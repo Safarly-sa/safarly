@@ -1,4 +1,4 @@
-import { useTranslation } from "@/providers/I18nProvider";
+import { useTranslation } from "@/providers/translation-context";
 import { motion } from "framer-motion";
 import { LucideIcon } from "lucide-react";
 

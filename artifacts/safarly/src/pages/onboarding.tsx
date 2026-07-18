@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { Check, ChevronLeft, ChevronRight, Search } from "lucide-react";
-import { useTranslation } from "@/providers/I18nProvider";
+import { useTranslation } from "@/providers/translation-context";
 
 /* ── Style injection for custom inputs ──────────────────────────────── */
 function useFormStyles() {

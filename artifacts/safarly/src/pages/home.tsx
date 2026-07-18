@@ -1,4 +1,4 @@
-import { useTranslation } from "@/providers/I18nProvider";
+import { useTranslation } from "@/providers/translation-context";
 import { useTheme } from "@/providers/ThemeProvider";
 import { Link } from "wouter";
 import { motion } from "framer-motion";

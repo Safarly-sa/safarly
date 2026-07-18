@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { motion } from "framer-motion";
 import { ArrowRight, Calendar, ChevronRight, ChevronLeft } from "lucide-react";
-import { useTranslation } from "@/providers/I18nProvider";
+import { useTranslation } from "@/providers/translation-context";
 
 /* ── Style injection ───────────────────────────────────────────────── */
 function useTripStyles() {

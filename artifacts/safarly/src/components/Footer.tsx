@@ -1,5 +1,5 @@
 import safarlyLogo from "@assets/safarly-transparent_1784408718766.png";
-import { useTranslation } from "@/providers/I18nProvider";
+import { useTranslation } from "@/providers/translation-context";
 import { Link } from "wouter";
 
 /* Hardcoded dark-mode palette — footer is always dark regardless of theme */

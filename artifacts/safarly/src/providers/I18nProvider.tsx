@@ -1,17 +1,9 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import en from "../locales/en.json";
 import ar from "../locales/ar.json";
+import { I18nContext, type Language } from "./translation-context";
 
-type Language = "en" | "ar";
 type Translations = Record<string, string>;
-
-interface I18nContextType {
-  language: Language;
-  setLanguage: (lang: Language) => void;
-  t: (key: string) => string;
-}
-
-const I18nContext = createContext<I18nContextType | undefined>(undefined);
 
 export function I18nProvider({ children }: { children: React.ReactNode }) {
   const [language, setLanguage] = useState<Language>(() => {
@@ -35,12 +27,4 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
       {children}
     </I18nContext.Provider>
   );
-}
-
-export function useTranslation() {
-  const context = useContext(I18nContext);
-  if (!context) {
-    throw new Error("useTranslation must be used within an I18nProvider");
-  }
-  return context;
 }

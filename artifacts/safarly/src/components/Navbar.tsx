@@ -1,6 +1,6 @@
 import { useLocation } from "wouter";
 import { Link } from "wouter";
-import { useTranslation } from "@/providers/I18nProvider";
+import { useTranslation } from "@/providers/translation-context";
 import { useTheme } from "@/providers/ThemeProvider";
 import safarlyLogo from "@assets/safarly-transparent_1784408718766.png";
 import { Sun, Moon } from "lucide-react";

@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { useTranslation } from "@/providers/I18nProvider";
+import { useTranslation } from "@/providers/translation-context";
 import { Home, Map as MapIcon, Camera, Mic } from "lucide-react";
 import clsx from "clsx";
 
