@@ -143,5 +143,26 @@
   "trip.goal.spiritual.desc": "Connect with the sacred heart of Islam",
   "trip.custom_goal.label": "Custom Goal (optional)",
   "trip.custom_goal.placeholder": "Describe your dream trip in your own words…",
-  "trip.cta": "Generate My Journey"
+  "trip.cta": "Generate My Journey",
+
+  "gen.title": "Crafting Your Journey",
+  "gen.subtitle": "Eight AI agents are analyzing your preferences",
+  "gen.redirecting": "Opening your itinerary…",
+  "gen.progress_label": "Analysis progress",
+
+  "gen.agent.goal_prefix": "Top objectives:",
+  "gen.agent.discovery": "Scanning {city} — {total} POIs in pool · {matched} stops matched your profile",
+  "gen.agent.restaurant": "{count} allergen-safe dishes confirmed",
+  "gen.agent.budget": "Estimated {total} total · Daily budget {daily} {flag}",
+  "gen.agent.culture": "{count} cultural notes attached to stops",
+  "gen.agent.safety": "Heat window **12:00–15:00** applied · Indoor stops locked for midday",
+  "gen.agent.sustainability": "Hidden-gem share: {pct} of all stops",
+  "gen.agent.verification": "{count} stops verified with Google Maps links",
+
+  "gen.obj.culture": "culture",
+  "gen.obj.budget": "budget",
+  "gen.obj.hiddenGems": "hidden gems",
+  "gen.obj.food": "food",
+  "gen.obj.family": "family",
+  "gen.obj.photography": "photography"
 }

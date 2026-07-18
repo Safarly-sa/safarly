@@ -13,11 +13,11 @@ import { Footer } from '@/components/Footer';
 import { Home } from '@/pages/home';
 import { Onboarding } from '@/pages/onboarding';
 import { Trip } from '@/pages/trip';
+import { Generating } from '@/pages/generating';
 import { StubPage } from '@/pages/stub';
 import NotFound from '@/pages/not-found';
 
 import { 
-  Wand2, 
   ListTodo, 
   Camera, 
   MessageCircle, 
@@ -38,9 +38,7 @@ function Router() {
           
           <Route path="/trip" component={Trip} />
           
-          <Route path="/generating">
-            <StubPage id="generating" icon={Wand2} />
-          </Route>
+          <Route path="/generating" component={Generating} />
           
           <Route path="/itinerary">
             <StubPage id="itinerary" icon={ListTodo} />
