@@ -11,12 +11,12 @@ import { BottomNav } from '@/components/BottomNav';
 import { Footer } from '@/components/Footer';
 
 import { Home } from '@/pages/home';
+import { Onboarding } from '@/pages/onboarding';
+import { Trip } from '@/pages/trip';
 import { StubPage } from '@/pages/stub';
 import NotFound from '@/pages/not-found';
 
 import { 
-  UserCircle, 
-  Map, 
   Wand2, 
   ListTodo, 
   Camera, 
@@ -34,13 +34,9 @@ function Router() {
         <Switch>
           <Route path="/" component={Home} />
           
-          <Route path="/onboarding">
-            <StubPage id="onboarding" icon={UserCircle} />
-          </Route>
+          <Route path="/onboarding" component={Onboarding} />
           
-          <Route path="/trip">
-            <StubPage id="trip" icon={Map} />
-          </Route>
+          <Route path="/trip" component={Trip} />
           
           <Route path="/generating">
             <StubPage id="generating" icon={Wand2} />
