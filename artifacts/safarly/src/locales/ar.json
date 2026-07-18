@@ -143,26 +143,5 @@
   "trip.goal.spiritual.desc": "تواصل مع القلب الروحي للإسلام",
   "trip.custom_goal.label": "هدف مخصص (اختياري)",
   "trip.custom_goal.placeholder": "صف رحلة أحلامك بكلماتك الخاصة…",
-  "trip.cta": "أنشئ رحلتي",
-
-  "gen.title": "نحن نصمم رحلتك",
-  "gen.subtitle": "ثمانية وكلاء ذكاء اصطناعي يحللون تفضيلاتك",
-  "gen.redirecting": "جارٍ فتح خطة رحلتك…",
-  "gen.progress_label": "تقدم التحليل",
-
-  "gen.agent.goal_prefix": "الأهداف الرئيسية:",
-  "gen.agent.discovery": "فحص {city} — {total} وجهة في المخزن · {matched} محطة تتوافق مع ملفك",
-  "gen.agent.restaurant": "تأكيد {count} طبق خالٍ من المواد المسببة للحساسية",
-  "gen.agent.budget": "التكلفة المقدرة {total} إجمالاً · الميزانية اليومية {daily} {flag}",
-  "gen.agent.culture": "{count} ملاحظة ثقافية مرفقة بالمحطات",
-  "gen.agent.safety": "نافذة الحرارة **12:00–15:00** مطبقة · محطات داخلية مخصصة للظهيرة",
-  "gen.agent.sustainability": "نسبة الكنوز الخفية: {pct} من إجمالي المحطات",
-  "gen.agent.verification": "{count} محطة موثقة بروابط خرائط جوجل",
-
-  "gen.obj.culture": "الثقافة",
-  "gen.obj.budget": "الميزانية",
-  "gen.obj.hiddenGems": "الكنوز الخفية",
-  "gen.obj.food": "الطعام",
-  "gen.obj.family": "العائلة",
-  "gen.obj.photography": "التصوير"
+  "trip.cta": "أنشئ رحلتي"
 }
