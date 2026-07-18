@@ -143,5 +143,6 @@
   "trip.goal.spiritual.desc": "Connect with the sacred heart of Islam",
   "trip.custom_goal.label": "Custom Goal (optional)",
   "trip.custom_goal.placeholder": "Describe your dream trip in your own words…",
-  "trip.cta": "Generate My Journey"
+  "trip.cta": "Generate My Journey",
+  "trip.hint": "Please select a city and travel dates to continue"
 }

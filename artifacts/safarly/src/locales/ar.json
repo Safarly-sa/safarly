@@ -143,5 +143,6 @@
   "trip.goal.spiritual.desc": "تواصل مع القلب الروحي للإسلام",
   "trip.custom_goal.label": "هدف مخصص (اختياري)",
   "trip.custom_goal.placeholder": "صف رحلة أحلامك بكلماتك الخاصة…",
-  "trip.cta": "أنشئ رحلتي"
+  "trip.cta": "أنشئ رحلتي",
+  "trip.hint": "الرجاء اختيار المدينة وتواريخ السفر للمتابعة"
 }

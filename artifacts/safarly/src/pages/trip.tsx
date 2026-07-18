@@ -530,7 +530,7 @@ export function Trip() {
               textAlign: "center", fontSize: "0.8125rem",
               color: "var(--sf-text-muted)", marginTop: "-20px",
             }}>
-              {`Please select a city and travel dates`}
+              {t("trip.hint")}
             </p>
           )}
         </div>
