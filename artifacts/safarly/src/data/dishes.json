@@ -1,0 +1,142 @@
+[
+  {
+    "id": "kabsa_chicken", "name": "Kabsa (Chicken)", "name_ar": "كبسة دجاج",
+    "meal_type": "lunch", "price_sar": 35,
+    "common_allergens": [],
+    "food_weight": 0.75,
+    "description": "Fragrant saffron-spiced rice with slow-braised chicken, dried fruits, and fried onions — the national dish."
+  },
+  {
+    "id": "kabsa_lamb", "name": "Kabsa (Lamb)", "name_ar": "كبسة لحم",
+    "meal_type": "lunch", "price_sar": 55,
+    "common_allergens": [],
+    "food_weight": 0.80,
+    "description": "Whole lamb joint slow-cooked with aromatic Kabsa spice blend atop long-grain rice."
+  },
+  {
+    "id": "jareesh", "name": "Jareesh", "name_ar": "جريش",
+    "meal_type": "lunch", "price_sar": 28,
+    "common_allergens": ["gluten"],
+    "food_weight": 0.70,
+    "description": "Cracked wheat slow-cooked to a creamy porridge with lamb, topped with crispy onions and ghee."
+  },
+  {
+    "id": "saleeg", "name": "Saleeg", "name_ar": "سليق",
+    "meal_type": "lunch", "price_sar": 32,
+    "common_allergens": ["dairy"],
+    "food_weight": 0.68,
+    "description": "White rice simmered in milk broth with chicken; Hejazi comfort food served with tomato sauce."
+  },
+  {
+    "id": "maraq", "name": "Maraq Lamb Broth", "name_ar": "مرق لحم",
+    "meal_type": "lunch", "price_sar": 20,
+    "common_allergens": [],
+    "food_weight": 0.55,
+    "description": "Clear spiced lamb broth with herbs — traditionally the first course of a Saudi feast."
+  },
+  {
+    "id": "machboos_rubyan", "name": "Machboos Rubyan (Shrimp Rice)", "name_ar": "مجبوس ربيان",
+    "meal_type": "lunch", "price_sar": 65,
+    "common_allergens": ["shellfish"],
+    "food_weight": 0.78,
+    "description": "Gulf-style spiced rice with jumbo shrimp, dried limes (loomi), and rose water — beloved on the Red Sea coast."
+  },
+  {
+    "id": "sayadiya", "name": "Sayadiya Fish Rice", "name_ar": "صيادية",
+    "meal_type": "lunch", "price_sar": 48,
+    "common_allergens": [],
+    "food_weight": 0.72,
+    "description": "Levantine-influenced fish rice; caramelised onion gravy soaks into long-grain rice beneath whole grilled fish."
+  },
+  {
+    "id": "thareed", "name": "Thareed (Lamb Bread Stew)", "name_ar": "ثريد",
+    "meal_type": "lunch", "price_sar": 30,
+    "common_allergens": ["gluten"],
+    "food_weight": 0.65,
+    "description": "Thin flat bread layered with slow-braised lamb and vegetables; the Prophet ﷺ's described as the best of foods."
+  },
+  {
+    "id": "harees", "name": "Harees", "name_ar": "هريس",
+    "meal_type": "lunch", "price_sar": 25,
+    "common_allergens": ["gluten"],
+    "food_weight": 0.68,
+    "description": "Wheat and lamb pounded to a silky paste; simple, ancient, and deeply satisfying — especially during Ramadan."
+  },
+  {
+    "id": "samboosa_lunch", "name": "Samboosa Platter", "name_ar": "سنبوسة",
+    "meal_type": "lunch", "price_sar": 18,
+    "common_allergens": ["gluten", "eggs"],
+    "food_weight": 0.52,
+    "description": "Crispy triangular pastries filled with spiced minced meat, herbs, and pine nuts."
+  },
+  {
+    "id": "mandi_lamb", "name": "Mandi (Slow-Roasted Lamb)", "name_ar": "مندي لحم",
+    "meal_type": "dinner", "price_sar": 70,
+    "common_allergens": [],
+    "food_weight": 0.85,
+    "description": "Whole lamb smoked low-and-slow in an underground pit (tandoor); the smoke flavour is unmistakable."
+  },
+  {
+    "id": "madfoon", "name": "Madfoon (Buried Lamb)", "name_ar": "مدفون",
+    "meal_type": "dinner", "price_sar": 75,
+    "common_allergens": [],
+    "food_weight": 0.82,
+    "description": "Seasoned lamb buried in a sand pit with hot coals overnight; Najdi highland tradition at its finest."
+  },
+  {
+    "id": "ouzi", "name": "Ouzi (Whole Lamb with Rice)", "name_ar": "أوزي",
+    "meal_type": "dinner", "price_sar": 85,
+    "common_allergens": [],
+    "food_weight": 0.85,
+    "description": "A whole roasted lamb on a bed of spiced rice, crowned with pine nuts and raisins — the ultimate celebration dish."
+  },
+  {
+    "id": "mathbi_chicken", "name": "Mathbi Grilled Chicken", "name_ar": "مطبي دجاج",
+    "meal_type": "dinner", "price_sar": 45,
+    "common_allergens": [],
+    "food_weight": 0.72,
+    "description": "Spatchcocked chicken pressed between two hot stones over open coals — smoky, charred, and aromatic."
+  },
+  {
+    "id": "mutabbaq", "name": "Mutabbaq (Filled Pancake)", "name_ar": "مطبق",
+    "meal_type": "dinner", "price_sar": 22,
+    "common_allergens": ["eggs", "gluten"],
+    "food_weight": 0.60,
+    "description": "Street-food pancake stuffed with egg, minced lamb, onion, and leek; a Jeddah Balad staple."
+  },
+  {
+    "id": "lahm_basal", "name": "Lahm bil Basal (Lamb & Onion Stew)", "name_ar": "لحم بالبصل",
+    "meal_type": "dinner", "price_sar": 38,
+    "common_allergens": [],
+    "food_weight": 0.65,
+    "description": "Slow-braised lamb shanks with caramelised onions in a rich tomato base; served with flatbread."
+  },
+  {
+    "id": "kabsa_dinner", "name": "Kabsa Dinner Special", "name_ar": "كبسة العشاء",
+    "meal_type": "dinner", "price_sar": 60,
+    "common_allergens": [],
+    "food_weight": 0.78,
+    "description": "Evening-edition kabsa with added dried apricots, almonds, and a darker, smokier spice profile."
+  },
+  {
+    "id": "fish_mandi", "name": "Fish Mandi (Jeddah Style)", "name_ar": "مندي سمك",
+    "meal_type": "dinner", "price_sar": 80,
+    "common_allergens": [],
+    "food_weight": 0.76,
+    "description": "Red Sea fish smoked Mandi-style over wood embers with turmeric rice; a coastal flagship dish."
+  },
+  {
+    "id": "shish_tawook", "name": "Shish Tawook Platter", "name_ar": "شيش طاووق",
+    "meal_type": "dinner", "price_sar": 40,
+    "common_allergens": [],
+    "food_weight": 0.65,
+    "description": "Yoghurt-marinated chicken cubes charcoal-grilled on skewers; served with garlic toum and warm bread."
+  },
+  {
+    "id": "kunafa", "name": "Kunafa bil Jibneh (Cheese Pastry)", "name_ar": "كنافة بالجبنة",
+    "meal_type": "dinner", "price_sar": 25,
+    "common_allergens": ["dairy", "gluten"],
+    "food_weight": 0.58,
+    "description": "Crispy shredded pastry over white cheese soaked in rose-water syrup; Levantine-influenced Hejazi dessert."
+  }
+]

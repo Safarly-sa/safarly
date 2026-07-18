@@ -1,0 +1,319 @@
+[
+  {
+    "id": "ruh_masmak", "name": "Al-Masmak Fortress", "city": "riyadh",
+    "category": "heritage", "lat": 24.6883, "lng": 46.7146,
+    "price_range": 0, "duration_hrs": 1.5, "hidden_gem": false,
+    "family_friendly": true, "accessible": true, "indoor": true, "best_slot": "morning",
+    "map_url": "https://www.google.com/maps/search/?api=1&query=Al-Masmak+Fortress+Riyadh",
+    "culture_note": "18th-century mudbrick citadel; the gate still bears the spearhead from the 1902 battle that reunified Saudi Arabia."
+  },
+  {
+    "id": "ruh_natmuseum", "name": "National Museum of Saudi Arabia", "city": "riyadh",
+    "category": "museum", "lat": 24.6910, "lng": 46.7080,
+    "price_range": 25, "duration_hrs": 2.5, "hidden_gem": false,
+    "family_friendly": true, "accessible": true, "indoor": true, "best_slot": "midday",
+    "map_url": "https://www.google.com/maps/search/?api=1&query=National+Museum+Saudi+Arabia+Riyadh",
+    "culture_note": "Eight galleries charting the Arabian Peninsula from prehistoric times through the founding of the modern Kingdom."
+  },
+  {
+    "id": "ruh_diriyah", "name": "Diriyah At-Turaif UNESCO District", "city": "riyadh",
+    "category": "heritage", "lat": 24.7341, "lng": 46.5751,
+    "price_range": 60, "duration_hrs": 3.0, "hidden_gem": false,
+    "family_friendly": true, "accessible": false, "indoor": false, "best_slot": "morning",
+    "map_url": "https://www.google.com/maps/search/?api=1&query=Diriyah+At-Turaif+Riyadh",
+    "culture_note": "Birthplace of the Saudi state and a UNESCO World Heritage Site; mudbrick palaces and mosques dating to the 15th century."
+  },
+  {
+    "id": "ruh_kingdom", "name": "Kingdom Centre Sky Bridge", "city": "riyadh",
+    "category": "modern", "lat": 24.6930, "lng": 46.6834,
+    "price_range": 65, "duration_hrs": 1.0, "hidden_gem": false,
+    "family_friendly": true, "accessible": false, "indoor": true, "best_slot": "afternoon",
+    "map_url": "https://www.google.com/maps/search/?api=1&query=Kingdom+Centre+Tower+Riyadh"
+  },
+  {
+    "id": "ruh_bujairi", "name": "Al-Bujairi Heritage Park", "city": "riyadh",
+    "category": "heritage", "lat": 24.7363, "lng": 46.5758,
+    "price_range": 0, "duration_hrs": 2.0, "hidden_gem": false,
+    "family_friendly": true, "accessible": true, "indoor": false, "best_slot": "evening",
+    "map_url": "https://www.google.com/maps/search/?api=1&query=Al-Bujairi+Heritage+Park+Diriyah",
+    "culture_note": "Restored craftsmen's quarter directly across the wadi from At-Turaif; active art studios and traditional coffee houses."
+  },
+  {
+    "id": "ruh_boulevard", "name": "Boulevard World Riyadh", "city": "riyadh",
+    "category": "entertainment", "lat": 24.7660, "lng": 46.6356,
+    "price_range": 40, "duration_hrs": 3.0, "hidden_gem": false,
+    "family_friendly": true, "accessible": true, "indoor": false, "best_slot": "evening",
+    "map_url": "https://www.google.com/maps/search/?api=1&query=Boulevard+World+Riyadh"
+  },
+  {
+    "id": "ruh_wadi_hanifah", "name": "Wadi Hanifah Eco Park", "city": "riyadh",
+    "category": "nature", "lat": 24.6900, "lng": 46.5600,
+    "price_range": 0, "duration_hrs": 2.5, "hidden_gem": false,
+    "family_friendly": true, "accessible": true, "indoor": false, "best_slot": "morning",
+    "map_url": "https://www.google.com/maps/search/?api=1&query=Wadi+Hanifah+Riyadh"
+  },
+  {
+    "id": "ruh_edge", "name": "Edge of the World (Jebel Fihrayn)", "city": "riyadh",
+    "category": "nature", "lat": 24.3500, "lng": 46.5500,
+    "price_range": 0, "duration_hrs": 4.0, "hidden_gem": true,
+    "family_friendly": false, "accessible": false, "indoor": false, "best_slot": "morning",
+    "map_url": "https://www.google.com/maps/search/?api=1&query=Edge+of+the+World+Jebel+Fihrayn+Riyadh",
+    "culture_note": "300-metre vertical escarpment overlooking the Tuwaiq valley — locals call it the end of the world."
+  },
+  {
+    "id": "ruh_camel", "name": "King Abdulaziz Camel Market", "city": "riyadh",
+    "category": "heritage", "lat": 24.4989, "lng": 46.8411,
+    "price_range": 0, "duration_hrs": 1.5, "hidden_gem": true,
+    "family_friendly": true, "accessible": false, "indoor": false, "best_slot": "morning",
+    "map_url": "https://www.google.com/maps/search/?api=1&query=Camel+Market+Riyadh+Souq+Al+Jmal",
+    "culture_note": "The world's largest camel market; thousands of camels traded daily. Go before 10am."
+  },
+  {
+    "id": "ruh_murabba", "name": "Al-Murabba Historical Palace", "city": "riyadh",
+    "category": "heritage", "lat": 24.6897, "lng": 46.7054,
+    "price_range": 0, "duration_hrs": 1.0, "hidden_gem": false,
+    "family_friendly": true, "accessible": true, "indoor": true, "best_slot": "midday",
+    "map_url": "https://www.google.com/maps/search/?api=1&query=Al-Murabba+Palace+Riyadh",
+    "culture_note": "1930s mudbrick palace of King Abdulaziz, precursor to the modern capital."
+  },
+  {
+    "id": "ruh_artdistrict", "name": "Riyadh Art District (Ithra)", "city": "riyadh",
+    "category": "art", "lat": 24.7200, "lng": 46.6700,
+    "price_range": 0, "duration_hrs": 1.5, "hidden_gem": true,
+    "family_friendly": true, "accessible": true, "indoor": false, "best_slot": "afternoon",
+    "map_url": "https://www.google.com/maps/search/?api=1&query=Riyadh+Art+Public+Murals"
+  },
+  {
+    "id": "ruh_old_market", "name": "Al-Zal Old Market", "city": "riyadh",
+    "category": "food", "lat": 24.6879, "lng": 46.7193,
+    "price_range": 0, "duration_hrs": 1.5, "hidden_gem": true,
+    "family_friendly": true, "accessible": false, "indoor": false, "best_slot": "afternoon",
+    "map_url": "https://www.google.com/maps/search/?api=1&query=Al-Zal+Market+Riyadh",
+    "culture_note": "Traditional bazaar unchanged since the 1940s; gold, spices, and antique silver."
+  },
+  {
+    "id": "ruh_red_sands", "name": "Red Sands Desert (Al-Ramah)", "city": "riyadh",
+    "category": "adventure", "lat": 24.4700, "lng": 46.2700,
+    "price_range": 0, "duration_hrs": 3.0, "hidden_gem": false,
+    "family_friendly": true, "accessible": false, "indoor": false, "best_slot": "morning",
+    "map_url": "https://www.google.com/maps/search/?api=1&query=Red+Sands+Desert+Riyadh"
+  },
+  {
+    "id": "ruh_natlib", "name": "Saudi National Library", "city": "riyadh",
+    "category": "museum", "lat": 24.7136, "lng": 46.6714,
+    "price_range": 0, "duration_hrs": 1.5, "hidden_gem": false,
+    "family_friendly": true, "accessible": true, "indoor": true, "best_slot": "midday",
+    "map_url": "https://www.google.com/maps/search/?api=1&query=Saudi+National+Library+Riyadh"
+  },
+
+  {
+    "id": "jed_balad", "name": "Al-Balad UNESCO Historic District", "city": "jeddah",
+    "category": "heritage", "lat": 21.4868, "lng": 39.1869,
+    "price_range": 0, "duration_hrs": 3.0, "hidden_gem": false,
+    "family_friendly": true, "accessible": false, "indoor": false, "best_slot": "morning",
+    "map_url": "https://www.google.com/maps/search/?api=1&query=Al-Balad+Jeddah+Historic+District",
+    "culture_note": "400-year-old coral-stone houses with intricately carved wooden Rawasheen (balconies); UNESCO since 2014."
+  },
+  {
+    "id": "jed_fountain", "name": "King Fahd Fountain", "city": "jeddah",
+    "category": "modern", "lat": 21.5388, "lng": 39.1499,
+    "price_range": 0, "duration_hrs": 0.5, "hidden_gem": false,
+    "family_friendly": true, "accessible": true, "indoor": false, "best_slot": "evening",
+    "map_url": "https://www.google.com/maps/search/?api=1&query=King+Fahd+Fountain+Jeddah"
+  },
+  {
+    "id": "jed_mosque", "name": "Al-Rahmah Floating Mosque", "city": "jeddah",
+    "category": "religion", "lat": 21.4819, "lng": 39.1447,
+    "price_range": 0, "duration_hrs": 1.0, "hidden_gem": false,
+    "family_friendly": true, "accessible": true, "indoor": false, "best_slot": "morning",
+    "map_url": "https://www.google.com/maps/search/?api=1&query=Al-Rahmah+Floating+Mosque+Jeddah",
+    "culture_note": "Built on stilts over the Red Sea; appears to float at high tide. Open to non-Muslim visitors outside prayer times."
+  },
+  {
+    "id": "jed_corniche", "name": "Jeddah Corniche Walk", "city": "jeddah",
+    "category": "nature", "lat": 21.5231, "lng": 39.1422,
+    "price_range": 0, "duration_hrs": 2.0, "hidden_gem": false,
+    "family_friendly": true, "accessible": true, "indoor": false, "best_slot": "evening",
+    "map_url": "https://www.google.com/maps/search/?api=1&query=Jeddah+Corniche"
+  },
+  {
+    "id": "jed_aquarium", "name": "Fakieh Aquarium", "city": "jeddah",
+    "category": "entertainment", "lat": 21.5200, "lng": 39.1298,
+    "price_range": 65, "duration_hrs": 2.0, "hidden_gem": false,
+    "family_friendly": true, "accessible": true, "indoor": true, "best_slot": "midday",
+    "map_url": "https://www.google.com/maps/search/?api=1&query=Fakieh+Aquarium+Jeddah"
+  },
+  {
+    "id": "jed_shallal", "name": "Al-Shallal Theme Park", "city": "jeddah",
+    "category": "entertainment", "lat": 21.5517, "lng": 39.1317,
+    "price_range": 90, "duration_hrs": 3.0, "hidden_gem": false,
+    "family_friendly": true, "accessible": true, "indoor": false, "best_slot": "afternoon",
+    "map_url": "https://www.google.com/maps/search/?api=1&query=Al-Shallal+Theme+Park+Jeddah"
+  },
+  {
+    "id": "jed_khalil_museum", "name": "Abdul Raouf Khalil Museum", "city": "jeddah",
+    "category": "museum", "lat": 21.5280, "lng": 39.1600,
+    "price_range": 30, "duration_hrs": 1.5, "hidden_gem": false,
+    "family_friendly": true, "accessible": true, "indoor": true, "best_slot": "midday",
+    "map_url": "https://www.google.com/maps/search/?api=1&query=Abdul+Raouf+Khalil+Museum+Jeddah",
+    "culture_note": "Private collection covering 7,000 years of Arabian history across four floors; exceptional Islamic manuscript gallery."
+  },
+  {
+    "id": "jed_nasif", "name": "Nasif Historical House", "city": "jeddah",
+    "category": "heritage", "lat": 21.4865, "lng": 39.1878,
+    "price_range": 0, "duration_hrs": 1.0, "hidden_gem": true,
+    "family_friendly": true, "accessible": true, "indoor": true, "best_slot": "midday",
+    "map_url": "https://www.google.com/maps/search/?api=1&query=Nasif+House+Al-Balad+Jeddah",
+    "culture_note": "19th-century merchant mansion where King Abdulaziz stayed during his 1925 campaign; still preserves original furniture."
+  },
+  {
+    "id": "jed_bab_makkah", "name": "Bab Makkah Old City Gate", "city": "jeddah",
+    "category": "heritage", "lat": 21.4850, "lng": 39.1920,
+    "price_range": 0, "duration_hrs": 0.5, "hidden_gem": true,
+    "family_friendly": true, "accessible": true, "indoor": false, "best_slot": "morning",
+    "map_url": "https://www.google.com/maps/search/?api=1&query=Bab+Makkah+Gate+Jeddah"
+  },
+  {
+    "id": "jed_obhur", "name": "Obhur Creek Beach", "city": "jeddah",
+    "category": "adventure", "lat": 21.7032, "lng": 39.0832,
+    "price_range": 0, "duration_hrs": 3.0, "hidden_gem": true,
+    "family_friendly": true, "accessible": true, "indoor": false, "best_slot": "morning",
+    "map_url": "https://www.google.com/maps/search/?api=1&query=Obhur+Creek+Jeddah"
+  },
+  {
+    "id": "jed_nawras", "name": "Al-Nawras Park Jeddah", "city": "jeddah",
+    "category": "entertainment", "lat": 21.5350, "lng": 39.1480,
+    "price_range": 0, "duration_hrs": 2.0, "hidden_gem": false,
+    "family_friendly": true, "accessible": true, "indoor": false, "best_slot": "afternoon",
+    "map_url": "https://www.google.com/maps/search/?api=1&query=Al-Nawras+Park+Jeddah"
+  },
+  {
+    "id": "jed_heritage_village", "name": "Jeddah Heritage Village", "city": "jeddah",
+    "category": "heritage", "lat": 21.5150, "lng": 39.1700,
+    "price_range": 0, "duration_hrs": 1.5, "hidden_gem": false,
+    "family_friendly": true, "accessible": true, "indoor": true, "best_slot": "midday",
+    "map_url": "https://www.google.com/maps/search/?api=1&query=Jeddah+Heritage+Village"
+  },
+  {
+    "id": "jed_flower_market", "name": "Al-Balad Flower & Spice Market", "city": "jeddah",
+    "category": "food", "lat": 21.4840, "lng": 39.1910,
+    "price_range": 0, "duration_hrs": 1.0, "hidden_gem": true,
+    "family_friendly": true, "accessible": false, "indoor": false, "best_slot": "morning",
+    "map_url": "https://www.google.com/maps/search/?api=1&query=Jeddah+Spice+Flower+Market",
+    "culture_note": "Frankincense, oud, and saffron traded in the same alley for five centuries."
+  },
+  {
+    "id": "jed_waterfront", "name": "Jeddah Waterfront (North Corniche)", "city": "jeddah",
+    "category": "modern", "lat": 21.5900, "lng": 39.1350,
+    "price_range": 0, "duration_hrs": 1.5, "hidden_gem": false,
+    "family_friendly": true, "accessible": true, "indoor": false, "best_slot": "evening",
+    "map_url": "https://www.google.com/maps/search/?api=1&query=Jeddah+Waterfront+North+Corniche"
+  },
+
+  {
+    "id": "ula_hegra", "name": "Hegra (Mada'in Salih) — Nabataean Tombs", "city": "alula",
+    "category": "heritage", "lat": 26.7904, "lng": 37.9552,
+    "price_range": 150, "duration_hrs": 4.0, "hidden_gem": false,
+    "family_friendly": false, "accessible": false, "indoor": false, "best_slot": "morning",
+    "map_url": "https://www.google.com/maps/search/?api=1&query=Hegra+Madain+Salih+AlUla",
+    "culture_note": "Saudi Arabia's first UNESCO World Heritage Site; 111 rock-cut Nabataean tombs dating to the 1st century CE."
+  },
+  {
+    "id": "ula_elephant", "name": "Elephant Rock (Jabal AlFil)", "city": "alula",
+    "category": "nature", "lat": 26.6200, "lng": 37.8700,
+    "price_range": 0, "duration_hrs": 1.5, "hidden_gem": false,
+    "family_friendly": true, "accessible": false, "indoor": false, "best_slot": "morning",
+    "map_url": "https://www.google.com/maps/search/?api=1&query=Elephant+Rock+Jabal+AlFil+AlUla"
+  },
+  {
+    "id": "ula_oldtown", "name": "AlUla Old Town", "city": "alula",
+    "category": "heritage", "lat": 26.6220, "lng": 37.9170,
+    "price_range": 0, "duration_hrs": 2.0, "hidden_gem": false,
+    "family_friendly": true, "accessible": true, "indoor": false, "best_slot": "afternoon",
+    "map_url": "https://www.google.com/maps/search/?api=1&query=AlUla+Old+Town",
+    "culture_note": "Abandoned 900-year-old mudbrick settlement; 900 homes, 400 shops, and six mosques awaiting rediscovery."
+  },
+  {
+    "id": "ula_ikmah", "name": "Jabal Ikmah (Library Mountain)", "city": "alula",
+    "category": "heritage", "lat": 26.7300, "lng": 37.9100,
+    "price_range": 45, "duration_hrs": 2.5, "hidden_gem": true,
+    "family_friendly": false, "accessible": false, "indoor": false, "best_slot": "morning",
+    "map_url": "https://www.google.com/maps/search/?api=1&query=Jabal+Ikmah+Library+Mountain+AlUla",
+    "culture_note": "Open-air library of Lihyanite, Dadanitic, and Minaic inscriptions carved into sandstone cliffs — over 500 ancient texts."
+  },
+  {
+    "id": "ula_dadan", "name": "Dadan Archaeological Site", "city": "alula",
+    "category": "heritage", "lat": 26.6140, "lng": 37.8890,
+    "price_range": 65, "duration_hrs": 2.0, "hidden_gem": true,
+    "family_friendly": false, "accessible": false, "indoor": false, "best_slot": "morning",
+    "map_url": "https://www.google.com/maps/search/?api=1&query=Dadan+Ancient+Kingdom+AlUla",
+    "culture_note": "Capital of the Lihyan and Dadanite kingdoms (9th–1st c. BCE); lion-carved tomb facades visible from the valley."
+  },
+  {
+    "id": "ula_maraya", "name": "Maraya — Mirror Building", "city": "alula",
+    "category": "art", "lat": 26.5910, "lng": 37.8780,
+    "price_range": 0, "duration_hrs": 1.0, "hidden_gem": false,
+    "family_friendly": true, "accessible": true, "indoor": false, "best_slot": "afternoon",
+    "map_url": "https://www.google.com/maps/search/?api=1&query=Maraya+Mirror+Building+AlUla",
+    "culture_note": "World record-holder for largest mirror-clad building; 9,740 m² of mirrored facades reflecting the Ashar Valley canyon."
+  },
+  {
+    "id": "ula_ashar", "name": "Ashar Valley Canyon Walk", "city": "alula",
+    "category": "adventure", "lat": 26.5800, "lng": 37.8600,
+    "price_range": 0, "duration_hrs": 3.0, "hidden_gem": true,
+    "family_friendly": false, "accessible": false, "indoor": false, "best_slot": "morning",
+    "map_url": "https://www.google.com/maps/search/?api=1&query=Ashar+Valley+AlUla"
+  },
+  {
+    "id": "ula_oasis", "name": "AlUla Oasis Palm Grove Walk", "city": "alula",
+    "category": "nature", "lat": 26.6200, "lng": 37.9100,
+    "price_range": 0, "duration_hrs": 1.5, "hidden_gem": true,
+    "family_friendly": true, "accessible": true, "indoor": false, "best_slot": "morning",
+    "map_url": "https://www.google.com/maps/search/?api=1&query=AlUla+Oasis+Palm+Grove",
+    "culture_note": "Ancient falaj irrigation system still watering 2 million date palms; some trees are over 1,000 years old."
+  },
+  {
+    "id": "ula_harrat", "name": "Harrat Uwayrid Lava Fields", "city": "alula",
+    "category": "nature", "lat": 26.5400, "lng": 37.7800,
+    "price_range": 0, "duration_hrs": 2.0, "hidden_gem": true,
+    "family_friendly": false, "accessible": false, "indoor": false, "best_slot": "afternoon",
+    "map_url": "https://www.google.com/maps/search/?api=1&query=Harrat+Uwayrid+Lava+Fields+AlUla"
+  },
+  {
+    "id": "ula_winterpark", "name": "Winter Park AlUla", "city": "alula",
+    "category": "entertainment", "lat": 26.6350, "lng": 37.9250,
+    "price_range": 80, "duration_hrs": 3.0, "hidden_gem": false,
+    "family_friendly": true, "accessible": true, "indoor": false, "best_slot": "afternoon",
+    "map_url": "https://www.google.com/maps/search/?api=1&query=Winter+Park+AlUla"
+  },
+  {
+    "id": "ula_farms", "name": "AlUla Date Farm Experience", "city": "alula",
+    "category": "food", "lat": 26.6150, "lng": 37.9200,
+    "price_range": 0, "duration_hrs": 1.0, "hidden_gem": true,
+    "family_friendly": true, "accessible": true, "indoor": false, "best_slot": "morning",
+    "map_url": "https://www.google.com/maps/search/?api=1&query=AlUla+Date+Farm+Experience",
+    "culture_note": "70+ named date varieties; farmers still harvest by hand using the same climbing technique as their ancestors."
+  },
+  {
+    "id": "ula_jabal_ahmar", "name": "Jabal Al-Ahmar (Red Mountain)", "city": "alula",
+    "category": "nature", "lat": 26.6500, "lng": 37.8500,
+    "price_range": 0, "duration_hrs": 2.0, "hidden_gem": true,
+    "family_friendly": false, "accessible": false, "indoor": false, "best_slot": "afternoon",
+    "map_url": "https://www.google.com/maps/search/?api=1&query=Jabal+Al-Ahmar+Red+Mountain+AlUla"
+  },
+  {
+    "id": "ula_visitor_center", "name": "AlUla Visitor Experience Centre", "city": "alula",
+    "category": "museum", "lat": 26.6230, "lng": 37.9180,
+    "price_range": 0, "duration_hrs": 1.5, "hidden_gem": false,
+    "family_friendly": true, "accessible": true, "indoor": true, "best_slot": "midday",
+    "map_url": "https://www.google.com/maps/search/?api=1&query=AlUla+Visitor+Centre"
+  },
+  {
+    "id": "ula_dedan", "name": "Dedan Ancient Kingdom Ruins", "city": "alula",
+    "category": "heritage", "lat": 26.6100, "lng": 37.8910,
+    "price_range": 45, "duration_hrs": 2.0, "hidden_gem": true,
+    "family_friendly": false, "accessible": false, "indoor": false, "best_slot": "morning",
+    "map_url": "https://www.google.com/maps/search/?api=1&query=Dedan+Ruins+AlUla",
+    "culture_note": "Seat of the Lihyan kingdom; towering lion statues once flanked the entrance to the royal tombs."
+  }
+]

@@ -144,5 +144,38 @@
   "trip.custom_goal.label": "هدف مخصص (اختياري)",
   "trip.custom_goal.placeholder": "صف رحلة أحلامك بكلماتك الخاصة…",
   "trip.cta": "أنشئ رحلتي",
-  "trip.hint": "الرجاء اختيار المدينة وتواريخ السفر للمتابعة"
+  "trip.hint": "الرجاء اختيار المدينة وتواريخ السفر للمتابعة",
+
+  "gen.title": "جاري تصميم خطة رحلتك",
+  "gen.subtitle": "٨ وكلاء ذكاء اصطناعي يبنون رحلتك المثالية",
+  "gen.ready": "الخطة جاهزة — نفتح رحلتك الآن…",
+
+  "gen.agent.goal": "محلل الأهداف",
+  "gen.agent.discovery": "مستكشف الوجهات",
+  "gen.agent.restaurant": "كشاف المطاعم",
+  "gen.agent.budget": "محسن الميزانية",
+  "gen.agent.culture": "المستشار الثقافي",
+  "gen.agent.safety": "مراقب السلامة",
+  "gen.agent.sustainability": "متتبع الاستدامة",
+  "gen.agent.verification": "محرك التحقق",
+
+  "gen.obj.culture": "الثقافة",
+  "gen.obj.budget": "الميزانية",
+  "gen.obj.hiddenGems": "الكنوز المخفية",
+  "gen.obj.food": "الطعام",
+  "gen.obj.family": "العائلة",
+  "gen.obj.photography": "التصوير",
+
+  "gen.msg.goal": "الأهداف الرئيسية:",
+  "gen.msg.discovery.pre": "وجهة مرشحة في",
+  "gen.msg.restaurant.pre": "طبقًا آمنًا بدون مسببات حساسية",
+  "gen.msg.budget.ok": "ضمن الميزانية",
+  "gen.msg.budget.over": "تجاوز الميزانية، يتم الضبط",
+  "gen.msg.culture.pre": "ملاحظة ثقافية مرفقة",
+  "gen.msg.safety": "نافذة الحرارة ١٢:٠٠–١٥:٠٠ → محطات داخلية في أوقات الذروة",
+  "gen.msg.sustainability.pre": "الكنوز المخفية:",
+  "gen.msg.sustainability.of": "من",
+  "gen.msg.sustainability.stops": "محطة",
+  "gen.msg.verification.pre": "جميع",
+  "gen.msg.verification.end": "محطة تحمل روابط خرائط موثقة ✓"
 }

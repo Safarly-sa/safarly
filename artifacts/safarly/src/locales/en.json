@@ -144,5 +144,38 @@
   "trip.custom_goal.label": "Custom Goal (optional)",
   "trip.custom_goal.placeholder": "Describe your dream trip in your own words…",
   "trip.cta": "Generate My Journey",
-  "trip.hint": "Please select a city and travel dates to continue"
+  "trip.hint": "Please select a city and travel dates to continue",
+
+  "gen.title": "Crafting Your Itinerary",
+  "gen.subtitle": "8 AI agents are building your perfect journey",
+  "gen.ready": "Itinerary ready — opening your journey…",
+
+  "gen.agent.goal": "Goal Analyzer",
+  "gen.agent.discovery": "Destination Discovery",
+  "gen.agent.restaurant": "Restaurant Scout",
+  "gen.agent.budget": "Budget Optimizer",
+  "gen.agent.culture": "Culture Advisor",
+  "gen.agent.safety": "Safety Monitor",
+  "gen.agent.sustainability": "Sustainability Tracker",
+  "gen.agent.verification": "Verification Engine",
+
+  "gen.obj.culture": "culture",
+  "gen.obj.budget": "budget",
+  "gen.obj.hiddenGems": "hidden gems",
+  "gen.obj.food": "food",
+  "gen.obj.family": "family",
+  "gen.obj.photography": "photography",
+
+  "gen.msg.goal": "Top objectives:",
+  "gen.msg.discovery.pre": "candidates found in",
+  "gen.msg.restaurant.pre": "allergen-safe dishes selected",
+  "gen.msg.budget.ok": "within budget",
+  "gen.msg.budget.over": "over budget, adjusting",
+  "gen.msg.culture.pre": "heritage notes attached",
+  "gen.msg.safety": "Heat window 12:00–15:00 → indoor midday stops set",
+  "gen.msg.sustainability.pre": "Hidden gems:",
+  "gen.msg.sustainability.of": "of",
+  "gen.msg.sustainability.stops": "stops",
+  "gen.msg.verification.pre": "All",
+  "gen.msg.verification.end": "stops carry verified map links ✓"
 }

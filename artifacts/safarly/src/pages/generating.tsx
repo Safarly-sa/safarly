@@ -1,0 +1,554 @@
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useLocation } from "wouter";
+import { useTranslation } from "@/providers/translation-context";
+import {
+  generateItinerary,
+  type ItineraryResult,
+  type TravelerProfile,
+  type TripSpec,
+} from "@/lib/engine";
+
+/* ── Animation constants ────────────────────────────────────────────── */
+const TYPING_MS   = 14;  // ms per character
+const PAUSE_TICKS = 13;  // ticks between consecutive lines (~182 ms)
+const DONE_TICKS  = 30;  // ticks after final line before isComplete
+
+/* ── Text-part types ────────────────────────────────────────────────── */
+interface TextPart  { text: string; accent?: boolean }
+interface AgentLine { nameKey: string; parts: TextPart[] }
+
+/* ── Helpers ────────────────────────────────────────────────────────── */
+function totalChars(parts: TextPart[]): number {
+  return parts.reduce((s, p) => s + p.text.length, 0);
+}
+
+function TypedParts({
+  parts,
+  visibleChars,
+}: {
+  parts: TextPart[];
+  visibleChars: number;
+}) {
+  let remaining = visibleChars;
+  return (
+    <>
+      {parts.map((part, i) => {
+        if (remaining <= 0) return null;
+        const visible = part.text.slice(0, remaining);
+        remaining = Math.max(0, remaining - part.text.length);
+        return (
+          <span
+            key={i}
+            style={{ color: part.accent ? "var(--sf-accent)" : "inherit" }}
+          >
+            {visible}
+          </span>
+        );
+      })}
+    </>
+  );
+}
+
+/* ── Style injection ────────────────────────────────────────────────── */
+function useGenStyles() {
+  useEffect(() => {
+    const id = "sf-gen-styles";
+    if (document.getElementById(id)) return;
+    const s = document.createElement("style");
+    s.id = id;
+    s.textContent = `
+      @keyframes sf-blink {
+        0%,100% { opacity: 1; }
+        50%      { opacity: 0; }
+      }
+      @keyframes sf-spin {
+        to { transform: rotate(360deg); }
+      }
+      @keyframes sf-line-in {
+        from { opacity: 0; transform: translateY(6px); }
+        to   { opacity: 1; transform: translateY(0); }
+      }
+      .sf-cursor {
+        display: inline-block;
+        animation: sf-blink 0.85s step-end infinite;
+        color: var(--sf-accent);
+        margin-inline-start: 1px;
+        line-height: 1;
+        vertical-align: text-bottom;
+      }
+      .sf-spinner {
+        animation: sf-spin 1.1s linear infinite;
+      }
+      .sf-line-row {
+        animation: sf-line-in 0.18s ease both;
+      }
+    `;
+    document.head.appendChild(s);
+  }, []);
+}
+
+/* ── Build agent lines from engine result ───────────────────────────── */
+function buildAgentLines(
+  result: ItineraryResult,
+  trip: TripSpec,
+  t: (k: string) => string,
+  language: string,
+): AgentLine[] {
+  const o = result.objectives;
+
+  // Top 3 objectives by weight
+  const topObj = (Object.entries(o) as [string, number][])
+    .sort(([, a], [, b]) => b - a)
+    .slice(0, 3);
+
+  const cityNamesAr: Record<string, string> = {
+    riyadh: "الرياض",
+    jeddah: "جدة",
+    alula:  "العُلا",
+  };
+  const cityDisplay =
+    language === "ar" ? (cityNamesAr[trip.city] ?? trip.city) : result.cityName;
+
+  const totalStops  = result.days.reduce((s, d) => s + d.stops.length, 0);
+  const hiddenCount = Math.round(result.hiddenGemShare * totalStops);
+  const pct         = Math.round(result.hiddenGemShare * 100);
+  const est         = Math.round(result.estimatedDailyAvg).toLocaleString();
+  const budgetStr   = trip.budget.toLocaleString();
+  const budgetOk    = result.budgetStatus === "ok";
+
+  const objLabel: Record<string, string> = {
+    culture:     t("gen.obj.culture"),
+    budget:      t("gen.obj.budget"),
+    hiddenGems:  t("gen.obj.hiddenGems"),
+    food:        t("gen.obj.food"),
+    family:      t("gen.obj.family"),
+    photography: t("gen.obj.photography"),
+  };
+
+  // Objectives line
+  const objParts: TextPart[] = [{ text: t("gen.msg.goal") + " " }];
+  topObj.forEach(([k, v], i) => {
+    if (i > 0) objParts.push({ text: " · " });
+    objParts.push({ text: objLabel[k] + " " });
+    objParts.push({ text: v.toFixed(2), accent: true });
+  });
+
+  // Budget line differs slightly per language (SAR placement)
+  const budgetParts: TextPart[] =
+    language === "ar"
+      ? [
+          { text: "تقدير " },
+          { text: est, accent: true },
+          { text: " ريال/يوم مقابل " + budgetStr + " ريال/يوم — " },
+          {
+            text:   budgetOk ? t("gen.msg.budget.ok") : t("gen.msg.budget.over"),
+            accent: !budgetOk,
+          },
+        ]
+      : [
+          { text: "Est. SAR " },
+          { text: est, accent: true },
+          { text: "/day vs SAR " + budgetStr + "/day — " },
+          {
+            text:   budgetOk ? t("gen.msg.budget.ok") : t("gen.msg.budget.over"),
+            accent: !budgetOk,
+          },
+        ];
+
+  return [
+    { nameKey: "gen.agent.goal",     parts: objParts },
+    {
+      nameKey: "gen.agent.discovery",
+      parts: [
+        { text: String(result.candidateCount), accent: true },
+        { text: " " + t("gen.msg.discovery.pre") + " " + cityDisplay },
+      ],
+    },
+    {
+      nameKey: "gen.agent.restaurant",
+      parts: [
+        { text: String(result.allergenSafeDishCount), accent: true },
+        { text: " " + t("gen.msg.restaurant.pre") },
+      ],
+    },
+    { nameKey: "gen.agent.budget",   parts: budgetParts },
+    {
+      nameKey: "gen.agent.culture",
+      parts: [
+        { text: String(result.cultureNoteCount), accent: true },
+        { text: " " + t("gen.msg.culture.pre") },
+      ],
+    },
+    {
+      nameKey: "gen.agent.safety",
+      parts: [{ text: t("gen.msg.safety") }],
+    },
+    {
+      nameKey: "gen.agent.sustainability",
+      parts: [
+        { text: t("gen.msg.sustainability.pre") + " " },
+        { text: String(hiddenCount), accent: true },
+        {
+          text:
+            " " +
+            t("gen.msg.sustainability.of") +
+            " " +
+            totalStops +
+            " " +
+            t("gen.msg.sustainability.stops") +
+            " (",
+        },
+        { text: pct + "%", accent: true },
+        { text: ")" },
+      ],
+    },
+    {
+      nameKey: "gen.agent.verification",
+      parts: [
+        { text: t("gen.msg.verification.pre") + " " },
+        { text: String(result.verifiedCount), accent: true },
+        { text: " " + t("gen.msg.verification.end") },
+      ],
+    },
+  ];
+}
+
+/* ── AgentLineRow ───────────────────────────────────────────────────── */
+function AgentLineRow({
+  line,
+  charCount,
+  t,
+  isActive,
+  language,
+}: {
+  line:      AgentLine;
+  charCount: number;   // –1 = fully visible
+  t:         (k: string) => string;
+  isActive:  boolean;
+  language:  string;
+}) {
+  const total   = totalChars(line.parts);
+  const visible = charCount === -1 ? total : charCount;
+
+  return (
+    <div
+      className="sf-line-row"
+      style={{
+        display:       "flex",
+        alignItems:    "flex-start",
+        gap:           "10px",
+        padding:       "10px 0",
+        borderBottom:  "1px solid var(--sf-border)",
+      }}
+    >
+      {/* Agent name in indigo */}
+      <span
+        style={{
+          color:          "var(--sf-indigo)",
+          fontWeight:     700,
+          fontSize:       "0.6875rem",
+          letterSpacing:  "0.06em",
+          textTransform:  "uppercase",
+          flexShrink:     0,
+          width:          "clamp(100px, 28%, 160px)",
+          paddingTop:     "2px",
+          lineHeight:     1.4,
+        }}
+      >
+        {t(line.nameKey)}
+      </span>
+
+      {/* Separator arrow (mirrors in RTL via bidi) */}
+      <span
+        aria-hidden
+        style={{
+          color:      "var(--sf-text-muted)",
+          flexShrink: 0,
+          paddingTop: "1px",
+          fontSize:   "0.875rem",
+          userSelect: "none",
+        }}
+      >
+        {language === "ar" ? "‹" : "›"}
+      </span>
+
+      {/* Typed message */}
+      <span
+        style={{
+          fontSize:   "0.8125rem",
+          lineHeight: 1.65,
+          color:      "var(--sf-text)",
+          flex:       1,
+          wordBreak:  "break-word",
+          minWidth:   0,
+        }}
+      >
+        <TypedParts parts={line.parts} visibleChars={visible} />
+        {isActive && (
+          <span className="sf-cursor" aria-hidden>
+            ▋
+          </span>
+        )}
+      </span>
+    </div>
+  );
+}
+
+/* ── Main page component ────────────────────────────────────────────── */
+export function Generating() {
+  const [, navigate]    = useLocation();
+  const { t, language } = useTranslation();
+  useGenStyles();
+
+  const [tick, setTick]         = useState(0);
+  const [agentLines, setLines]  = useState<AgentLine[]>([]);
+  const [engineReady, setReady] = useState(false);
+
+  const resultRef    = useRef<ItineraryResult | null>(null);
+  const completedRef = useRef(false);
+  const navigateRef  = useRef(navigate);
+  navigateRef.current = navigate;
+
+  /* ── Run engine once on mount ─────────────────────────────────────── */
+  useEffect(() => {
+    const profileRaw = localStorage.getItem("safarly_profile");
+    const tripRaw    = localStorage.getItem("safarly_trip");
+
+    if (!profileRaw || !tripRaw) {
+      navigateRef.current("/trip");
+      return;
+    }
+
+    let result: ItineraryResult;
+    let trip:   TripSpec;
+
+    try {
+      const profile = JSON.parse(profileRaw) as TravelerProfile;
+      trip          = JSON.parse(tripRaw)    as TripSpec;
+      result        = generateItinerary(profile, trip);
+    } catch {
+      navigateRef.current("/trip");
+      return;
+    }
+
+    resultRef.current = result;
+    setLines(buildAgentLines(result, trip, t, language));
+    setReady(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  /* ── Tick timer — starts only after engine is ready ──────────────── */
+  useEffect(() => {
+    if (!engineReady) return;
+    const id = setInterval(() => setTick(prev => prev + 1), TYPING_MS);
+    return () => clearInterval(id);
+  }, [engineReady]);
+
+  /* ── Derive per-tick animation state ─────────────────────────────── */
+  const anim = useMemo(() => {
+    if (agentLines.length === 0) {
+      return { visibleLines: 0, activeIdx: -1, activeChars: 0, isComplete: false };
+    }
+
+    let rem = tick;
+
+    for (let i = 0; i < agentLines.length; i++) {
+      const len = totalChars(agentLines[i].parts);
+
+      if (rem < len) {
+        // Currently typing line i
+        return { visibleLines: i, activeIdx: i, activeChars: rem, isComplete: false };
+      }
+      rem -= len;
+
+      // Pause ticks after line i
+      if (rem < PAUSE_TICKS) {
+        return { visibleLines: i + 1, activeIdx: -1, activeChars: 0, isComplete: false };
+      }
+      rem -= PAUSE_TICKS;
+    }
+
+    // Tail pause — show all lines before declaring done
+    if (rem < DONE_TICKS) {
+      return { visibleLines: agentLines.length, activeIdx: -1, activeChars: 0, isComplete: false };
+    }
+
+    return { visibleLines: agentLines.length, activeIdx: -1, activeChars: 0, isComplete: true };
+  }, [tick, agentLines]);
+
+  /* ── Save result + navigate when animation completes ─────────────── */
+  useEffect(() => {
+    if (anim.isComplete && !completedRef.current && resultRef.current) {
+      completedRef.current = true;
+      localStorage.setItem("safarly_itinerary", JSON.stringify(resultRef.current));
+      const timer = setTimeout(() => navigateRef.current("/itinerary"), 900);
+      return () => clearTimeout(timer);
+    }
+  }, [anim.isComplete]);
+
+  /* ── Progress 0–1 ────────────────────────────────────────────────── */
+  const progress = useMemo(() => {
+    if (anim.isComplete || agentLines.length === 0) return anim.isComplete ? 1 : 0;
+    const lineFraction =
+      anim.activeIdx >= 0 && agentLines[anim.activeIdx]
+        ? anim.activeChars / Math.max(1, totalChars(agentLines[anim.activeIdx].parts))
+        : 0;
+    return (anim.visibleLines + lineFraction) / agentLines.length;
+  }, [anim, agentLines]);
+
+  /* ── Render ──────────────────────────────────────────────────────── */
+  return (
+    <div
+      style={{
+        paddingTop:    "68px",
+        paddingBottom: "80px",   // clear bottom-nav
+        background:    "var(--sf-bg)",
+        minHeight:     "100dvh",
+        display:       "flex",
+        flexDirection: "column",
+      }}
+    >
+      {/* ── Header ──────────────────────────────────────────────────── */}
+      <div
+        style={{
+          padding:      "24px 20px 20px",
+          borderBottom: "1px solid var(--sf-border)",
+        }}
+      >
+        <div style={{ maxWidth: "640px", margin: "0 auto" }}>
+          {/* Spinner */}
+          <div
+            className="sf-spinner"
+            aria-hidden
+            style={{
+              width:        "40px",
+              height:       "40px",
+              borderRadius: "50%",
+              border:       "3px solid var(--sf-border)",
+              borderTopColor: "var(--sf-accent)",
+              marginBottom: "16px",
+            }}
+          />
+
+          <h1
+            style={{
+              fontSize:      "clamp(1.25rem, 4vw, 1.75rem)",
+              fontWeight:    800,
+              color:         "var(--sf-text)",
+              letterSpacing: "-0.02em",
+              marginBottom:  "6px",
+            }}
+          >
+            {t("gen.title")}
+          </h1>
+
+          <p style={{ color: "var(--sf-text-muted)", fontSize: "0.9375rem" }}>
+            {t("gen.subtitle")}
+          </p>
+        </div>
+      </div>
+
+      {/* ── Agent feed ──────────────────────────────────────────────── */}
+      <div
+        style={{
+          flex:       1,
+          padding:    "0 20px",
+          overflowX:  "hidden",
+        }}
+      >
+        <div style={{ maxWidth: "640px", margin: "0 auto" }}>
+
+          {/* Fully-revealed lines */}
+          {agentLines.slice(0, anim.visibleLines).map((line, i) => (
+            <AgentLineRow
+              key={i}
+              line={line}
+              charCount={-1}
+              t={t}
+              isActive={false}
+              language={language}
+            />
+          ))}
+
+          {/* Currently typing line */}
+          {anim.activeIdx >= 0 && anim.activeIdx < agentLines.length && (
+            <AgentLineRow
+              key={`active-${anim.activeIdx}`}
+              line={agentLines[anim.activeIdx]}
+              charCount={anim.activeChars}
+              t={t}
+              isActive={true}
+              language={language}
+            />
+          )}
+
+          {/* Done message */}
+          {anim.isComplete && (
+            <p
+              style={{
+                padding:       "16px 0 0",
+                color:         "var(--sf-accent)",
+                fontWeight:    600,
+                fontSize:      "0.875rem",
+                letterSpacing: "0.01em",
+              }}
+            >
+              {t("gen.ready")}
+            </p>
+          )}
+        </div>
+      </div>
+
+      {/* ── Progress bar ────────────────────────────────────────────── */}
+      <div
+        style={{
+          padding:      "16px 20px 12px",
+          borderTop:    "1px solid var(--sf-border)",
+          background:   "var(--sf-bg)",
+          marginTop:    "auto",
+        }}
+      >
+        <div style={{ maxWidth: "640px", margin: "0 auto" }}>
+          {/* Track */}
+          <div
+            style={{
+              height:       "4px",
+              background:   "var(--sf-surface-alt)",
+              borderRadius: "4px",
+              overflow:     "hidden",
+            }}
+          >
+            {/* Fill */}
+            <div
+              style={{
+                height:     "100%",
+                borderRadius: "4px",
+                background: "linear-gradient(90deg, var(--sf-indigo), var(--sf-accent))",
+                width:      `${Math.round(progress * 100)}%`,
+                transition: "width 0.12s linear",
+                boxShadow:  progress > 0.05 ? "0 0 8px rgba(0,216,164,0.35)" : "none",
+              }}
+            />
+          </div>
+
+          {/* Labels */}
+          <div
+            style={{
+              display:        "flex",
+              justifyContent: "space-between",
+              marginTop:      "8px",
+              fontSize:       "0.75rem",
+              color:          "var(--sf-text-muted)",
+            }}
+          >
+            <span>{Math.round(progress * 100)}%</span>
+            <span>
+              {Math.min(anim.visibleLines + (anim.activeIdx >= 0 ? 1 : 0), agentLines.length || 8)}
+              &thinsp;/&thinsp;{agentLines.length || 8}&nbsp;agents
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
