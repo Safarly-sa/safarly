@@ -1,0 +1,242 @@
+[
+  {
+    "city": "Riyadh",
+    "dialect": "Najdi",
+    "situation": "greeting",
+    "arabic": "هلا والله، كيف الأحوال؟",
+    "transliteration": "Halā wallāh, kīf il-aḥwāl?",
+    "english": "Hey, how's everything? (enthusiastic Najdi greeting between acquaintances)"
+  },
+  {
+    "city": "Riyadh",
+    "dialect": "Najdi",
+    "situation": "greeting",
+    "arabic": "وين رايح؟",
+    "transliteration": "Wain rāyiḥ?",
+    "english": "Where are you headed? (friendly casual opener used when passing someone)"
+  },
+  {
+    "city": "Riyadh",
+    "dialect": "Najdi",
+    "situation": "tickets",
+    "arabic": "أبي تذكرتين. بكم كل واحدة؟",
+    "transliteration": "Abi tathkaratayn. Bikam kull wāḥda?",
+    "english": "I want two tickets. How much is each one?"
+  },
+  {
+    "city": "Riyadh",
+    "dialect": "Najdi",
+    "situation": "tickets",
+    "arabic": "هل باقي تذاكر اليوم؟",
+    "transliteration": "Hal bāgi tathākir il-yōm?",
+    "english": "Are there still tickets available today?"
+  },
+  {
+    "city": "Riyadh",
+    "dialect": "Najdi",
+    "situation": "taxi",
+    "arabic": "وديني على... كم تأخذ؟",
+    "transliteration": "Waddinī 'ala... kam ta'khuth?",
+    "english": "Take me to [place]... how much do you charge?"
+  },
+  {
+    "city": "Riyadh",
+    "dialect": "Najdi",
+    "situation": "taxi",
+    "arabic": "عداد الميتر بس، ما أبي سعر ثابت",
+    "transliteration": "'Addād il-mītar bas, mā abi si'r thābit",
+    "english": "Meter only please, I don't want a fixed price"
+  },
+  {
+    "city": "AlUla",
+    "dialect": "Najdi",
+    "situation": "ordering",
+    "arabic": "أبي كبسة دجاج بدون حار",
+    "transliteration": "Abi kabsa dijāj bidōn ḥār",
+    "english": "I want chicken kabsa without spice"
+  },
+  {
+    "city": "AlUla",
+    "dialect": "Najdi",
+    "situation": "ordering",
+    "arabic": "زيد عليّ خبز، وقهوة سعودية",
+    "transliteration": "Zayyid 'alayy khubz, w-gahwa Sa'ūdiyya",
+    "english": "Give me extra bread, and a Saudi coffee"
+  },
+  {
+    "city": "Riyadh",
+    "dialect": "Najdi",
+    "situation": "bargaining",
+    "arabic": "هذا غالي، قلّل شوي عليّ",
+    "transliteration": "Hātha ghāli, gallil shway 'alayy",
+    "english": "This is expensive, come down a little for me"
+  },
+  {
+    "city": "Riyadh",
+    "dialect": "Najdi",
+    "situation": "bargaining",
+    "arabic": "بعطيك نقد، ترخّص عليّ؟",
+    "transliteration": "Ba'tīk nagd, tirakkhiṣ 'alayy?",
+    "english": "I'll pay cash — will you lower the price for me?"
+  },
+  {
+    "city": "AlUla",
+    "dialect": "Najdi",
+    "situation": "thanks",
+    "arabic": "يسلمو إيدك، الله يعطيك العافية",
+    "transliteration": "Yislamu 'ēdak, Allāh yi'tīk il-'āfiya",
+    "english": "Thank you (lit. may your hands be safe) — God bless your effort (distinctly Najdi expression)"
+  },
+  {
+    "city": "Riyadh",
+    "dialect": "Najdi",
+    "situation": "thanks",
+    "arabic": "مشكور، أطال الله عمرك",
+    "transliteration": "Mashkōr, aṭāl Allāh 'umrak",
+    "english": "Thank you — may God prolong your life (warm Najdi farewell-thanks)"
+  },
+  {
+    "city": "Riyadh",
+    "dialect": "Najdi",
+    "situation": "directions",
+    "arabic": "وين أقرب دوّار؟",
+    "transliteration": "Wain agrab dawwār?",
+    "english": "Where is the nearest roundabout? (common Riyadh navigation reference)"
+  },
+  {
+    "city": "AlUla",
+    "dialect": "Najdi",
+    "situation": "directions",
+    "arabic": "دور يمين بعد الإشارة",
+    "transliteration": "Dawr yamīn ba'd il-ishāra",
+    "english": "Turn right after the traffic lights"
+  },
+  {
+    "city": "AlUla",
+    "dialect": "Najdi",
+    "situation": "directions",
+    "arabic": "بعيد ولّا قريب من هنا؟ أقدر أمشي؟",
+    "transliteration": "Ba'īd willa garīb min hina? Agdar amshi?",
+    "english": "Is it far or close from here? Can I walk?"
+  },
+  {
+    "city": "Jeddah",
+    "dialect": "Hijazi",
+    "situation": "greeting",
+    "arabic": "أهلاً وسهلاً، شلونك؟",
+    "transliteration": "Ahlān wa sahlān, shlōnak?",
+    "english": "Welcome, how are you? (warm standard Hijazi greeting)"
+  },
+  {
+    "city": "Jeddah",
+    "dialect": "Hijazi",
+    "situation": "greeting",
+    "arabic": "عامل إيش؟ كله تمام؟",
+    "transliteration": "'Āmil ēsh? Kullu tamām?",
+    "english": "How are you doing? Everything OK? (casual Jeddawi check-in)"
+  },
+  {
+    "city": "Jeddah",
+    "dialect": "Hijazi",
+    "situation": "tickets",
+    "arabic": "أبغى تذكرة واحدة. بقدّاش؟",
+    "transliteration": "Abgha tathkara wāḥda. Bigaddaish?",
+    "english": "I want one ticket. How much? (bigaddaish = how much, distinctly Hijazi)"
+  },
+  {
+    "city": "Jeddah",
+    "dialect": "Hijazi",
+    "situation": "tickets",
+    "arabic": "في تذاكر متوفّرة دلوقتي ولّا لا؟",
+    "transliteration": "Fī tathākir mutawwaffira dilwagti willa lā?",
+    "english": "Are there tickets available right now or not? (dilwagti = right now, Hijazi marker)"
+  },
+  {
+    "city": "Jeddah",
+    "dialect": "Hijazi",
+    "situation": "taxi",
+    "arabic": "خذني على البلد القديم كمان تعرف الطريق؟",
+    "transliteration": "Khuthni 'ala il-balad il-gadīm — kamān ti'rif iṭ-ṭarīg?",
+    "english": "Take me to the old city (Al-Balad) — do you know the route?"
+  },
+  {
+    "city": "Jeddah",
+    "dialect": "Hijazi",
+    "situation": "taxi",
+    "arabic": "كمان من البلد لين الكورنيش؟",
+    "transliteration": "Kamān min il-balad layn il-Kornīsh?",
+    "english": "How much from Al-Balad to the Corniche? (kamān = how much, used in Hijazi)"
+  },
+  {
+    "city": "Jeddah",
+    "dialect": "Hijazi",
+    "situation": "ordering",
+    "arabic": "أبغى مطبق باللحم وبيض، بدون حار",
+    "transliteration": "Abgha muṭabbag bil-laḥm wa bayd, bidōn ḥār",
+    "english": "I want mutabbaq with meat and egg, not spicy"
+  },
+  {
+    "city": "Jeddah",
+    "dialect": "Hijazi",
+    "situation": "ordering",
+    "arabic": "زيدني تمييس وقهوة بدون سكر",
+    "transliteration": "Zayyidni tamīs w-gahwa bidōn sukkar",
+    "english": "Bring me extra tamees bread and a coffee without sugar"
+  },
+  {
+    "city": "Jeddah",
+    "dialect": "Hijazi",
+    "situation": "bargaining",
+    "arabic": "ما يصلح كذا. قلّل شوي يا أخوي",
+    "transliteration": "Mā yiṣlaḥ kithi. Gallil shway yā akhōy",
+    "english": "That won't do. Lower it a bit, brother (yā akhōy = common Jeddawi appeal)"
+  },
+  {
+    "city": "Jeddah",
+    "dialect": "Hijazi",
+    "situation": "bargaining",
+    "arabic": "عندي كاش، تقدر تعطيني خصم؟",
+    "transliteration": "'Indi kāsh, tigdar ti'tīni khaṣm?",
+    "english": "I have cash — can you give me a discount?"
+  },
+  {
+    "city": "Jeddah",
+    "dialect": "Hijazi",
+    "situation": "thanks",
+    "arabic": "يسلمو، الله يخليك يا طيّب",
+    "transliteration": "Yislamu, Allāh ykhallīk yā ṭayyib",
+    "english": "Thank you — God keep you safe, you're so kind (yā ṭayyib = you're good-natured, a Hijazi warmth marker)"
+  },
+  {
+    "city": "Jeddah",
+    "dialect": "Hijazi",
+    "situation": "thanks",
+    "arabic": "مشكور، عشت وانبسطنا",
+    "transliteration": "Mashkōr, 'isht w-inbaṣaṭna",
+    "english": "Much appreciated — you're a delight (lit. 'you lived and we enjoyed ourselves,' idiomatic Hijazi gratitude)"
+  },
+  {
+    "city": "Jeddah",
+    "dialect": "Hijazi",
+    "situation": "directions",
+    "arabic": "فين الكورنيش من هنا؟",
+    "transliteration": "Fayn il-Kornīsh min hina?",
+    "english": "Where is the Corniche from here? (fain/fayn = where, Hijazi usage vs Najdi 'wain')"
+  },
+  {
+    "city": "Jeddah",
+    "dialect": "Hijazi",
+    "situation": "directions",
+    "arabic": "لف شمال عند الإشارة الثانية",
+    "transliteration": "Liff shimāl 'ind il-ishāra ith-thāniya",
+    "english": "Turn left at the second traffic light (liff = turn, common Hijazi directional verb)"
+  },
+  {
+    "city": "Jeddah",
+    "dialect": "Hijazi",
+    "situation": "directions",
+    "arabic": "قريب تمشي ولّا بعيد نروح بالسيارة؟",
+    "transliteration": "Garīb tamshi willa ba'īd nrūḥ bis-sayyāra?",
+    "english": "Is it close enough to walk, or far enough we need to drive?"
+  }
+]
