@@ -15,6 +15,7 @@ import { Home } from '@/pages/home';
 import { Onboarding } from '@/pages/onboarding';
 import { Trip } from '@/pages/trip';
 import { Generating } from '@/pages/generating';
+import { Itinerary } from '@/pages/itinerary';
 import { StubPage } from '@/pages/stub';
 import NotFound from '@/pages/not-found';
 
@@ -85,9 +86,7 @@ function Router() {
           
           <Route path="/generating" component={Generating} />
           
-          <Route path="/itinerary">
-            <StubPage id="itinerary" icon={ListTodo} />
-          </Route>
+          <Route path="/itinerary" component={Itinerary} />
           
           <Route path="/lens">
             <StubPage id="lens" icon={Camera} />
