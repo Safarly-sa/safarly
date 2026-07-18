@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 680" width="480" height="680">
+  <rect width="480" height="680" fill="#F7F0E6"/>
+  <rect x="16" y="16" width="448" height="648" fill="none" stroke="#8B6C42" stroke-width="2"/>
+  <rect x="22" y="22" width="436" height="636" fill="none" stroke="#8B6C42" stroke-width="0.5"/>
+  <!-- header -->
+  <rect x="16" y="16" width="448" height="100" fill="#2C1A08"/>
+  <text x="240" y="58" font-family="serif" font-size="24" fill="#D4AA6E" text-anchor="middle" direction="rtl">مطعم العُلا التراثي</text>
+  <text x="240" y="92" font-family="serif" font-size="11" fill="#E8C990" text-anchor="middle" letter-spacing="3">ALULA HERITAGE RESTAURANT · العُلا</text>
+  <line x1="60" y1="134" x2="420" y2="134" stroke="#8B6C42" stroke-width="1"/>
+  <text x="240" y="126" font-family="serif" font-size="11" fill="#6B4C22" text-anchor="middle" direction="rtl" letter-spacing="2">وصفات الأجداد</text>
+  <text x="400" y="165" font-family="serif" font-size="12" fill="#6B4C22" text-anchor="end" direction="rtl">— مأكولات تراثية —</text>
+
+  <text x="400" y="204" font-family="serif" font-size="22" fill="#1E0E00" text-anchor="end" direction="rtl">ثريد</text>
+  <text x="80" y="204" font-family="sans-serif" font-size="11" fill="#8B6C42">Thareed (Lamb Bread Stew)</text>
+  <text x="400" y="222" font-family="sans-serif" font-size="11" fill="#6B4C22" text-anchor="end" direction="rtl">خبز رقيق مع يخنة لحم وخضار</text>
+  <line x1="60" y1="232" x2="420" y2="232" stroke="#DCC8A0" stroke-width="0.5" stroke-dasharray="4,4"/>
+  <text x="60" y="228" font-family="sans-serif" font-size="12" fill="#1E0E00" font-weight="bold">30 SAR</text>
+
+  <text x="400" y="268" font-family="serif" font-size="22" fill="#1E0E00" text-anchor="end" direction="rtl">هريس</text>
+  <text x="80" y="268" font-family="sans-serif" font-size="11" fill="#8B6C42">Harees</text>
+  <text x="400" y="286" font-family="sans-serif" font-size="11" fill="#6B4C22" text-anchor="end" direction="rtl">قمح ولحم مدقوق حتى النعومة</text>
+  <line x1="60" y1="296" x2="420" y2="296" stroke="#DCC8A0" stroke-width="0.5" stroke-dasharray="4,4"/>
+  <text x="60" y="292" font-family="sans-serif" font-size="12" fill="#1E0E00" font-weight="bold">25 SAR</text>
+
+  <text x="400" y="332" font-family="serif" font-size="22" fill="#1E0E00" text-anchor="end" direction="rtl">مرق لحم</text>
+  <text x="80" y="332" font-family="sans-serif" font-size="11" fill="#8B6C42">Maraq Lamb Broth</text>
+  <text x="400" y="350" font-family="sans-serif" font-size="11" fill="#6B4C22" text-anchor="end" direction="rtl">مرق خروف صافٍ بالأعشاب</text>
+  <line x1="60" y1="360" x2="420" y2="360" stroke="#DCC8A0" stroke-width="0.5" stroke-dasharray="4,4"/>
+  <text x="60" y="356" font-family="sans-serif" font-size="12" fill="#1E0E00" font-weight="bold">20 SAR</text>
+
+  <text x="400" y="396" font-family="serif" font-size="22" fill="#1E0E00" text-anchor="end" direction="rtl">لحم بالبصل</text>
+  <text x="80" y="396" font-family="sans-serif" font-size="11" fill="#8B6C42">Lahm bil Basal (Lamb &amp; Onion)</text>
+  <text x="400" y="414" font-family="sans-serif" font-size="11" fill="#6B4C22" text-anchor="end" direction="rtl">لحم مطهو ببطء مع بصل مكرمل</text>
+  <line x1="60" y1="424" x2="420" y2="424" stroke="#DCC8A0" stroke-width="0.5" stroke-dasharray="4,4"/>
+  <text x="60" y="420" font-family="sans-serif" font-size="12" fill="#1E0E00" font-weight="bold">38 SAR</text>
+
+  <text x="400" y="460" font-family="serif" font-size="22" fill="#1E0E00" text-anchor="end" direction="rtl">مطبي دجاج</text>
+  <text x="80" y="460" font-family="sans-serif" font-size="11" fill="#8B6C42">Mathbi Grilled Chicken</text>
+  <text x="400" y="478" font-family="sans-serif" font-size="11" fill="#6B4C22" text-anchor="end" direction="rtl">دجاج مضغوط فوق الحجارة الساخنة</text>
+  <line x1="60" y1="488" x2="420" y2="488" stroke="#DCC8A0" stroke-width="0.5" stroke-dasharray="4,4"/>
+  <text x="60" y="484" font-family="sans-serif" font-size="12" fill="#1E0E00" font-weight="bold">45 SAR</text>
+
+  <text x="400" y="524" font-family="serif" font-size="22" fill="#1E0E00" text-anchor="end" direction="rtl">كبسة العشاء</text>
+  <text x="80" y="524" font-family="sans-serif" font-size="11" fill="#8B6C42">Kabsa Dinner Special</text>
+  <text x="400" y="542" font-family="sans-serif" font-size="11" fill="#6B4C22" text-anchor="end" direction="rtl">كبسة مسائية بالمشمش المجفف واللوز</text>
+  <line x1="60" y1="552" x2="420" y2="552" stroke="#DCC8A0" stroke-width="0.5" stroke-dasharray="4,4"/>
+  <text x="60" y="548" font-family="sans-serif" font-size="12" fill="#1E0E00" font-weight="bold">60 SAR</text>
+
+  <line x1="60" y1="598" x2="420" y2="598" stroke="#8B6C42" stroke-width="1"/>
+  <text x="240" y="622" font-family="sans-serif" font-size="10" fill="#6B4C22" text-anchor="middle">العُلا — المملكة العربية السعودية</text>
+  <text x="240" y="642" font-family="sans-serif" font-size="9" fill="#B8A080" text-anchor="middle">demo menu · menu-alula.svg</text>
+</svg>

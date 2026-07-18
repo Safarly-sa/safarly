@@ -1,0 +1,27 @@
+Prompt 2.1 — Live Lens menu scanner
+You should see: a viewfinder upload zone with a mint scanning sweep, translated dish cards, red allergy warnings matching your saved profile, and dish detail modals.
+Use only the existing design tokens. Build the real /lens page (Live Lens). Only this page plus /public/demo-menus.
+ 
+Flow: an elegant upload zone - drag-and-drop on desktop, file picker on mobile - styled like a camera viewfinder card with corner brackets in --accent. On upload: a 2-second scanning animation (a soft mint line sweeping the image), then the results.
+Implementation for demo reliability: bundle 3 demo menu images in /public/demo-menus (generate simple styled placeholder menu images listing Arabic dish names from /data/dishes.json). Match uploads by filename against a lookup; if the file is unknown, show a friendly "menu detected" fallback that returns 6 random dishes. Structure the code so one function swap can later call a real vision API.
+Results: the dish list as cards - Arabic name, English translation, 1-line description, price in SAR, and allergen warning chips in --error when a dish's common_allergens intersect the allergies saved in "safarly_profile" (e.g. "Contains nuts - your allergy"). Tapping a dish opens a modal: larger layout, origin story, allergen list, and an "Add to my food list" button saving to localStorage "safarly_favorites". A small note under results: "Always confirm allergens with the restaurant."
+ 
+MOBILE & ARABIC (mandatory for this page): build mobile-first and verify at 390px before desktop - controls thumb-reachable above the bottom nav, 44px+ touch targets, no horizontal scroll, works in BOTH Night Sky and Light Grid themes with no hardcoded colors. Add every new user-facing string to /locales/en.json AND /locales/ar.json with native-quality Arabic, and verify the page mirrors correctly in RTL (logical properties only - no raw ml-/mr-).
+Prompt 2.2 — Dialect Tutor
+You should see: Najdi or Hijazi phrase cards depending on your trip city, spoken audio on tap, and a practice mode with a persistent progress ring.
+Use only the existing design tokens. Build the real /dialect page (Dialect Tutor). Only this page.
+ 
+Read the trip city from "safarly_trip" (Riyadh/AlUla show Najdi, Jeddah shows Hijazi; default Najdi). Filter /data/phrases.json accordingly. Header explains in one line: "Locals here speak [dialect] - these phrases are what people actually say."
+Phrase cards grouped by situation (greeting, tickets, taxi, ordering, bargaining, thanks, directions): large Arabic script in IBM Plex Sans Arabic, transliteration beneath in italics, English meaning, situation tag chip in --indigo. A play button on each card speaks the Arabic using the Web Speech API with an ar-SA voice (graceful "audio unavailable" tooltip if the browser has no Arabic voice).
+Practice mode: tapping "Practice" plays the audio, then shows "Now you say it" with a 3-second pulse ring, then an "I said it" confirmation - each practiced phrase fills a progress ring on the page header and gets a mint "learned" badge, persisted in localStorage "safarly_learned" so learned phrases sort to the bottom next visit.
+ 
+MOBILE & ARABIC (mandatory for this page): build mobile-first and verify at 390px before desktop - controls thumb-reachable above the bottom nav, 44px+ touch targets, no horizontal scroll, works in BOTH Night Sky and Light Grid themes with no hardcoded colors. Add every new user-facing string to /locales/en.json AND /locales/ar.json with native-quality Arabic, and verify the page mirrors correctly in RTL (logical properties only - no raw ml-/mr-).
+Prompt 2.3 — Dashboard
+You should see: budget bar, trip stats, learned phrases, food list, and editable profile — all from real localStorage data with graceful empty states.
+Use only the existing design tokens. Build the real /dashboard page. Only this page.
+ 
+Compose from localStorage (safarly_profile, safarly_trip, safarly_itinerary, safarly_learned, safarly_favorites), with graceful empty states when data is missing ("Plan your first journey" CTA).
+Sections: (1) a welcome header with the traveler's context and trip dates; (2) Budget - an elegant bar showing estimated spend vs budget with per-day breakdown on hover; (3) Trip stats - stops planned, hidden gems, verified places, dialect phrases learned (with the progress ring), favorite dishes saved; (4) My phrases - the learned phrase list, tappable to replay audio; (5) My food list - saved dishes; (6) Profile - editable allergies and interests chips that write back to "safarly_profile".
+Keep it calm and premium: two-column grid on desktop, stacked on mobile.
+ 
+MOBILE & ARABIC (mandatory for this page): build mobile-first and verify at 390px before desktop - controls thumb-reachable above the bottom nav, 44px+ touch targets, no horizontal scroll, works in BOTH Night Sky and Light Grid themes with no hardcoded colors. Add every new user-facing string to /locales/en.json AND /locales/ar.json with native-quality Arabic, and verify the page mirrors correctly in RTL (logical properties only - no raw ml-/mr-).

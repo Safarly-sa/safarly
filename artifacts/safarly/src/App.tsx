@@ -16,16 +16,11 @@ import { Onboarding } from '@/pages/onboarding';
 import { Trip } from '@/pages/trip';
 import { Generating } from '@/pages/generating';
 import { Itinerary } from '@/pages/itinerary';
-import { StubPage } from '@/pages/stub';
+import { Lens }      from '@/pages/lens';
+import { Dialect }   from '@/pages/dialect';
+import { Dashboard } from '@/pages/dashboard';
+import { StubPage }  from '@/pages/stub';
 import NotFound from '@/pages/not-found';
-
-import { 
-  Wand2, 
-  ListTodo, 
-  Camera, 
-  MessageCircle, 
-  LayoutDashboard 
-} from 'lucide-react';
 
 /* ── Error boundary ─────────────────────────────────────────────────── */
 interface EBState { error: Error | null }
@@ -88,17 +83,9 @@ function Router() {
           
           <Route path="/itinerary" component={Itinerary} />
           
-          <Route path="/lens">
-            <StubPage id="lens" icon={Camera} />
-          </Route>
-          
-          <Route path="/dialect">
-            <StubPage id="dialect" icon={MessageCircle} />
-          </Route>
-          
-          <Route path="/dashboard">
-            <StubPage id="dashboard" icon={LayoutDashboard} />
-          </Route>
+          <Route path="/lens"      component={Lens} />
+          <Route path="/dialect"   component={Dialect} />
+          <Route path="/dashboard" component={Dashboard} />
 
           <Route component={NotFound} />
         </Switch>
