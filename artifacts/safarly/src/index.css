@@ -52,7 +52,7 @@
 
 :root {
   --app-font-sans: 'Inter', sans-serif;
-  --radius: 0.5rem; /* 8px */
+  --radius: 0.625rem; /* 10px — site-wide standard radius */
 
   /* Light Grid Default Vars */
   --sf-bg: #F5F7FA;

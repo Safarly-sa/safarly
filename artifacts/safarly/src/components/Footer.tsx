@@ -18,23 +18,17 @@ export function Footer() {
               />
             </Link>
             {/* Brand name + tagline */}
-            <p className="font-bold text-lg text-foreground tracking-tight mb-0.5">
+            <p className="font-bold text-lg text-foreground tracking-tight mb-1">
               Safarly —{" "}
               <span className="font-normal text-muted-foreground">Travel Companion</span>
-            </p>
-            {/* Arabic greeting */}
-            <p
-              className="text-sm text-accent mb-4 font-semibold"
-              dir="rtl"
-              lang="ar"
-              style={{ fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}
-            >
-              أهلاً وسهلاً
             </p>
             <p className="text-muted-foreground text-sm max-w-sm mb-6">
               {t("footer.tagline")}
             </p>
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted border border-border text-xs font-medium text-muted-foreground">
+            <div
+              className="inline-flex items-center gap-2 px-3 py-1.5 bg-muted border border-border text-xs font-medium text-muted-foreground"
+              style={{ borderRadius: "10px" }}
+            >
               <span>🇸🇦</span>
               {t("footer.built")}
             </div>

@@ -150,9 +150,6 @@ export function Home() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.15 }}
           >
-            <p className="text-accent font-bold text-lg mb-4 tracking-wider" style={{ fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}>
-              {t("hero.greeting")}
-            </p>
             <h1 className="text-4xl md:text-5xl lg:text-7xl font-extrabold tracking-[-0.02em] leading-tight mb-6 text-foreground">
               {t("hero.headline")}
             </h1>
@@ -164,7 +161,8 @@ export function Home() {
               <Link
                 href="/onboarding"
                 data-testid="link-start-planning"
-                className="w-full sm:w-auto px-8 py-4 bg-[var(--sf-accent)] hover:bg-[var(--sf-accent-hover)] text-[#0A0E16] rounded font-semibold text-lg transition-all duration-200 shadow-[0_0_20px_rgba(0,216,164,0.28)] hover:shadow-[0_0_32px_rgba(0,216,164,0.5)] flex items-center justify-center gap-2 active:scale-[0.98]"
+                className="w-full sm:w-auto px-8 py-4 bg-[var(--sf-accent)] hover:bg-[var(--sf-accent-hover)] text-[#0A0E16] font-semibold text-lg transition-all duration-200 shadow-[0_0_20px_rgba(0,216,164,0.28)] hover:shadow-[0_0_32px_rgba(0,216,164,0.5)] flex items-center justify-center gap-2 active:scale-[0.98]"
+                style={{ borderRadius: "10px" }}
               >
                 {t("cta.start")}
                 <ArrowRight className="w-5 h-5 rtl:rotate-180" />
@@ -172,7 +170,8 @@ export function Home() {
               <Link
                 href="/lens"
                 data-testid="link-see-how"
-                className="w-full sm:w-auto px-8 py-4 border border-[var(--sf-indigo)] text-[var(--sf-indigo)] hover:bg-[var(--sf-indigo)] hover:text-white rounded font-semibold text-lg transition-all duration-200 flex items-center justify-center gap-2 active:scale-[0.98]"
+                className="w-full sm:w-auto px-8 py-4 border border-[var(--sf-indigo)] text-[var(--sf-indigo)] hover:bg-[var(--sf-indigo)] hover:text-white font-semibold text-lg transition-all duration-200 flex items-center justify-center gap-2 active:scale-[0.98]"
+                style={{ borderRadius: "10px" }}
               >
                 {t("cta.howItWorks")}
               </Link>
@@ -210,7 +209,8 @@ export function Home() {
                 whileHover={{ y: -6 }}
                 viewport={{ once: true, margin: "-40px" }}
                 transition={{ duration: 0.5, delay: i * 0.08 }}
-                className="feature-card group p-6 rounded-lg bg-card border border-border transition-[border-color,box-shadow] duration-300 shadow-sm relative overflow-hidden"
+                className="feature-card group p-6 bg-card border border-border transition-[border-color,box-shadow] duration-300 shadow-sm relative overflow-hidden"
+                style={{ borderRadius: "10px" }}
                 data-testid={`card-feature-${feature.id}`}
               >
                 {/* hover overlay gradient */}
@@ -243,7 +243,8 @@ export function Home() {
                   whileInView={{ opacity: 1, scale: 1 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.3, delay: i * 0.055 }}
-                  className="px-4 py-2 rounded bg-[var(--sf-primary-soft)] border border-border text-sm font-semibold text-foreground whitespace-nowrap hover:border-[var(--sf-indigo)] transition-colors duration-200"
+                  className="px-4 py-2 bg-[var(--sf-primary-soft)] border border-border text-sm font-semibold text-foreground whitespace-nowrap hover:border-[var(--sf-indigo)] transition-colors duration-200"
+                  style={{ borderRadius: "10px" }}
                   data-testid={`chip-agent-${i}`}
                 >
                   {t(chipKey)}
@@ -326,7 +327,8 @@ export function Home() {
             <Link
               href="/onboarding"
               data-testid="link-cta-bottom"
-              className="inline-flex items-center justify-center gap-2 px-10 py-4 bg-[var(--sf-accent)] hover:bg-[var(--sf-accent-hover)] text-[#0A0E16] rounded font-semibold text-lg transition-all duration-200 shadow-[0_0_24px_rgba(0,216,164,0.28)] hover:shadow-[0_0_40px_rgba(0,216,164,0.5)] active:scale-[0.98]"
+              className="inline-flex items-center justify-center gap-2 px-10 py-4 bg-[var(--sf-accent)] hover:bg-[var(--sf-accent-hover)] text-[#0A0E16] font-semibold text-lg transition-all duration-200 shadow-[0_0_24px_rgba(0,216,164,0.28)] hover:shadow-[0_0_40px_rgba(0,216,164,0.5)] active:scale-[0.98]"
+              style={{ borderRadius: "10px" }}
             >
               {t("cta.start")}
               <ArrowRight className="w-5 h-5 rtl:rotate-180" />
