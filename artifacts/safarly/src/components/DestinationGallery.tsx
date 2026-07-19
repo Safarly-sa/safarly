@@ -11,7 +11,7 @@ import { AnimatePresence, motion, LayoutGroup } from "framer-motion";
 import { useTranslation } from "@/providers/translation-context";
 
 /* ── Types ─────────────────────────────────────────────────────────── */
-type Region = "all" | "central" | "western" | "southern" | "eastern" | "northern";
+type Region = "northern" | "central" | "western" | "eastern" | "southern";
 
 interface Destination {
   id: string;
@@ -402,14 +402,17 @@ const DESTINATIONS: Destination[] = [
 ];
 
 /* ── Filter tabs ─────────────────────────────────────────────────── */
+// No "All" tab — a region is always selected, defaulting to DEFAULT_REGION.
+// Every region must appear here or its destinations become unreachable.
 const TABS: { id: Region; labelEn: string; labelAr: string }[] = [
-  { id: "all",      labelEn: "All",      labelAr: "الكل"   },
+  { id: "northern", labelEn: "Northern", labelAr: "الشمالية"},
   { id: "central",  labelEn: "Central",  labelAr: "الوسطى" },
   { id: "western",  labelEn: "Western",  labelAr: "الغربية"},
-  { id: "southern", labelEn: "Southern", labelAr: "الجنوبية"},
   { id: "eastern",  labelEn: "Eastern",  labelAr: "الشرقية"},
-  { id: "northern", labelEn: "Northern", labelAr: "الشمالية"},
+  { id: "southern", labelEn: "Southern", labelAr: "الجنوبية"},
 ];
+
+const DEFAULT_REGION: Region = "northern";
 
 /* ── Card component ──────────────────────────────────────────────── */
 function DestCard({
@@ -438,7 +441,7 @@ function DestCard({
           : { duration: 0.35, delay: index * 0.04, ease: [0.16, 1, 0.3, 1] }
       }
       className="relative overflow-hidden bg-card border border-border shadow-sm cursor-default focus-within:ring-2 focus-within:ring-[var(--sf-indigo)]"
-      style={{ borderRadius: "10px", aspectRatio: "4/3" }}
+      style={{ borderRadius: "10px", aspectRatio: "3/2" }}
       whileHover={prefersReduced ? {} : { y: -5, transition: { duration: 0.2 } }}
       onHoverStart={() => setHovered(true)}
       onHoverEnd={() => setHovered(false)}
@@ -549,13 +552,10 @@ function DestCard({
 export function DestinationGallery() {
   const { dir } = useTranslation();
   const isAr = dir === "rtl";
-  const [activeRegion, setActiveRegion] = useState<Region>("all");
+  const [activeRegion, setActiveRegion] = useState<Region>(DEFAULT_REGION);
   const tabsId = useId();
 
-  const filtered =
-    activeRegion === "all"
-      ? DESTINATIONS
-      : DESTINATIONS.filter((d) => d.region === activeRegion);
+  const filtered = DESTINATIONS.filter((d) => d.region === activeRegion);
 
   return (
     <section
@@ -617,8 +617,11 @@ export function DestinationGallery() {
           </div>
         </LayoutGroup>
 
-        {/* Grid — desktop 3-col, tablet 2-col; mobile: snap-scroll carousel */}
-        <div className="hidden sm:grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        {/* Grid — scales 2→4 columns so a region's destinations stay visible
+            without a long scroll. Card width stays ~230-300px across
+            breakpoints; it's the row count that drops.
+            Mobile (<sm) uses the snap-scroll carousel below instead. */}
+        <div className="hidden sm:grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           <AnimatePresence mode="popLayout">
             {filtered.map((dest, i) => (
               <DestCard key={dest.id} dest={dest} isAr={isAr} index={i} />
@@ -635,7 +638,7 @@ export function DestinationGallery() {
             <div
               key={dest.id}
               className="flex-shrink-0 snap-center w-[78vw]"
-              style={{ aspectRatio: "4/3" }}
+              style={{ aspectRatio: "3/2" }}
             >
               <div className="w-full h-full">
                 <DestCard dest={dest} isAr={isAr} index={i} />
