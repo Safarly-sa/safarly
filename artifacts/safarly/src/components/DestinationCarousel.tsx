@@ -354,8 +354,13 @@ export function DestinationCarousel({
       </div>
 
       {/* ── Dot indicators ───────────────────────────────────────────── */}
+      {/* `left-1/2` is deliberately physical, not the logical `start-1/2`.
+          Pairing `start-1/2` with `-translate-x-1/2` breaks under RTL: `start`
+          flips to `right: 50%` but `translate-x` does not flip, so the row lands
+          a full width left of centre. Centring is direction-neutral — keep both
+          halves physical. */}
       <div
-        className="absolute bottom-8 start-1/2 -translate-x-1/2 flex items-center gap-2 z-10"
+        className="absolute bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-2 z-10"
         role="tablist"
         aria-label={isAr ? "مؤشرات الشرائح" : "Slide indicators"}
       >

@@ -1,0 +1,14 @@
+# ⚠️ REMOVE THIS FILE BEFORE LAUNCHING ON THE REAL DOMAIN. ⚠️
+#
+# This blocks ALL search-engine indexing, on every domain the site is served
+# from — including a custom domain. It exists because the site currently lives
+# on a throwaway *.pages.dev preview URL, and a preview URL that gets indexed
+# will compete with the real domain in search results later.
+#
+# `X-Robots-Tag` is used rather than a robots.txt `Disallow`, because Disallow
+# only stops crawling — Google can still index a URL it never crawled, from
+# inbound links alone. The header is what actually keeps it out of the index.
+#
+# Read by Cloudflare Pages and Netlify. Vercel needs `headers` in vercel.json.
+/*
+  X-Robots-Tag: noindex, nofollow

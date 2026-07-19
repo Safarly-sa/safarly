@@ -1,0 +1,10 @@
+# SPA fallback. Routing is client-side (wouter), so the static host must serve
+# index.html for any path it has no file for — otherwise deep links like
+# /profile or /itinerary 404 on reload or when shared.
+#
+# The 200 (rewrite, not redirect) matters: the URL stays as typed so wouter can
+# read it. A 301/302 to / would drop the route.
+#
+# Understood by Cloudflare Pages and Netlify. Vercel ignores this file and needs
+# a rewrite in vercel.json instead.
+/*  /index.html  200
