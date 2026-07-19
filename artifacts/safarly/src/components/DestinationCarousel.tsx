@@ -9,7 +9,6 @@ import { Link } from "wouter";
 import { ArrowRight } from "lucide-react";
 import { useTranslation } from "@/providers/translation-context";
 import { getStartPath } from "@/lib/auth";
-import safarlyLogo from "@assets/safarly-lockup-light_1784459757614.png";
 
 interface HeroSlide {
   id: string;
@@ -290,28 +289,10 @@ export function DestinationCarousel({
           </motion.div>
         </AnimatePresence>
 
-        {/* Safarly logo */}
-        {!children && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.88 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.55, ease: "easeOut" }}
-            style={{ display: "flex", justifyContent: "center", marginBottom: 28 }}
-          >
-            <img
-              src={safarlyLogo}
-              alt="Safarly"
-              style={{
-                height: "clamp(100px, 16vw, 240px)",
-                width: "auto",
-                objectFit: "contain",
-                filter: "drop-shadow(0 0 32px rgba(0,216,164,0.55)) drop-shadow(0 0 64px rgba(0,216,164,0.25))",
-              }}
-            />
-          </motion.div>
-        )}
-
-        {/* Main headline — always visible, children or default */}
+        {/* Main headline — always visible, children or default.
+            The Safarly lockup used to sit here at up to 240px with a glow, but it
+            out-sized the headline and duplicated the Navbar logo already visible
+            in the same viewport. The headline is the hero's primary message. */}
         {children ?? (
           <motion.h1
             className="text-4xl md:text-5xl lg:text-7xl font-extrabold tracking-[-0.02em] leading-tight mb-6"
