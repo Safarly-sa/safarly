@@ -7,10 +7,11 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { AnimatePresence, motion } from "framer-motion";
-import { Mail, User, ArrowRight } from "lucide-react";
+import { Mail, User, ArrowRight, Lock, Eye, EyeOff, Check, X } from "lucide-react";
 import { usePageMeta } from "@/lib/usePageMeta";
 import { getAuth, setAuth, isProfileComplete } from "@/lib/auth";
-import { isValidEmail } from "@/lib/validation";
+import { isValidEmail, assessPassword } from "@/lib/validation";
+import { signUp, logIn } from "@/lib/auth-api";
 import safarlyLogo from "@assets/safarly-lockup-light_1784459757614.png";
 
 export function Login() {
@@ -19,14 +20,21 @@ export function Login() {
   const [mode, setMode] = useState<"signup" | "login">("signup");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  /* Live policy feedback. Signup only — on login the rules are whatever the
+     account was created with, so showing today's checklist would be noise. */
+  const assessment = assessPassword(password, [email, name]);
 
   /* Redirect if already authenticated + profile complete */
   useEffect(() => {
     if (getAuth() && isProfileComplete()) navigate("/");
   }, [navigate]);
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
     const trimEmail = email.trim();
@@ -38,15 +46,26 @@ export function Login() {
       return;
     }
     if (mode === "signup" && !trimName) { setError("Please enter your name."); return; }
+    if (!password) { setError("Please enter your password."); return; }
+    if (mode === "signup" && !assessment.valid) {
+      setError(assessment.firstFailure ?? "Please choose a stronger password.");
+      return;
+    }
 
-    if (mode === "signup") {
-      setAuth({ name: trimName, email: trimEmail });
-      navigate("/profile-setup");
-    } else {
-      /* For login, preserve existing name if auth already present */
-      const existing = getAuth();
-      setAuth({ name: existing?.name ?? trimName, email: trimEmail });
-      navigate(isProfileComplete() ? "/" : "/profile-setup");
+    setSubmitting(true);
+    try {
+      const result = mode === "signup"
+        ? await signUp({ name: trimName, email: trimEmail, password })
+        : await logIn({ email: trimEmail, password });
+
+      if (!result.ok) { setError(result.error); return; }
+
+      /* The server owns the account; localStorage keeps only the display copy
+         the rest of the app already reads synchronously. */
+      setAuth({ name: result.user.name, email: result.user.email });
+      navigate(mode === "signup" || !isProfileComplete() ? "/profile-setup" : "/");
+    } finally {
+      setSubmitting(false);
     }
   }
 
@@ -186,6 +205,94 @@ export function Login() {
             </div>
           </div>
 
+          {/* Password field — always shown */}
+          <div>
+            <FieldLabel>Password</FieldLabel>
+            <div style={{ position: "relative" }}>
+              <Lock
+                size={15}
+                style={{
+                  position: "absolute", top: "50%",
+                  insetInlineStart: "14px",
+                  transform: "translateY(-50%)",
+                  color: "var(--sf-text-muted)",
+                  pointerEvents: "none",
+                }}
+              />
+              <input
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                placeholder={mode === "signup" ? "At least 10 characters" : "Your password"}
+                autoComplete={mode === "signup" ? "new-password" : "current-password"}
+                style={{ ...inputStyle, paddingInlineEnd: "46px" }}
+                onFocus={e => (e.currentTarget.style.borderColor = "var(--sf-indigo)")}
+                onBlur={e => (e.currentTarget.style.borderColor = "var(--sf-border)")}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(s => !s)}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+                aria-pressed={showPassword}
+                style={{
+                  position: "absolute", top: "50%",
+                  insetInlineEnd: "6px",
+                  transform: "translateY(-50%)",
+                  background: "none", border: "none", cursor: "pointer",
+                  color: "var(--sf-text-muted)",
+                  padding: 8, display: "flex", alignItems: "center",
+                  minWidth: 34, minHeight: 34, justifyContent: "center",
+                }}
+              >
+                {showPassword ? <EyeOff size={16} aria-hidden /> : <Eye size={16} aria-hidden />}
+              </button>
+            </div>
+
+            {/* Requirement checklist — signup only, and only once typing starts.
+                Showing every unmet rule up front reads as a wall of red. */}
+            {mode === "signup" && password.length > 0 && (
+              <div style={{ marginTop: 12 }}>
+                <div
+                  style={{ display: "flex", gap: 4, marginBottom: 10 }}
+                  role="img"
+                  aria-label={`Password strength: ${assessment.score} of 4`}
+                >
+                  {[0, 1, 2, 3].map(i => (
+                    <div
+                      key={i}
+                      style={{
+                        flex: 1, height: 4, borderRadius: 2,
+                        background: i < assessment.score
+                          ? (assessment.score <= 1 ? "#DC2626"
+                            : assessment.score === 2 ? "#F59E0B"
+                            : assessment.score === 3 ? "#84CC16" : "var(--sf-accent)")
+                          : "var(--sf-border)",
+                        transition: "background 200ms ease",
+                      }}
+                    />
+                  ))}
+                </div>
+                <ul style={{ display: "flex", flexDirection: "column", gap: 5, listStyle: "none", padding: 0, margin: 0 }}>
+                  {assessment.rules.map(rule => (
+                    <li
+                      key={rule.id}
+                      style={{
+                        display: "flex", alignItems: "center", gap: 7,
+                        fontSize: "0.78rem",
+                        color: rule.passed ? "var(--sf-accent)" : "var(--sf-text-muted)",
+                      }}
+                    >
+                      {rule.passed
+                        ? <Check size={13} aria-hidden style={{ flexShrink: 0 }} />
+                        : <X size={13} aria-hidden style={{ flexShrink: 0, opacity: 0.5 }} />}
+                      <span>{rule.label}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+
           {/* Error */}
           {error && (
             <p style={{ fontSize: "0.8125rem", color: "var(--sf-error)", fontWeight: 600, margin: 0 }}>
@@ -196,6 +303,7 @@ export function Login() {
           {/* Submit */}
           <button
             type="submit"
+            disabled={submitting}
             style={{
               minHeight: "52px",
               borderRadius: "10px",
@@ -204,19 +312,22 @@ export function Login() {
               color: "#0A0E16",
               fontWeight: 700,
               fontSize: "1rem",
-              cursor: "pointer",
+              cursor: submitting ? "not-allowed" : "pointer",
+              opacity: submitting ? 0.6 : 1,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               gap: "8px",
               marginTop: "4px",
-              transition: "background .18s",
+              transition: "background .18s, opacity .18s",
             }}
-            onMouseEnter={e => (e.currentTarget.style.background = "var(--sf-accent-hover)")}
+            onMouseEnter={e => { if (!submitting) e.currentTarget.style.background = "var(--sf-accent-hover)"; }}
             onMouseLeave={e => (e.currentTarget.style.background = "var(--sf-accent)")}
           >
-            {mode === "signup" ? "Create Account" : "Log In"}
-            <ArrowRight size={18} className="rtl:hidden" aria-hidden />
+            {submitting
+              ? (mode === "signup" ? "Creating account…" : "Logging in…")
+              : (mode === "signup" ? "Create Account" : "Log In")}
+            {!submitting && <ArrowRight size={18} className="rtl:hidden" aria-hidden />}
           </button>
         </form>
 

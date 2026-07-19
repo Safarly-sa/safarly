@@ -5,6 +5,8 @@
      safarly_profile_complete "true" | absent
 ──────────────────────────────────────────────────────────────────────── */
 
+import { logOutRemote } from "./auth-api";
+
 export interface SafarlyAuth {
   name: string;
   email: string;
@@ -67,6 +69,11 @@ const ACCOUNT_KEYS = [
  * copy of any of this, so it cannot be undone — callers should confirm first.
  */
 export function signOut(): void {
+  // Fire-and-forget: destroy the server session too, so the httpOnly cookie
+  // cannot be replayed. Deliberately not awaited — local sign-out must succeed
+  // even when the API is unreachable, and the caller is a click handler.
+  void logOutRemote();
+
   for (const key of ACCOUNT_KEYS) localStorage.removeItem(key);
   window.dispatchEvent(new Event("safarly-auth-changed"));
 }

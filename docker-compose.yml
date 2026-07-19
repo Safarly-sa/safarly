@@ -1,0 +1,34 @@
+# Local development database.
+#
+#   docker compose up -d      start Postgres
+#   docker compose down       stop it (data survives)
+#   docker compose down -v    stop it and delete all data
+#
+# Then point the API server at it:
+#   DATABASE_URL=postgres://safarly:safarly@localhost:5432/safarly
+#
+# These credentials are for local development only and are deliberately
+# committed so the team gets an identical setup with one command. Never reuse
+# them for anything reachable from outside your machine.
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: safarly-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: safarly
+      POSTGRES_PASSWORD: safarly
+      POSTGRES_DB: safarly
+    ports:
+      - "5432:5432"
+    volumes:
+      - safarly-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U safarly -d safarly"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  safarly-pgdata:
