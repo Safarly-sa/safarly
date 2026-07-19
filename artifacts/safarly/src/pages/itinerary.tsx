@@ -624,7 +624,7 @@ function StopCard({
             lineHeight: 1.3,
             display:    "block",
           }}>
-            {poi.name}
+            {t("poi." + poi.id + ".name") || poi.name}
           </span>
         </div>
 
@@ -650,7 +650,7 @@ function StopCard({
             lineHeight:   1.65,
             marginBottom: "12px",
           }}>
-            {poi.culture_note}
+            {t("poi." + poi.id + ".culture") || poi.culture_note}
           </p>
         )}
 
@@ -711,7 +711,10 @@ function MealCard({
 }) {
   const { dish } = meal;
   const mealLabel = meal.type === "lunch" ? t("itin.lunch") : t("itin.dinner");
-  const dishDisplayName = language === "ar" && dish.name_ar ? dish.name_ar : dish.name;
+  // Prefer locale-specific dish name, then Arabic name for AR, else English
+  const translatedDishName = t("dish." + dish.id + ".name");
+  const dishDisplayName = translatedDishName
+    || (language === "ar" && dish.name_ar ? dish.name_ar : dish.name);
 
   return (
     <div style={{ display: "flex", gap: "12px", alignItems: "flex-start", paddingBlock: "6px" }}>
@@ -764,14 +767,16 @@ function MealCard({
           marginBottom: "4px",
         }}>
           {dishDisplayName}
-          {language === "ar" && dish.name_ar && dish.name_ar !== dish.name && (
-            <span style={{ fontWeight: 400, fontSize: "0.8125rem", color: "var(--sf-text-muted)", marginInlineStart: "6px" }}>
-              {dish.name}
-            </span>
-          )}
+          {/* Show Arabic script alongside when viewing in a non-Arabic language */}
           {language !== "ar" && dish.name_ar && (
             <span style={{ fontWeight: 400, fontSize: "0.8125rem", color: "var(--sf-text-muted)", marginInlineStart: "6px" }}>
               {dish.name_ar}
+            </span>
+          )}
+          {/* Show English romanisation alongside Arabic */}
+          {language === "ar" && dish.name_ar && dish.name_ar !== dish.name && (
+            <span style={{ fontWeight: 400, fontSize: "0.8125rem", color: "var(--sf-text-muted)", marginInlineStart: "6px" }}>
+              {dish.name}
             </span>
           )}
         </div>
@@ -783,7 +788,7 @@ function MealCard({
           lineHeight:  1.55,
           marginBottom: "6px",
         }}>
-          {dish.description}
+          {t("dish." + dish.id + ".desc") || dish.description}
         </p>
 
         {/* Price */}
@@ -1515,7 +1520,9 @@ const CATEGORY_ICONS: Record<string, string> = {
 };
 
 function PoiPhotoModal({ poi, onClose }: { poi: RawPoi; onClose: () => void }) {
+  const { t } = useTranslation();
   const icon = CATEGORY_ICONS[poi.category] ?? "📍";
+  const displayName = t("poi." + poi.id + ".name") || poi.name;
 
   useEffect(() => {
     const prev = document.body.style.overflow;
@@ -1530,7 +1537,7 @@ function PoiPhotoModal({ poi, onClose }: { poi: RawPoi; onClose: () => void }) {
 
   return (
     <div
-      role="dialog" aria-modal="true" aria-label={`Photos of ${poi.name}`}
+      role="dialog" aria-modal="true" aria-label={`Photos of ${displayName}`}
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}
       style={{
         position: "fixed", inset: 0, zIndex: 9100,
@@ -1557,7 +1564,7 @@ function PoiPhotoModal({ poi, onClose }: { poi: RawPoi; onClose: () => void }) {
         }}>
           <div>
             <p style={{ fontWeight: 800, fontSize: "1.0625rem", color: "var(--sf-text)", lineHeight: 1.25, marginBottom: 5 }}>
-              {poi.name}
+              {displayName}
             </p>
             <span style={{
               display: "inline-block", fontSize: "0.6875rem", fontWeight: 700,
@@ -1597,7 +1604,7 @@ function PoiPhotoModal({ poi, onClose }: { poi: RawPoi; onClose: () => void }) {
               <span style={{ fontSize: "2.25rem", opacity: 0.88 }}>{icon}</span>
               <div style={{ textAlign: "center", padding: "0 16px" }}>
                 <p style={{ fontSize: "0.8125rem", fontWeight: 700, color: "rgba(255,255,255,0.95)", lineHeight: 1.3, marginBottom: 2 }}>
-                  {poi.name}
+                  {displayName}
                 </p>
                 <p style={{ fontSize: "0.6875rem", color: "rgba(255,255,255,0.6)" }}>
                   Photo {slot + 1} of 3
@@ -1728,8 +1735,8 @@ export function Itinerary() {
     if (pool.length === 0) return;
 
     const chosen  = pool[0];
-    const altName1 = pool[0]?.name ?? "";
-    const altName2 = pool[1]?.name ?? pool[0]?.name ?? "";
+    const altName1 = (pool[0] ? (t("poi." + pool[0].id + ".name") || pool[0].name) : "");
+    const altName2 = (pool[1] ? (t("poi." + pool[1].id + ".name") || pool[1].name) : altName1);
 
     // Build replacement stop (same time slot as target)
     const replacementStop: ItineraryStop = {
@@ -1803,7 +1810,7 @@ export function Itinerary() {
     // Start cascade animation sequence
     const base: Omit<CascadeInfo, "phase" | "feedStep"> = {
       closedPoiId:     target.poi.id,
-      closedPoiName:   target.poi.name,
+      closedPoiName:   t("poi." + target.poi.id + ".name") || target.poi.name,
       replacementPoiId: chosen.id,
       altName1,
       altName2,
