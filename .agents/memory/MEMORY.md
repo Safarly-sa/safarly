@@ -1,2 +1,0 @@
-- [Safarly auth layer](safarly-auth.md) — localStorage-only, keys: safarly_auth, safarly_profile_complete, safarly_profile; dispatches safarly-auth-changed event
-- [Safarly engine multi-city](safarly-engine-cities.md) — new cities map to backing POI dataset; "ai" city resolved at runtime; goals[] blended by averaging GOAL_OBJECTIVES weights

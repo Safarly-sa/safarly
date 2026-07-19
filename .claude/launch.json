@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "safarly",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "@workspace/safarly", "run", "dev"],
+      "port": 5173
+    }
+  ]
+}

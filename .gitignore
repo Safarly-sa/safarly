@@ -44,6 +44,9 @@ Thumbs.db
 .cursor/rules/nx-rules.mdc
 .github/instructions/nx.instructions.md
 
-# Replit
+# Claude Code — per-machine local settings (launch.json IS shared)
+.claude/settings.local.json
+
+# Legacy Replit leftovers
 .cache/
 .local/
