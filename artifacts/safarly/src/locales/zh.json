@@ -479,5 +479,12 @@
   "dish.shish_tawook.desc": "酸奶腌制鸡肉块串烤在炭火上；配大蒜酱和薄饼上桌。",
   "dish.kunafa.desc": "酥脆细丝酥皮覆盖在玫瑰露糖浆浸泡的白奶酪上——中东最受欢迎的甜点。",
   "dash.photos.of": "照片",
-  "dash.photos.counter": "第 {n} 张，共 3 张"
+  "dash.photos.counter": "第 {n} 张，共 3 张",
+  "profile.account.title": "账户",
+  "profile.signout.hint": "退出登录将从此设备移除您的个人资料、行程、收藏菜品和已学短语。",
+  "profile.signout.button": "退出登录",
+  "profile.signout.title": "退出 Safarly？",
+  "profile.signout.body": "这将从此设备删除您的个人资料、行程、收藏菜品和已学短语。别处没有任何备份，此操作无法撤销。您的语言和主题设置会保留。",
+  "profile.signout.cancel": "取消",
+  "profile.signout.confirm": "退出登录"
 }

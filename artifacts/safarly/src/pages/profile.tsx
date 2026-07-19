@@ -3,12 +3,12 @@
  * Shows all profile fields in one scrollable page.
  * Saves to safarly_profile on button click.
  */
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useLocation } from "wouter";
-import { CheckCircle2, ArrowLeft } from "lucide-react";
+import { CheckCircle2, ArrowLeft, LogOut, AlertTriangle } from "lucide-react";
 import { useTranslation } from "@/providers/translation-context";
 import { usePageMeta } from "@/lib/usePageMeta";
-import { getAuth, setAuth } from "@/lib/auth";
+import { getAuth, setAuth, signOut } from "@/lib/auth";
 import {
   Chip,
   NationalityDropdown,
@@ -70,6 +70,88 @@ function useProfileStyles() {
 }
 
 /* ── Helpers ────────────────────────────────────────────────────────── */
+/* ── Sign-out confirmation ──────────────────────────────────────────── */
+/**
+ * Sign-out deletes trips, saved dishes and learned phrases with no server copy,
+ * so it is confirmed rather than fired on a single tap. Focus lands on Cancel,
+ * so Enter dismisses instead of destroying.
+ */
+function SignOutDialog({ onConfirm, onCancel, t }: {
+  onConfirm: () => void; onCancel: () => void; t: (k: string) => string;
+}) {
+  const cancelRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    cancelRef.current?.focus();
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    function onKey(e: KeyboardEvent) { if (e.key === "Escape") onCancel(); }
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = prev;
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [onCancel]);
+
+  return (
+    <div
+      role="dialog" aria-modal="true" aria-labelledby="signout-title"
+      onClick={e => { if (e.target === e.currentTarget) onCancel(); }}
+      style={{
+        position: "fixed", inset: 0, zIndex: 9200,
+        background: "rgba(0,0,0,0.72)", backdropFilter: "blur(5px)",
+        display: "flex", alignItems: "center", justifyContent: "center", padding: 20,
+      }}
+    >
+      <div
+        onClick={e => e.stopPropagation()}
+        style={{
+          background: "var(--sf-surface)", borderRadius: 16, width: "100%", maxWidth: 420,
+          boxShadow: "0 24px 64px rgba(0,0,0,0.55)", padding: "22px 20px",
+          display: "flex", flexDirection: "column", gap: 14,
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <AlertTriangle size={20} aria-hidden style={{ color: "#F59E0B", flexShrink: 0 }} />
+          <h2 id="signout-title" style={{ fontSize: "1.0625rem", fontWeight: 800, color: "var(--sf-text)" }}>
+            {t("profile.signout.title")}
+          </h2>
+        </div>
+
+        <p style={{ fontSize: "0.875rem", lineHeight: 1.65, color: "var(--sf-text-muted)" }}>
+          {t("profile.signout.body")}
+        </p>
+
+        <div style={{ display: "flex", gap: 10, marginTop: 4 }}>
+          <button
+            ref={cancelRef}
+            type="button"
+            onClick={onCancel}
+            style={{
+              flex: 1, minHeight: 46, borderRadius: 10,
+              border: "1px solid var(--sf-border)", background: "var(--sf-surface-alt)",
+              color: "var(--sf-text)", fontWeight: 700, fontSize: "0.9375rem", cursor: "pointer",
+            }}
+          >
+            {t("profile.signout.cancel")}
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            style={{
+              flex: 1, minHeight: 46, borderRadius: 10, border: "none",
+              background: "#DC2626", color: "#fff",
+              fontWeight: 700, fontSize: "0.9375rem", cursor: "pointer",
+            }}
+          >
+            {t("profile.signout.confirm")}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function toggleArr<T>(arr: T[], val: T): T[] {
   return arr.includes(val) ? arr.filter((x) => x !== val) : [...arr, val];
 }
@@ -110,11 +192,18 @@ export function Profile() {
 
   const [data, setData] = useState<ProfileData>(loadProfile);
   const [saved, setSaved] = useState(false);
+  const [confirmSignOut, setConfirmSignOut] = useState(false);
 
   /* Redirect to login if not authenticated */
   useEffect(() => {
     if (!getAuth()) navigate("/login");
   }, [navigate]);
+
+  function handleSignOut() {
+    signOut();
+    setConfirmSignOut(false);
+    navigate("/");
+  }
 
   function patch(p: Partial<ProfileData>) {
     setData((prev) => ({ ...prev, ...p }));
@@ -332,7 +421,36 @@ export function Profile() {
           )}
         </div>
 
+        {/* ── Sign out ── */}
+        <section style={{ marginTop: 34, paddingTop: 22, borderTop: "1px solid var(--sf-border)" }}>
+          <h2 className="sf-profile-section-title">{t("profile.account.title")}</h2>
+          <p style={{ fontSize: "0.8125rem", lineHeight: 1.6, color: "var(--sf-text-muted)", marginBottom: 14 }}>
+            {t("profile.signout.hint")}
+          </p>
+          <button
+            type="button"
+            onClick={() => setConfirmSignOut(true)}
+            style={{
+              display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8,
+              minHeight: 48, padding: "0 22px", borderRadius: 10,
+              border: "1px solid #DC2626", background: "transparent",
+              color: "#DC2626", fontWeight: 700, fontSize: "0.9375rem", cursor: "pointer",
+            }}
+          >
+            <LogOut size={16} aria-hidden />
+            {t("profile.signout.button")}
+          </button>
+        </section>
+
       </div>
+
+      {confirmSignOut && (
+        <SignOutDialog
+          t={t}
+          onCancel={() => setConfirmSignOut(false)}
+          onConfirm={handleSignOut}
+        />
+      )}
     </div>
   );
 }

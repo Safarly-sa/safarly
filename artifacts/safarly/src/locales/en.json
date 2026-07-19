@@ -479,5 +479,12 @@
   "dish.kunafa.name": "Kunafa bil Jibneh (Cheese Pastry)",
   "dish.kunafa.desc": "Crispy shredded pastry over white cheese soaked in rose-water syrup — the Middle East's favourite dessert.",
   "dash.photos.of": "Photos of",
-  "dash.photos.counter": "Photo {n} of 3"
+  "dash.photos.counter": "Photo {n} of 3",
+  "profile.account.title": "Account",
+  "profile.signout.hint": "Signing out removes your profile, trips, saved dishes and learned phrases from this device.",
+  "profile.signout.button": "Sign Out",
+  "profile.signout.title": "Sign out of Safarly?",
+  "profile.signout.body": "This deletes your profile, trips, saved dishes and learned phrases from this device. Nothing is stored anywhere else, so this cannot be undone. Your language and theme settings are kept.",
+  "profile.signout.cancel": "Cancel",
+  "profile.signout.confirm": "Sign Out"
 }

@@ -479,5 +479,12 @@
   "dish.shish_tawook.desc": "Cubes de poulet marinés au yaourt, grillés au charbon de bois sur des brochettes; servis avec sauce à l'ail et pain plat.",
   "dish.kunafa.desc": "Pâte filée croustillante sur du fromage blanc imbibé de sirop à l'eau de rose — le dessert préféré du Moyen-Orient.",
   "dash.photos.of": "Photos de",
-  "dash.photos.counter": "Photo {n} sur 3"
+  "dash.photos.counter": "Photo {n} sur 3",
+  "profile.account.title": "Compte",
+  "profile.signout.hint": "La déconnexion supprime votre profil, vos voyages, vos plats enregistrés et vos phrases apprises de cet appareil.",
+  "profile.signout.button": "Se déconnecter",
+  "profile.signout.title": "Se déconnecter de Safarly ?",
+  "profile.signout.body": "Cela supprimera votre profil, vos voyages, vos plats enregistrés et vos phrases apprises de cet appareil. Rien n’est sauvegardé ailleurs, cette action est irréversible. Votre langue et votre thème sont conservés.",
+  "profile.signout.cancel": "Annuler",
+  "profile.signout.confirm": "Se déconnecter"
 }

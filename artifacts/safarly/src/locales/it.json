@@ -479,5 +479,12 @@
   "dish.shish_tawook.desc": "Cubetti di pollo marinati allo yogurt, grigliati su spiedi alla brace; serviti con salsa all'aglio e pane piatto.",
   "dish.kunafa.desc": "Pasta filata croccante sopra formaggio bianco intriso di sciroppo all'acqua di rose — il dolce preferito del Medio Oriente.",
   "dash.photos.of": "Foto di",
-  "dash.photos.counter": "Foto {n} di 3"
+  "dash.photos.counter": "Foto {n} di 3",
+  "profile.account.title": "Account",
+  "profile.signout.hint": "La disconnessione rimuove profilo, viaggi, piatti salvati e frasi imparate da questo dispositivo.",
+  "profile.signout.button": "Esci",
+  "profile.signout.title": "Uscire da Safarly?",
+  "profile.signout.body": "Questo eliminerà profilo, viaggi, piatti salvati e frasi imparate da questo dispositivo. Non esiste alcun backup, l’operazione è irreversibile. Lingua e tema vengono mantenuti.",
+  "profile.signout.cancel": "Annulla",
+  "profile.signout.confirm": "Esci"
 }

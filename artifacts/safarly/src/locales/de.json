@@ -479,5 +479,12 @@
   "dish.shish_tawook.desc": "Joghurtmarinierte Hähnchenstücke, auf Spießen über Holzkohle gegrillt; serviert mit Knoblauchsauce und Fladenbrot.",
   "dish.kunafa.desc": "Knuspriges Engelshaar-Gebäck über Weißkäse, in Rosenwasser-Sirup getränkt — das beliebteste Dessert des Nahen Ostens.",
   "dash.photos.of": "Fotos von",
-  "dash.photos.counter": "Foto {n} von 3"
+  "dash.photos.counter": "Foto {n} von 3",
+  "profile.account.title": "Konto",
+  "profile.signout.hint": "Beim Abmelden werden Profil, Reisen, gespeicherte Gerichte und gelernte Redewendungen von diesem Gerät entfernt.",
+  "profile.signout.button": "Abmelden",
+  "profile.signout.title": "Von Safarly abmelden?",
+  "profile.signout.body": "Dadurch werden Profil, Reisen, gespeicherte Gerichte und gelernte Redewendungen von diesem Gerät gelöscht. Es gibt keine Sicherung, dies kann nicht rückgängig gemacht werden. Sprache und Design bleiben erhalten.",
+  "profile.signout.cancel": "Abbrechen",
+  "profile.signout.confirm": "Abmelden"
 }
