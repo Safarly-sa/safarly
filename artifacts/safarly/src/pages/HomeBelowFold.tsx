@@ -1,5 +1,5 @@
 /**
- * HomeBelowFold — sections 2-6 of the landing page.
+ * HomeBelowFold — sections 2-7 of the landing page.
  * Lazy-imported by home.tsx so they don't block initial paint.
  */
 import { useTranslation } from "@/providers/translation-context";
@@ -8,6 +8,7 @@ import {
   MapPin, MessageCircle, Camera, Languages, Compass, ArrowRight, Globe, BookOpen,
 } from "lucide-react";
 import { Link } from "wouter";
+import { DestinationGallery } from "@/components/DestinationGallery";
 
 function FadeUp({
   children, delay = 0, className = "",
@@ -62,7 +63,12 @@ export function HomeBelowFold() {
     <>
       <DottedDivider />
 
-      {/* ── 2. Feature Cards ─────────────────────────────────────────── */}
+      {/* ── 2. Destination Gallery ───────────────────────────────────── */}
+      <DestinationGallery />
+
+      <DottedDivider />
+
+      {/* ── 3. Feature Cards ─────────────────────────────────────────── */}
       <section className="py-20 bg-muted/30 px-4">
         <div className="max-w-7xl mx-auto">
           <FadeUp className="mb-12 text-center">

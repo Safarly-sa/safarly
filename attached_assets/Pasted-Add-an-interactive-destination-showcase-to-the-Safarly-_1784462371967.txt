@@ -1,0 +1,85 @@
+Add an interactive destination showcase to the Safarly site with two parts: (A) a hero background carousel and (B) a filterable destination gallery grid below it. Keep the existing dark theme and purple-to-teal brand gradient. Everything must be fully responsive, work correctly in RTL (Arabic) mode, respect prefers-reduced-motion, and run at 60fps using only transform/opacity animations. Use royalty-free Unsplash placeholder images with descriptive alt text for each destination.
+
+Filter/tab bar for the gallery (with sliding active indicator): All · Central · Western · Southern · Eastern · Northern
+
+Destinations to include (show English + Arabic name, region tag, and a one-line tagline on each card):
+
+Central Region (المنطقة الوسطى):
+
+Riyadh (الرياض) — Diriyah, Kingdom Centre, Wadi Hanifah, National Museum, Boulevard
+
+Edge of the World / Jebel Fihrayn (حافة العالم)
+
+Diriyah (الدرعية) — UNESCO At-Turaif
+
+Buraydah (بريدة) & Unaizah (عنيزة) — Qassim dates & heritage
+
+Ushaiqer Heritage Village (أشيقر)
+
+Shaqra (شقراء)
+
+Western Region (المنطقة الغربية):
+
+Jeddah (جدة) — Al-Balad historic district (UNESCO), Corniche, King Fahd Fountain
+
+Makkah (مكة المكرمة) — Masjid al-Haram
+
+Madinah (المدينة المنورة) — Al-Masjid an-Nabawi, Quba Mosque
+
+Taif (الطائف) — roses, Al-Shafa, Al-Hada cable car
+
+AlUla (العُلا) — Hegra/Madain Salih (UNESCO), Elephant Rock, Dadan, Jabal Ikmah, AlUla Old Town, Maraya
+
+Yanbu (ينبع) — Red Sea diving
+
+Rabigh (رابغ)
+
+Southern Region (المنطقة الجنوبية):
+
+Abha (أبها) — Aseer highlands
+
+Soudah / Souda (السودة) — highest peak & cable car
+
+Rijal Almaa (رجال ألمع) — heritage village
+
+Al-Habala (الحبلة) — hanging village
+
+Green Mountain / Jabal Thera (الجبل الأخضر)
+
+Aseer National Park (منتزه عسير الوطني), Tanoumah (تنومة), Muhayil (محايل)
+
+Farasan Islands (جزر فرسان) — beaches, coral reefs, Ottoman fort, Al Qassar village
+
+Jazan (جازان), Fifa Mountains (جبال فيفاء), Malaki Dam (سد ملكي)
+
+Najran (نجران) — Al-Ukhdood, mud palaces
+
+Al-Baha (الباحة) — Raghadan Forest, Thee Ain marble village (ذي عين)
+
+Eastern Region (المنطقة الشرقية):
+
+Al-Ahsa Oasis (الأحساء) — UNESCO
+
+Dammam (الدمام) & Al Khobar (الخبر) — Corniche
+
+Half Moon Bay (نصف القمر), Uqair beach (العقير)
+
+Jubail (الجبيل), Qatif (القطيف), Tarout Island (جزيرة تاروت)
+
+Northern Region (المنطقة الشمالية):
+
+Umluj (أملج) — the "Maldives of Saudi"
+
+The Red Sea Project (البحر الأحمر), NEOM (نيوم)
+
+Tabuk (تبوك), Wadi Al-Disah (وادي الديسة), Jabal Al-Lawz (جبل اللوز)
+
+Hail (حائل) — Jubbah & Shuwaymis rock art (UNESCO)
+
+Sakaka & Domat Al-Jandal (سكاكا ودومة الجندل), Al-Jawf (الجوف)
+
+Tayma (تيماء)
+
+Hero carousel behavior: Rotate through 8–10 hero-worthy destinations spanning all regions — AlUla/Hegra, Farasan Islands, Abha/Soudah, Edge of the World, Umluj, Diriyah, Al-Balad Jeddah, Al-Ahsa, Taif, and Hegra — so the big cities aren't the only ones featured. Each slide uses a slow Ken Burns zoom-pan (6s per slide), smooth cross-fade, a dark gradient overlay for text legibility, dot indicators, and pause-on-hover.
+
+Gallery grid behavior: Responsive card grid; on hover each card lifts slightly, the image zooms, a gradient overlay fades in, and the tagline slides up from the bottom. On mobile, make it a horizontal snap-scroll carousel. When a region tab is selected, animate the cards filtering in/out with a staggered fade-and-scale, and slide the active tab indicator. Display each destination's Arabic name alongside the English name so it reads correctly in both languages.

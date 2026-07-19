@@ -143,6 +143,12 @@ html[dir="rtl"] {
   }
 }
 
+/* ── Ken Burns zoom-pan for hero carousel ─────────────────────────── */
+@keyframes sf-kenburns {
+  0%   { transform: scale(1)    translate(0%, 0%); }
+  100% { transform: scale(1.08) translate(-1.5%, -1%); }
+}
+
 /* ── Feature card hover states ─────────────────────────────────────── */
 /* Light mode: indigo border lift */
 .feature-card:hover {
