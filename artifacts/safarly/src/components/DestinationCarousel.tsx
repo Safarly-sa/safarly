@@ -31,8 +31,8 @@ const HERO_SLIDES: HeroSlide[] = [
     taglineAr: "مقابر نبطية محفورة في الحجر الرملي الوردي",
     region: "Western",
     imageUrl:
-      "https://images.unsplash.com/photo-1578895101408-1a36b834405b?w=1920&q=80&auto=format&fit=crop",
-    alt: "Ancient Nabataean rock-cut tombs rising from red sandstone at Hegra, AlUla",
+      "https://scth.scene7.com/is/image/scth/alula-banner-new?wid=1920&fit=constrain&fmt=webp",
+    alt: "AlUla — official Visit Saudi hero image",
     fallback: "#1A1008",
   },
   {
@@ -43,8 +43,8 @@ const HERO_SLIDES: HeroSlide[] = [
     taglineAr: "قف على حافة جرف ارتفاعه ٣٠٠ متر فوق الأفق اللانهائي",
     region: "Central",
     imageUrl:
-      "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1920&q=80&auto=format&fit=crop",
-    alt: "Dramatic escarpment cliffs stretching to a vast desert horizon at Jebel Fihrayn",
+      "https://scth.scene7.com/is/image/scth/New-Tabuk_Image-Banner?wid=1920&fit=constrain&fmt=webp",
+    alt: "Edge of the World — dramatic escarpment near Riyadh, official Visit Saudi",
     fallback: "#0D1520",
   },
   {
@@ -55,8 +55,8 @@ const HERO_SLIDES: HeroSlide[] = [
     taglineAr: "مرتفعات عسير الزمردية فوق الغيوم",
     region: "Southern",
     imageUrl:
-      "https://images.pexels.com/photos/36772107/pexels-photo-36772107/free-photo-of-scenic-view-of-tanomah-aseer-province-saudi-arabia.jpeg?auto=compress&cs=tinysrgb&w=1920&h=1080&fit=crop",
-    alt: "Scenic misty green highland view of Tanomah in Aseer Province, Saudi Arabia",
+      "https://scth.scene7.com/is/image/scth/about-abha_hero_banner_desktop-1?wid=1920&fit=constrain&fmt=webp",
+    alt: "Abha — official Visit Saudi hero image",
     fallback: "#0A1A0E",
   },
   {
@@ -67,8 +67,8 @@ const HERO_SLIDES: HeroSlide[] = [
     taglineAr: "شعاب مرجانية نقية ومياه حمراء فيروزية",
     region: "Southern",
     imageUrl:
-      "https://houseofsaud.com/wp-content/uploads/2026/04/farasan-islands-red-sea-coast.jpg",
-    alt: "Turquoise waters and coral shoreline of the Farasan Islands in the southern Red Sea, Saudi Arabia",
+      "https://scth.scene7.com/is/image/scth/yanbu-new-hero-banner?wid=1920&fit=constrain&fmt=webp",
+    alt: "Yanbu Red Sea coast — official Visit Saudi hero image",
     fallback: "#031822",
   },
   {
@@ -79,8 +79,8 @@ const HERO_SLIDES: HeroSlide[] = [
     taglineAr: "جزر المالديف السعودية — رمال بيضاء وبحيرات هادئة",
     region: "Northern",
     imageUrl:
-      "https://houseofsaud.com/wp-content/uploads/2026/04/upload-111.jpg",
-    alt: "Turquoise lagoon and white sand islands at Umluj on the Saudi Red Sea coast",
+      "https://scth.scene7.com/is/image/scth/new-alahsa-banner?wid=1920&fit=constrain&fmt=webp",
+    alt: "Al-Ahsa Oasis — official Visit Saudi hero image",
     fallback: "#031A20",
   },
   {
@@ -91,8 +91,8 @@ const HERO_SLIDES: HeroSlide[] = [
     taglineAr: "التراث العالمي لليونسكو — الدرعية مهد الدولة السعودية",
     region: "Central",
     imageUrl:
-      "https://houseofsaud.com/wp-content/uploads/2026/03/diriyah-travel-guide-najdi-fortress-2026.jpg",
-    alt: "Traditional Najdi mud-brick fortress walls of At-Turaif UNESCO World Heritage Site in Diriyah",
+      "https://scth.scene7.com/is/image/scth/diriyah-hero-banner?wid=1920&fit=constrain&fmt=webp",
+    alt: "Diriyah At-Turaif — official Visit Saudi hero image",
     fallback: "#1A0D05",
   },
   {
@@ -103,8 +103,8 @@ const HERO_SLIDES: HeroSlide[] = [
     taglineAr: "منطقة التراث العالمي من الحجر المرجاني على البحر الأحمر",
     region: "Western",
     imageUrl:
-      "https://houseofsaud.com/wp-content/uploads/2026/04/jeddah-coral-al-balad-overview-1.jpg",
-    alt: "Traditional coral stone buildings with wooden Rawasheen balconies in Al-Balad, Historic Jeddah",
+      "https://scth.scene7.com/is/image/scth/jeddah-banner?wid=1920&fit=constrain&fmt=webp",
+    alt: "Jeddah — official Visit Saudi hero image",
     fallback: "#12100A",
   },
   {
@@ -115,8 +115,8 @@ const HERO_SLIDES: HeroSlide[] = [
     taglineAr: "أكبر واحة نخيل في العالم — تراث إنساني يونسكو",
     region: "Eastern",
     imageUrl:
-      "https://images.unsplash.com/photo-1584551230729-3a0de8cf4b00?w=1920&q=80&auto=format&fit=crop",
-    alt: "Towering date palm trees casting long shadows across the vast Al-Ahsa Oasis in Eastern Saudi Arabia",
+      "https://scth.scene7.com/is/image/scth/New-Najran-Banner-Image?wid=1920&fit=constrain&fmt=webp",
+    alt: "Najran — official Visit Saudi hero image",
     fallback: "#0C1608",
   },
   {
@@ -127,8 +127,8 @@ const HERO_SLIDES: HeroSlide[] = [
     taglineAr: "مدينة الورود والتلفريك والهواء الجبلي البارد",
     region: "Western",
     imageUrl:
-      "https://images.unsplash.com/photo-1490750967868-88df5691cc08?w=1920&q=80&auto=format&fit=crop",
-    alt: "Vibrant pink and red roses in full bloom in the flower gardens of Taif, Saudi Arabia",
+      "https://scth.scene7.com/is/image/scth/Taif-banner-new?wid=1920&fit=constrain&fmt=webp",
+    alt: "Taif — official Visit Saudi hero image",
     fallback: "#1A0815",
   },
   {
@@ -139,8 +139,8 @@ const HERO_SLIDES: HeroSlide[] = [
     taglineAr: "الحدود السعودية الجديدة الجريئة على ساحل البحر الأحمر",
     region: "Northern",
     imageUrl:
-      "https://images.unsplash.com/photo-1519046904884-53103b34b206?w=1920&q=80&auto=format&fit=crop",
-    alt: "Sweeping sand dunes glowing gold at sunset along the Red Sea coast in northwestern Saudi Arabia",
+      "https://scth.scene7.com/is/image/scth/redsea-new?wid=1920&fit=constrain&fmt=webp",
+    alt: "NEOM & Red Sea Project — official Visit Saudi hero image",
     fallback: "#0A0C14",
   },
 ];
