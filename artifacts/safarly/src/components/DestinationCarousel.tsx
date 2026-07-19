@@ -55,8 +55,8 @@ const HERO_SLIDES: HeroSlide[] = [
     taglineAr: "مرتفعات عسير الزمردية فوق الغيوم",
     region: "Southern",
     imageUrl:
-      "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=1920&q=80&auto=format&fit=crop",
-    alt: "Lush green highland mountains shrouded in mist in the Aseer region near Abha",
+      "https://images.pexels.com/photos/36772107/pexels-photo-36772107/free-photo-of-scenic-view-of-tanomah-aseer-province-saudi-arabia.jpeg?auto=compress&cs=tinysrgb&w=1920&h=1080&fit=crop",
+    alt: "Scenic misty green highland view of Tanomah in Aseer Province, Saudi Arabia",
     fallback: "#0A1A0E",
   },
   {
@@ -67,8 +67,8 @@ const HERO_SLIDES: HeroSlide[] = [
     taglineAr: "شعاب مرجانية نقية ومياه حمراء فيروزية",
     region: "Southern",
     imageUrl:
-      "https://images.unsplash.com/photo-1559547776-b3e29c5b0277?w=1920&q=80&auto=format&fit=crop",
-    alt: "Crystal-clear turquoise water over coral reefs of the Farasan Islands in the Red Sea",
+      "https://houseofsaud.com/wp-content/uploads/2026/04/farasan-islands-red-sea-coast.jpg",
+    alt: "Turquoise waters and coral shoreline of the Farasan Islands in the southern Red Sea, Saudi Arabia",
     fallback: "#031822",
   },
   {
@@ -79,8 +79,8 @@ const HERO_SLIDES: HeroSlide[] = [
     taglineAr: "جزر المالديف السعودية — رمال بيضاء وبحيرات هادئة",
     region: "Northern",
     imageUrl:
-      "https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=1920&q=80&auto=format&fit=crop",
-    alt: "Pristine white sand beach with crystal clear turquoise water at Umluj on the Red Sea",
+      "https://houseofsaud.com/wp-content/uploads/2026/04/upload-111.jpg",
+    alt: "Turquoise lagoon and white sand islands at Umluj on the Saudi Red Sea coast",
     fallback: "#031A20",
   },
   {
@@ -91,8 +91,8 @@ const HERO_SLIDES: HeroSlide[] = [
     taglineAr: "التراث العالمي لليونسكو — الدرعية مهد الدولة السعودية",
     region: "Central",
     imageUrl:
-      "https://images.unsplash.com/photo-1551279880-03041531948f?w=1920&q=80&auto=format&fit=crop",
-    alt: "Illuminated mud-brick walls and towers of At-Turaif District in Diriyah at dusk",
+      "https://houseofsaud.com/wp-content/uploads/2026/03/diriyah-travel-guide-najdi-fortress-2026.jpg",
+    alt: "Traditional Najdi mud-brick fortress walls of At-Turaif UNESCO World Heritage Site in Diriyah",
     fallback: "#1A0D05",
   },
   {
@@ -103,8 +103,8 @@ const HERO_SLIDES: HeroSlide[] = [
     taglineAr: "منطقة التراث العالمي من الحجر المرجاني على البحر الأحمر",
     region: "Western",
     imageUrl:
-      "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=1920&q=80&auto=format&fit=crop",
-    alt: "Traditional ornate wooden Rawasheen windows on a historic coral-stone building in Al-Balad Jeddah",
+      "https://houseofsaud.com/wp-content/uploads/2026/04/jeddah-coral-al-balad-overview-1.jpg",
+    alt: "Traditional coral stone buildings with wooden Rawasheen balconies in Al-Balad, Historic Jeddah",
     fallback: "#12100A",
   },
   {
