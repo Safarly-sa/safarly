@@ -321,6 +321,29 @@
   "dash.profile.interests": "اهتماماتي",
   "dash.profile.saved": "تم الحفظ",
 
+  "dash.tab.profile": "ملفي الشخصي",
+  "dash.tab.trips": "رحلاتي",
+  "dash.tab.ongoing": "الرحلة الحالية",
+
+  "dash.ongoing.empty.title": "لا توجد رحلة نشطة",
+  "dash.ongoing.empty.desc": "أنشئ رحلة واضغط على «تأكيد الرحلة» لتثبيتها هنا.",
+  "dash.ongoing.empty.cta": "خطط لرحلة",
+  "dash.ongoing.spend": "الإنفاق المتوقع",
+  "dash.ongoing.objectives": "أهداف الرحلة",
+  "dash.ongoing.day": "اليوم {n}",
+
+  "dash.trips.empty.title": "لا توجد رحلات سابقة",
+  "dash.trips.empty.desc": "عند تأكيد رحلة جديدة تنتقل السابقة إلى هنا.",
+  "dash.trips.stops": "{n} محطة",
+  "dash.trips.gems": "{n} كنوز مخفية",
+  "dash.trips.nights": "{n} ليالٍ",
+  "dash.trips.phrases": "عبارات تعلّمتها",
+  "dash.trips.food": "أطباق محفوظة",
+
+  "itin.confirm.btn": "تأكيد الرحلة",
+  "itin.confirm.done": "تم تأكيد الرحلة ✓",
+  "itin.confirm.goto": "عرض في لوحة التحكم",
+
   "cascade.wrench_label": "عرض توضيحي: محاكاة إغلاق وجهة",
   "cascade.closed_chip": "مغلق فجأة",
   "cascade.replanned_badge": "أُعيد التخطيط",

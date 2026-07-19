@@ -321,6 +321,29 @@
   "dash.profile.interests": "My Interests",
   "dash.profile.saved": "Saved",
 
+  "dash.tab.profile": "Profile",
+  "dash.tab.trips": "Trips",
+  "dash.tab.ongoing": "Ongoing Trip",
+
+  "dash.ongoing.empty.title": "No active trip",
+  "dash.ongoing.empty.desc": "Generate a trip and tap \"Confirm Trip\" on your itinerary to pin it here.",
+  "dash.ongoing.empty.cta": "Plan a Trip",
+  "dash.ongoing.spend": "Estimated Spend",
+  "dash.ongoing.objectives": "Trip Objectives",
+  "dash.ongoing.day": "Day {n}",
+
+  "dash.trips.empty.title": "No past trips yet",
+  "dash.trips.empty.desc": "Once you confirm a new trip your previous one moves here.",
+  "dash.trips.stops": "{n} stops",
+  "dash.trips.gems": "{n} hidden gems",
+  "dash.trips.nights": "{n} nights",
+  "dash.trips.phrases": "Phrases learned",
+  "dash.trips.food": "Saved dishes",
+
+  "itin.confirm.btn": "Confirm Trip",
+  "itin.confirm.done": "Trip Confirmed ✓",
+  "itin.confirm.goto": "View in Dashboard",
+
   "cascade.wrench_label": "Demo: simulate venue closure",
   "cascade.closed_chip": "Closed unexpectedly",
   "cascade.replanned_badge": "Replanned",

@@ -1148,13 +1148,14 @@ function ObjBar({
 }
 
 function TripSummary({
-  result, trip, t, onRegen, onEdit, language,
+  result, trip, t, onRegen, onEdit, onConfirm, language,
 }: {
   result: ItineraryResult;
   trip: TripSpec;
   t: (k: string) => string;
   onRegen: () => void;
   onEdit: () => void;
+  onConfirm: () => void;
   language: string;
 }) {
   const [mounted, setMounted] = useState(false);
@@ -1162,6 +1163,21 @@ function TripSummary({
     const id = setTimeout(() => setMounted(true), 80);
     return () => clearTimeout(id);
   }, []);
+
+  const [confirmed, setConfirmed] = useState(() => {
+    try {
+      const raw = localStorage.getItem("safarly_ongoing_trip");
+      if (!raw) return false;
+      const saved = JSON.parse(raw);
+      return saved?.trip?.city === trip.city &&
+             saved?.trip?.dateStart === trip.dateStart;
+    } catch { return false; }
+  });
+
+  function handleConfirmClick() {
+    onConfirm();
+    setConfirmed(true);
+  }
 
   const totalStops = result.days.reduce((s, d) => s + d.stops.length, 0);
   const gemCount   = Math.round(result.hiddenGemShare * totalStops);
@@ -1316,6 +1332,54 @@ function TripSummary({
 
       {/* Actions */}
       <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+
+        {/* Confirm Trip — primary green CTA */}
+        {!confirmed ? (
+          <button
+            onClick={handleConfirmClick}
+            style={{
+              display: "flex", alignItems: "center", justifyContent: "center",
+              gap: 8, minHeight: 44, borderRadius: 8, border: "none",
+              background: "var(--sf-accent)", color: "#0A0E16",
+              fontWeight: 700, fontSize: "0.9375rem", cursor: "pointer",
+              transition: "background .18s",
+            }}
+            onMouseEnter={e => (e.currentTarget.style.background = "var(--sf-accent-hover)")}
+            onMouseLeave={e => (e.currentTarget.style.background = "var(--sf-accent)")}
+          >
+            <CheckCircle2 size={16} aria-hidden />
+            {t("itin.confirm.btn")}
+          </button>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            <div style={{
+              display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+              minHeight: 44, borderRadius: 8,
+              background: "color-mix(in srgb, var(--sf-success) 14%, var(--sf-surface))",
+              border: "1.5px solid var(--sf-success)",
+              color: "var(--sf-success)", fontWeight: 700, fontSize: "0.875rem",
+            }}>
+              <CheckCircle2 size={15} aria-hidden />
+              {t("itin.confirm.done")}
+            </div>
+            <a
+              href="/dashboard"
+              style={{
+                display: "flex", alignItems: "center", justifyContent: "center",
+                gap: 6, minHeight: 38, borderRadius: 8,
+                border: "1px solid var(--sf-border)",
+                background: "var(--sf-surface-alt)",
+                color: "var(--sf-text)", fontWeight: 600, fontSize: "0.875rem",
+                textDecoration: "none", transition: "border-color .18s",
+              }}
+              onMouseEnter={e => ((e.currentTarget as HTMLElement).style.borderColor = "var(--sf-indigo)")}
+              onMouseLeave={e => ((e.currentTarget as HTMLElement).style.borderColor = "var(--sf-border)")}
+            >
+              {t("itin.confirm.goto")} →
+            </a>
+          </div>
+        )}
+
         <button className="sf-btn-primary" onClick={onRegen}>
           <RotateCcw size={15} aria-hidden />
           {t("itin.regen")}
@@ -1507,6 +1571,24 @@ export function Itinerary() {
 
   function handleEdit() {
     navigate("/trip");
+  }
+
+  function handleConfirm() {
+    if (!result || !trip) return;
+    // Push any existing ongoing trip to past trips before overwriting
+    try {
+      const prevRaw = localStorage.getItem("safarly_ongoing_trip");
+      if (prevRaw) {
+        const prev = JSON.parse(prevRaw);
+        const past = JSON.parse(localStorage.getItem("safarly_past_trips") ?? "[]");
+        if (!past.some((p: { confirmedAt: string }) => p.confirmedAt === prev.confirmedAt)) {
+          past.push(prev);
+          localStorage.setItem("safarly_past_trips", JSON.stringify(past));
+        }
+      }
+    } catch { /* */ }
+    const confirmed = { trip, itinerary: result, confirmedAt: new Date().toISOString() };
+    localStorage.setItem("safarly_ongoing_trip", JSON.stringify(confirmed));
   }
 
   /* ── Haversine-approximation distance (deg → arbitrary unit) ──── */
@@ -1735,6 +1817,7 @@ export function Itinerary() {
               t={t}
               onRegen={handleRegen}
               onEdit={handleEdit}
+              onConfirm={handleConfirm}
               language={language}
             />
           </aside>
