@@ -1,0 +1,52 @@
+My Replit project is showing this platform/database error:
+
+Failed to connect: sync error: Failed to initialize SQLite persistence
+
+I need you to fix this safely without breaking the app.
+
+Context:
+- Project name: Safarly
+- It is an imported Replit project
+- I may publish it later, but first I need the editor/preview to work
+- If the issue is with Replit’s internal persistence rather than my app code, do not make random code changes just to hide the error
+
+Tasks:
+1. Determine whether this error comes from:
+   - Replit internal SQLite persistence / workspace sync
+   - my app’s own SQLite usage
+   - Replit SQL database / DATABASE_URL configuration
+   - a broken migration, startup command, or missing secret
+
+2. Check the project in this order:
+   - run command
+   - shell/runtime errors
+   - package install errors
+   - environment variables and Secrets
+   - database connection code
+   - migrations / schema initialization
+   - publishing settings only if needed
+
+3. Fix the smallest issue first.
+4. Explain exactly what you changed and why.
+5. Do not refactor unrelated files.
+6. If this is a Replit platform issue and not fixable in code, say that clearly and give me:
+   - the safest workaround
+   - whether publishing is likely to fail too
+   - whether I should clone/remix/export the project
+   - whether I should contact Replit support
+
+Specific checks I want:
+- Search the codebase for sqlite, better-sqlite3, sqlite3, drizzle, prisma, knex, pg, postgres, DATABASE_URL
+- Tell me which database Safarly is actually using
+- If the app uses Replit SQL / Postgres, verify DATABASE_URL is present and valid
+- If the app uses local SQLite files, identify the exact file path
+- Check whether any startup code tries to write to a non-persistent or invalid path
+- Check whether migrations fail on startup
+- Verify Preview works before suggesting Publish
+
+Output format:
+- Root cause
+- Files checked
+- Exact fix applied
+- Remaining risk
+- How I verify the fix step by step
