@@ -2,10 +2,14 @@ import { createContext, useContext } from "react";
 
 export type Language = "en" | "ar" | "de" | "it" | "fr" | "ur" | "zh" | "ru";
 
+export type Direction = "ltr" | "rtl";
+
 export interface I18nContextType {
   language: Language;
   setLanguage: (lang: Language) => void;
   t: (key: string) => string;
+  /** Writing direction for the active language; mirrors document.documentElement.dir. */
+  dir: Direction;
 }
 
 // The context lives here so I18nProvider.tsx (component) and useTranslation

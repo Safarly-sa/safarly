@@ -340,8 +340,11 @@ function ProfileTab({ t }: { t: (k: string) => string }) {
 /* ──────────────────────────────────────────────────────────────────────
    TAB 2 · Trips (past / completed)
    ────────────────────────────────────────────────────────────────────── */
-function cityName(trip: TripSpec, language: string) {
-  const key = trip.city === "ai" ? (trip as Record<string,string>).resolvedCity ?? "riyadh" : (trip.city ?? "");
+// `resolvedCity` lives on ItineraryResult, not TripSpec — an "ai" trip only
+// learns its real city once the engine has run, so the itinerary must be passed
+// in. Reading it off `trip` silently fell back to "riyadh" for every AI trip.
+function cityName(trip: TripSpec, itinerary: ItineraryResult | undefined, language: string) {
+  const key = trip.city === "ai" ? (itinerary?.resolvedCity ?? "riyadh") : (trip.city ?? "");
   return language === "ar" ? (CITY_NAMES_AR[key] ?? key) : (CITY_NAMES_EN[key] ?? key);
 }
 
@@ -365,7 +368,7 @@ function PastTripCard({ confirmed, language, learnedIds, favorites, t }: {
   const totalStops = itinerary.days.reduce((s, d) => s + d.stops.length, 0);
   const gemCount   = Math.round((itinerary.hiddenGemShare ?? 0) * totalStops);
   const nights     = trip.dateStart && trip.dateEnd ? nightsBetween(trip.dateStart, trip.dateEnd) : 0;
-  const cn         = cityName(trip, language);
+  const cn         = cityName(trip, itinerary, language);
 
   const learnedPhrases = useMemo(() => learnedIds.map(id => PHRASES_MAP[id]).filter(Boolean) as Phrase[], [learnedIds]);
   const favDishes      = useMemo(() => favorites.map(id => DISHES_MAP[id]).filter(Boolean)   as Dish[],   [favorites]);
@@ -831,7 +834,7 @@ function OngoingTripTab({ confirmed, language, learnedIds, favorites, t }: {
 
   const { trip, itinerary } = confirmed;
   const locale = language === "ar" ? "ar-SA" : "en-GB";
-  const cn     = cityName(trip, language);
+  const cn     = cityName(trip, itinerary, language);
   const currentDay = itinerary.days[activeDay] ?? itinerary.days[0];
 
   return (
@@ -995,7 +998,7 @@ export function Dashboard() {
   }, []);
 
   const auth = getAuth();
-  const cn = ongoingTrip ? cityName(ongoingTrip.trip, language) : "";
+  const cn = ongoingTrip ? cityName(ongoingTrip.trip, ongoingTrip.itinerary, language) : "";
 
   /* If truly nothing at all — no auth, no data */
   const hasAnyData = !!(auth || profile || ongoingTrip || pastTrips.length || learnedIds.length || favorites.length);

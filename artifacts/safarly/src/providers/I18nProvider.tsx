@@ -7,7 +7,7 @@ import fr from "../locales/fr.json";
 import ur from "../locales/ur.json";
 import zh from "../locales/zh.json";
 import ru from "../locales/ru.json";
-import { I18nContext, type Language } from "./translation-context";
+import { I18nContext, type Direction, type Language } from "./translation-context";
 
 type Translations = Record<string, string>;
 
@@ -31,17 +31,19 @@ function detectLocale(): Language {
 export function I18nProvider({ children }: { children: React.ReactNode }) {
   const [language, setLanguage] = useState<Language>(detectLocale);
 
+  const dir: Direction = RTL_LANGS.has(language) ? "rtl" : "ltr";
+
   useEffect(() => {
     localStorage.setItem("safarly-lang", language);
     document.documentElement.lang = language;
-    document.documentElement.dir = RTL_LANGS.has(language) ? "rtl" : "ltr";
-  }, [language]);
+    document.documentElement.dir = dir;
+  }, [language, dir]);
 
   const t = (key: string): string =>
     LOCALES[language][key] ?? LOCALES["en"][key] ?? key;
 
   return (
-    <I18nContext.Provider value={{ language, setLanguage, t }}>
+    <I18nContext.Provider value={{ language, setLanguage, t, dir }}>
       {children}
     </I18nContext.Provider>
   );

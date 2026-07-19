@@ -392,6 +392,7 @@ export function Generating() {
       const timer = setTimeout(() => navigateRef.current("/itinerary"), 900);
       return () => clearTimeout(timer);
     }
+    return undefined;
   }, [anim.isComplete]);
 
   /* ── Progress 0–1 ────────────────────────────────────────────────── */

@@ -10,7 +10,7 @@
  */
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useLocation } from "wouter";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, type Variants } from "framer-motion";
 import { Check, ChevronLeft, ChevronRight, Search } from "lucide-react";
 import { useTranslation } from "@/providers/translation-context";
 import { usePageMeta } from "@/lib/usePageMeta";
@@ -238,10 +238,15 @@ export function Toggle({ checked, onChange, label }: { checked: boolean; onChang
 }
 
 /* ── Step animation variants ────────────────────────────────────────── */
-const slideVariants = {
+// Cubic-bezier control points must be 4-tuples, not number[], or framer-motion
+// rejects them as an Easing.
+const EASE_OUT: [number, number, number, number] = [0.16, 1, 0.3, 1];
+const EASE_IN: [number, number, number, number] = [0.4, 0, 1, 1];
+
+const slideVariants: Variants = {
   enter: (dir: number) => ({ x: dir * 48, opacity: 0 }),
-  center: { x: 0, opacity: 1, transition: { duration: 0.3, ease: [0.16, 1, 0.3, 1] } },
-  exit:  (dir: number) => ({ x: dir * -48, opacity: 0, transition: { duration: 0.2, ease: [0.4, 0, 1, 1] } }),
+  center: { x: 0, opacity: 1, transition: { duration: 0.3, ease: EASE_OUT } },
+  exit:  (dir: number) => ({ x: dir * -48, opacity: 0, transition: { duration: 0.2, ease: EASE_IN } }),
 };
 
 /* ── Progress bar ───────────────────────────────────────────────────── */

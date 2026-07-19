@@ -67,6 +67,9 @@ Routes are declared in `artifacts/safarly/src/App.tsx`.
 
 ## Gotchas
 
+- **`SpeechRecognition` is declared locally**, in
+  `artifacts/safarly/src/types/speech-recognition.d.ts` — TypeScript's `lib.dom`
+  does not ship it. Extend that file rather than reaching for `as any`.
 - **Two copies of the datasets exist.** `artifacts/safarly/src/data/*.json` is what
   the app imports; the top-level `data/*.json` is an older, differently-sized copy.
   Edit the one under `artifacts/safarly/`. Consider deleting the top-level copy.

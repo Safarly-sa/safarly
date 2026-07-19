@@ -439,8 +439,7 @@ export function Dialect() {
   }
 
   function handlePractice(phrase: Phrase) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const SR = (window as any).SpeechRecognition ?? (window as any).webkitSpeechRecognition;
+    const SR = window.SpeechRecognition ?? window.webkitSpeechRecognition;
 
     if (!SR) {
       // Browser doesn't support SpeechRecognition — fall back to manual confirmation
@@ -452,7 +451,7 @@ export function Dialect() {
     setPMap(m => ({ ...m, [phrase.id]: "recording" }));
 
     let handled = false;
-    const rec = new SR() as SpeechRecognition;
+    const rec = new SR();
     rec.lang = "ar-SA";
     rec.maxAlternatives = 5;
     rec.interimResults = false;

@@ -50,11 +50,8 @@ pnpm run build        # typecheck + build every package
 pnpm --filter @workspace/safarly run build    # build just the site
 ```
 
-> **Heads up:** `pnpm run typecheck` currently reports 8 pre-existing errors in
-> `artifacts/safarly` (see [CLAUDE.md](CLAUDE.md)). They predate the migration off
-> Replit and do **not** block the build, because Vite strips types via esbuild
-> rather than typechecking. Fixing them is tracked separately — don't be alarmed
-> when a fresh clone reports them.
+`pnpm run build` runs the typecheck first and should pass cleanly. If it doesn't,
+that's a real regression — please don't merge past it.
 
 ## Contributing
 
