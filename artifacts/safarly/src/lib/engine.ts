@@ -20,13 +20,15 @@ export interface TravelerProfile {
 }
 
 export interface TripSpec {
-  city: string;         // "riyadh" | "jeddah" | "alula"
-  dateStart: string;    // "YYYY-MM-DD"
+  city: string;           // "riyadh" | "jeddah" | "alula" | "al_khobar" | "abha" | "taif" | "madinah" | "ai"
+  dateStart: string;      // "YYYY-MM-DD"
   dateEnd: string;
-  budget: number;       // SAR per day
-  moods: string[];      // "relax" | "adventure" | "romantic" | "luxury" | "spiritual" | "family" | "photography" | "food"
-  goal: string;         // "culture" | "food" | "gems" | "family" | "budget" | "photo" | "spiritual"
-  customGoal: string;
+  budget: number;         // SAR per day
+  moods: string[];        // "relax" | "adventure" | "romantic" | "luxury" | "spiritual" | "family" | "photography" | "food"
+  goals?: string[];       // multi-select (up to 3), replaces goal
+  goal?: string;          // legacy single-select (backward compat)
+  customGoal?: string;
+  travelContext?: string; // "solo_woman" | "solo_man" | "couple" | "family" | "friends"
 }
 
 export interface Objectives {
@@ -101,8 +103,44 @@ export interface ItineraryResult {
   hiddenGemShare: number;
   cultureNoteCount: number;
   cityName: string;
+  resolvedCity: string;   // actual city key used (important when trip.city === "ai")
   budgetStatus: "ok" | "over";
   estimatedDailyAvg: number;
+}
+
+/* ── City → POI dataset mapping ─────────────────────────────────────── */
+// New cities without dedicated POI data fall back to the nearest dataset city.
+const CITY_POI_MAP: Record<string, string> = {
+  riyadh:    "riyadh",
+  jeddah:    "jeddah",
+  alula:     "alula",
+  al_khobar: "riyadh",  // Eastern Province — modern Saudi city, similar vibe
+  abha:      "alula",   // Nature-heavy highlands destination
+  taif:      "jeddah",  // Hejaz region
+  madinah:   "jeddah",  // Hejaz region, spiritual character similar to Jeddah data
+};
+
+const CITY_NAMES: Record<string, string> = {
+  riyadh:    "Riyadh",
+  jeddah:    "Jeddah",
+  alula:     "AlUla",
+  al_khobar: "Al Khobar",
+  abha:      "Abha",
+  taif:      "Taif",
+  madinah:   "Madinah",
+};
+
+/** Resolve "ai" city key to an actual city based on profile + trip context. */
+function resolveAiCity(profile: TravelerProfile, trip: TripSpec): string {
+  const moods     = trip.moods ?? [];
+  const interests = profile.interests ?? [];
+  const goals     = trip.goals ?? (trip.goal ? [trip.goal] : []);
+  if (moods.includes("spiritual") || goals.includes("spiritual")) return "madinah";
+  if (moods.includes("adventure") || interests.includes("adventure") || interests.includes("nature")) return "abha";
+  if (interests.includes("history") || goals.includes("culture")) return "alula";
+  if (moods.includes("food") || moods.includes("luxury") || moods.includes("romantic")) return "jeddah";
+  if (moods.includes("family") || profile.travelType === "family" || trip.travelContext === "family") return "riyadh";
+  return "riyadh";
 }
 
 /* ── Objective Mapping ──────────────────────────────────────────────── */
@@ -175,12 +213,24 @@ function computeObjectives(profile: TravelerProfile, trip: TripSpec): Objectives
     food: 0.30, family: 0.30, photography: 0.30,
   };
 
-  // Layer 1: goal
-  const goalWeights = GOAL_OBJECTIVES[trip.goal] ?? {};
-  let o: Objectives = { ...base, ...goalWeights };
+  // Layer 1: goals (multi-select blend; backward-compat with single goal string)
+  const goals = (trip.goals && trip.goals.length > 0)
+    ? trip.goals
+    : (trip.goal ? [trip.goal] : []);
+
+  let o: Objectives = { ...base };
+  if (goals.length > 0) {
+    const keys = ["culture", "budget", "hiddenGems", "food", "family", "photography"] as const;
+    const blended: Partial<Objectives> = {};
+    for (const key of keys) {
+      const sum = goals.reduce((acc, g) => acc + (GOAL_OBJECTIVES[g]?.[key] ?? base[key]), 0);
+      blended[key] = sum / goals.length;
+    }
+    o = { ...base, ...blended };
+  }
 
   // Layer 2: moods
-  for (const mood of trip.moods) {
+  for (const mood of trip.moods ?? []) {
     switch (mood) {
       case "adventure":    o.hiddenGems = clamp(o.hiddenGems + 0.15); break;
       case "romantic":     o.hiddenGems = clamp(o.hiddenGems + 0.15); o.photography = clamp(o.photography + 0.10); break;
@@ -205,8 +255,9 @@ function computeObjectives(profile: TravelerProfile, trip: TripSpec): Objectives
     }
   }
 
-  // Layer 4: travel type overrides
-  if (profile.travelType === "family") {
+  // Layer 4: travel context (trip-level) + travel type (profile legacy)
+  const travelContext = trip.travelContext ?? profile.travelType;
+  if (travelContext === "family") {
     o.family = Math.max(o.family, 0.80);
   }
 
@@ -388,27 +439,28 @@ export function generateItinerary(
   profile: TravelerProfile,
   trip: TripSpec,
 ): ItineraryResult {
-  const objectives = computeObjectives(profile, trip);
+  // Resolve AI city choice or map new cities to their POI backing dataset
+  const resolvedCity = trip.city === "ai"
+    ? resolveAiCity(profile, trip)
+    : trip.city;
+  const poiCity = CITY_POI_MAP[resolvedCity] ?? resolvedCity;
 
-  const cityPois   = (poisData  as POI[]).filter(p => p.city === trip.city);
+  const objectives    = computeObjectives(profile, trip);
+  const cityPois      = (poisData as POI[]).filter(p => p.city === poiCity);
   const userAllergens = profile.allergies ?? [];
-  const safeDishes = (dishesData as Dish[]).filter(d =>
+  const safeDishes    = (dishesData as Dish[]).filter(d =>
     !d.common_allergens.some(a => userAllergens.includes(a))
   );
 
   const days = buildDays(cityPois, safeDishes, objectives, trip, profile);
 
-  const allStops        = days.flatMap(d => d.stops);
-  const totalCostSar    = days.reduce((s, d) => s + d.dailyCostSar, 0);
-  const verifiedCount   = allStops.filter(s => !!s.poi.map_url).length;
-  const hiddenGemCount  = allStops.filter(s => s.poi.hidden_gem).length;
-  const hiddenGemShare  = allStops.length > 0 ? hiddenGemCount / allStops.length : 0;
+  const allStops         = days.flatMap(d => d.stops);
+  const totalCostSar     = days.reduce((s, d) => s + d.dailyCostSar, 0);
+  const verifiedCount    = allStops.filter(s => !!s.poi.map_url).length;
+  const hiddenGemCount   = allStops.filter(s => s.poi.hidden_gem).length;
+  const hiddenGemShare   = allStops.length > 0 ? hiddenGemCount / allStops.length : 0;
   const cultureNoteCount = allStops.filter(s => !!s.poi.culture_note).length;
   const estimatedDailyAvg = days.length > 0 ? totalCostSar / days.length : 0;
-
-  const CITY_NAMES: Record<string, string> = {
-    riyadh: "Riyadh", jeddah: "Jeddah", alula: "AlUla",
-  };
 
   return {
     days,
@@ -419,7 +471,8 @@ export function generateItinerary(
     candidateCount: cityPois.length,
     hiddenGemShare,
     cultureNoteCount,
-    cityName: CITY_NAMES[trip.city] ?? trip.city,
+    cityName: CITY_NAMES[resolvedCity] ?? resolvedCity,
+    resolvedCity,
     budgetStatus: estimatedDailyAvg > trip.budget ? "over" : "ok",
     estimatedDailyAvg,
   };

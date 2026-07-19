@@ -103,12 +103,18 @@ function buildAgentLines(
     .slice(0, 3);
 
   const cityNamesAr: Record<string, string> = {
-    riyadh: "الرياض",
-    jeddah: "جدة",
-    alula:  "العُلا",
+    riyadh:    "الرياض",
+    jeddah:    "جدة",
+    alula:     "العُلا",
+    al_khobar: "الخبر",
+    abha:      "أبها",
+    taif:      "الطائف",
+    madinah:   "المدينة المنورة",
   };
+  // For AI-chosen city, use the resolved city from the engine result
+  const effectiveCity = trip.city === "ai" ? (result.resolvedCity ?? "riyadh") : trip.city;
   const cityDisplay =
-    language === "ar" ? (cityNamesAr[trip.city] ?? trip.city) : result.cityName;
+    language === "ar" ? (cityNamesAr[effectiveCity] ?? effectiveCity) : result.cityName;
 
   const totalStops  = result.days.reduce((s, d) => s + d.stops.length, 0);
   const hiddenCount = Math.round(result.hiddenGemShare * totalStops);
