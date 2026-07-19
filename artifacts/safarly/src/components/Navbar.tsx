@@ -33,7 +33,7 @@ export function Navbar() {
     >
       <div className="max-w-7xl mx-auto px-6 lg:px-8 h-full flex items-center justify-between">
         {/* Brand */}
-        <Link href="/" className="flex items-center gap-2.5 group outline-none shrink-0">
+        <Link href="/" className="flex items-center gap-2.5 group shrink-0" aria-label="Safarly — Home">
           <img
             src={safarlyLogo}
             alt="Safarly"
@@ -61,7 +61,7 @@ export function Navbar() {
                 key={link.href}
                 href={link.href}
                 className={clsx(
-                  "text-sm font-medium transition-colors duration-200 outline-none whitespace-nowrap",
+                  "text-sm font-medium transition-colors duration-200 whitespace-nowrap rounded-sm",
                   isActive
                     ? "border-b-2 pb-px"
                     : "hover:text-white"
@@ -82,7 +82,7 @@ export function Navbar() {
         <div className="flex items-center gap-3 shrink-0">
           <button
             onClick={toggleTheme}
-            className="p-2 rounded-full transition-colors duration-200 outline-none focus-visible:ring-2 focus-visible:ring-[#00D8A4]"
+            className="p-2 rounded-full transition-colors duration-200"
             style={{ color: "#8A93A6" }}
             onMouseEnter={(e) => {
               (e.currentTarget as HTMLButtonElement).style.color = "#EDEFF3";
@@ -92,14 +92,14 @@ export function Navbar() {
               (e.currentTarget as HTMLButtonElement).style.color = "#8A93A6";
               (e.currentTarget as HTMLButtonElement).style.backgroundColor = "transparent";
             }}
-            aria-label="Toggle Theme"
+            aria-label={t("nav.toggle_theme")}
           >
             {theme === "dark" ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
           </button>
 
           <button
             onClick={toggleLanguage}
-            className="text-sm font-semibold tracking-wide transition-colors duration-200 outline-none focus-visible:ring-2 focus-visible:ring-[#00D8A4] px-3 py-1.5"
+            className="text-sm font-semibold tracking-wide transition-colors duration-200 px-3 py-1.5"
             style={{
               color: "#8A93A6",
               borderRadius: "10px",
@@ -113,6 +113,7 @@ export function Navbar() {
               (e.currentTarget as HTMLButtonElement).style.color = "#8A93A6";
               (e.currentTarget as HTMLButtonElement).style.borderColor = "#232C3D";
             }}
+            aria-label={t("nav.toggle_lang")}
           >
             {language === "en" ? "العربية" : "EN"}
           </button>

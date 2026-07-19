@@ -10,7 +10,7 @@
   --color-foreground: var(--sf-text);
   --color-border: var(--sf-border);
   --color-input: var(--sf-border);
-  --color-ring: var(--sf-accent);
+  --color-ring: var(--sf-indigo);
 
   --color-card: var(--sf-surface);
   --color-card-foreground: var(--sf-text);
@@ -66,6 +66,7 @@
   --sf-primary-soft: #E7E9EE;
   --sf-accent: #00D8A4;
   --sf-accent-hover: #00BD8F;
+  --sf-text-accent: var(--sf-accent-hover); /* AA-safer for text on light surfaces */
   --sf-indigo: #5C6CFF;
   --sf-indigo-hover: #4453E6;
   --sf-success: #16C98A;
@@ -86,6 +87,7 @@
   --sf-primary-soft: #141C2C;
   --sf-accent: #00D8A4;
   --sf-accent-hover: #33E6BC;
+  --sf-text-accent: var(--sf-accent); /* bright mint is fine on dark surfaces */
   --sf-indigo: #5C6CFF;
   --sf-indigo-hover: #7683FF;
   --sf-success: #33E0A0;
@@ -122,6 +124,23 @@ html[dir="rtl"] {
 @layer utilities {
   .pb-safe {
     padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+/* ── Global focus ring ────────────────────────────────────────────── */
+:focus-visible {
+  outline: 2px solid var(--sf-indigo);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ── Respect prefers-reduced-motion ──────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
 

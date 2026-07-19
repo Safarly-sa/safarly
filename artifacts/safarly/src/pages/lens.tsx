@@ -251,7 +251,7 @@ function DishModal({ dish, userAllergens, isFav, t, language, onClose, onAddFav 
           background: "var(--sf-surface-alt)", border: "none", borderRadius: "50%",
           width: 36, height: 36, display: "flex", alignItems: "center",
           justifyContent: "center", cursor: "pointer",
-        }} aria-label="Close">
+        }} aria-label={t("lens.modal.close")}>
           <X size={16} style={{ color: "var(--sf-text-muted)" }} />
         </button>
 
@@ -268,7 +268,7 @@ function DishModal({ dish, userAllergens, isFav, t, language, onClose, onAddFav 
           <span style={{
             display: "inline-block", padding: "4px 12px", borderRadius: 999,
             background: "color-mix(in srgb, var(--sf-accent) 12%, var(--sf-surface))",
-            color: "var(--sf-accent)", fontWeight: 800, fontSize: "0.9375rem",
+            color: "var(--sf-text-accent)", fontWeight: 800, fontSize: "0.9375rem",
           }}>
             {t("itin.summary.sar")} {dish.price_sar}
           </span>

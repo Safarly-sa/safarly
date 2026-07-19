@@ -119,7 +119,7 @@ function useItinStyles() {
 
       /* Maps link */
       .sf-maps-link {
-        color: var(--sf-accent);
+        color: var(--sf-text-accent);
         text-decoration: none;
         font-size: 0.75rem;
         font-weight: 600;

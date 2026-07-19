@@ -92,7 +92,7 @@ function useDialectStyles() {
         cursor: pointer; min-height: 40px; white-space: nowrap;
         transition: border-color 0.15s, color 0.15s;
       }
-      .sf-play-btn:hover { border-color: var(--sf-accent); color: var(--sf-accent); }
+      .sf-play-btn:hover { border-color: var(--sf-text-accent); color: var(--sf-text-accent); }
       .sf-play-btn:disabled { opacity: 0.4; cursor: not-allowed; }
       .sf-practice-btn {
         display: flex; align-items: center; justify-content: center;
@@ -116,7 +116,7 @@ function useDialectStyles() {
         display: inline-flex; align-items: center; gap: 4px;
         padding: 3px 10px; border-radius: 999px;
         background: color-mix(in srgb, var(--sf-accent) 14%, var(--sf-surface));
-        color: var(--sf-accent); font-size: 0.6875rem; font-weight: 700;
+        color: var(--sf-text-accent); font-size: 0.6875rem; font-weight: 700;
         border: 1px solid color-mix(in srgb, var(--sf-accent) 28%, transparent);
       }
     `;
@@ -158,7 +158,7 @@ function PhraseCard({ phrase, practicePhase, hasAudio, t, language, onPlay, onPr
       </div>
 
       {/* Transliteration */}
-      <div style={{ fontSize: "0.9375rem", color: "var(--sf-accent)", fontStyle: "italic", marginBottom: 4 }}>
+      <div style={{ fontSize: "0.9375rem", color: "var(--sf-text-accent)", fontStyle: "italic", marginBottom: 4 }}>
         {phrase.transliteration}
       </div>
 
@@ -187,7 +187,11 @@ function PhraseCard({ phrase, practicePhase, hasAudio, t, language, onPlay, onPr
           <p style={{ fontSize: "0.9375rem", fontWeight: 700, color: "var(--sf-indigo)", marginBottom: 12 }}>
             {t("dialect.now_say")}
           </p>
-          <button className="sf-confirm-btn" onClick={onConfirm}>
+          <button
+            className="sf-confirm-btn"
+            onClick={onConfirm}
+            aria-label={t("dialect.i_said")}
+          >
             <CheckCircle2 size={16} aria-hidden />
             {t("dialect.i_said")}
           </button>
@@ -202,6 +206,7 @@ function PhraseCard({ phrase, practicePhase, hasAudio, t, language, onPlay, onPr
             onClick={onPlay}
             disabled={isPlaying || !hasAudio}
             title={!hasAudio ? t("dialect.no_audio") : undefined}
+            aria-label={`${t("dialect.play")}: ${phrase.transliteration}`}
           >
             {hasAudio
               ? <Volume2 size={14} aria-hidden />
@@ -212,6 +217,7 @@ function PhraseCard({ phrase, practicePhase, hasAudio, t, language, onPlay, onPr
             className="sf-practice-btn"
             onClick={onPractice}
             disabled={isPlaying}
+            aria-label={`${t("dialect.practice")}: ${phrase.transliteration}`}
           >
             <Mic size={14} aria-hidden />
             {t("dialect.practice")}
@@ -225,6 +231,7 @@ function PhraseCard({ phrase, practicePhase, hasAudio, t, language, onPlay, onPr
           onClick={onPlay}
           disabled={!hasAudio}
           title={!hasAudio ? t("dialect.no_audio") : undefined}
+          aria-label={`${t("dialect.play")}: ${phrase.transliteration}`}
           style={{ marginTop: 4 }}
         >
           {hasAudio ? <Volume2 size={14} aria-hidden /> : <VolumeX size={14} aria-hidden />}

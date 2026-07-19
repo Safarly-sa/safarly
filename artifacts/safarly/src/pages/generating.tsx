@@ -487,7 +487,7 @@ export function Generating() {
             <p
               style={{
                 padding:       "16px 0 0",
-                color:         "var(--sf-accent)",
+                color:         "var(--sf-text-accent)",
                 fontWeight:    600,
                 fontSize:      "0.875rem",
                 letterSpacing: "0.01em",
