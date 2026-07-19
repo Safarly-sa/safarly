@@ -281,5 +281,26 @@
   "dash.profile.title": "ملفي",
   "dash.profile.allergies": "حساسيتي",
   "dash.profile.interests": "اهتماماتي",
-  "dash.profile.saved": "تم الحفظ"
+  "dash.profile.saved": "تم الحفظ",
+
+  "cascade.wrench_label": "عرض توضيحي: محاكاة إغلاق وجهة",
+  "cascade.closed_chip": "مغلق فجأة",
+  "cascade.replanned_badge": "أُعيد التخطيط",
+  "cascade.swapped": "أُزيل",
+  "cascade.panel.title": "جارٍ إعادة تخطيط يومك…",
+  "cascade.panel.thinking": "يفكر…",
+  "cascade.name.safety": "وكيل السلامة",
+  "cascade.name.discovery": "اكتشاف الوجهات",
+  "cascade.name.transport": "المواصلات",
+  "cascade.name.budget": "محسّن الميزانية",
+  "cascade.name.restaurant": "كاشف المطاعم",
+  "cascade.agent.safety": "تم رصد إغلاق: {poi}",
+  "cascade.agent.discovery": "مقترح: {alt1} · {alt2}",
+  "cascade.agent.transport": "إعادة ترتيب {n} محطات حسب المسافة",
+  "cascade.agent.budget": "الإجمالي اليومي الجديد: {cost} ريال",
+  "cascade.agent.restaurant": "تم تأجيل الغداء إلى {time}",
+  "cascade.agent.restaurant_no_shift": "اختيار القائمة محفوظ",
+  "cascade.toast.msg": "أُغلق {poi} — أُعيد تخطيط فترة ما بعد الظهر تلقائياً",
+  "cascade.toast.undo": "تراجع",
+  "cascade.toast.dismiss": "إخفاء الإشعار"
 }

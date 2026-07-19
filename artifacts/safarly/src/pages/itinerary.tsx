@@ -1,11 +1,39 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import {
   CheckCircle2, ExternalLink, MapPin, Utensils,
-  Wrench, RotateCcw, ArrowLeft, Moon, Gem, ArrowRight,
+  Wrench, RotateCcw, ArrowLeft, Moon, Gem,
+  AlertTriangle, ShieldAlert, Compass, Navigation, Wallet, X,
 } from "lucide-react";
 import { useTranslation } from "@/providers/translation-context";
 import { generateItinerary, type ItineraryResult, type ItineraryDay, type ItineraryStop, type ItineraryMeal, type TripSpec, type TravelerProfile, type Objectives } from "@/lib/engine";
+import poisRaw from "@/data/pois.json";
+
+/* ── POI type (mirrors pois.json shape) ────────────────────────────── */
+interface RawPoi {
+  id: string; name: string; city: string;
+  category: string; lat: number; lng: number;
+  price_range: number; duration_hrs: number;
+  hidden_gem: boolean; family_friendly: boolean;
+  accessible: boolean; indoor: boolean; best_slot: string;
+  map_url?: string; culture_note?: string;
+}
+const ALL_POIS = poisRaw as RawPoi[];
+
+/* ── Cascade state shape ────────────────────────────────────────────── */
+type CascadePhase = "idle" | "closed" | "feeding" | "replanned";
+interface CascadeInfo {
+  phase:          CascadePhase;
+  closedPoiId:    string;
+  closedPoiName:  string;
+  replacementPoiId: string;
+  altName1:       string;
+  altName2:       string;
+  newDailyCost:   number;
+  shiftedLunch:   string;
+  reorderedCount: number;
+  feedStep:       number; // 1-5 visible agent messages
+}
 
 /* ── Style injection ────────────────────────────────────────────────── */
 function useItinStyles() {
@@ -164,6 +192,40 @@ function useItinStyles() {
         border-color: var(--sf-text-muted);
         color: var(--sf-text);
       }
+
+      /* ── Cascade animations ─────────────────────────────────── */
+      @keyframes sf-shake {
+        0%,100% { transform: translateX(0); }
+        15%  { transform: translateX(-6px); }
+        30%  { transform: translateX( 6px); }
+        45%  { transform: translateX(-5px); }
+        60%  { transform: translateX( 5px); }
+        75%  { transform: translateX(-3px); }
+        90%  { transform: translateX( 3px); }
+      }
+      @keyframes sf-step-appear {
+        from { opacity: 0; transform: translateY(5px); }
+        to   { opacity: 1; transform: translateY(0);   }
+      }
+      @keyframes sf-new-stop-in {
+        from { opacity: 0; transform: translateY(-14px); }
+        to   { opacity: 1; transform: translateY(0);      }
+      }
+      @keyframes sf-toast-in {
+        from { opacity: 0; transform: translateY(12px); }
+        to   { opacity: 1; transform: translateY(0);    }
+      }
+      @keyframes sf-panel-in {
+        from { opacity: 0; transform: translateY(40px); }
+        to   { opacity: 1; transform: translateY(0);    }
+      }
+      @keyframes sf-error-pulse {
+        0%,100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--sf-warning) 40%, transparent); }
+        50%     { box-shadow: 0 0 0 6px color-mix(in srgb, var(--sf-warning) 0%, transparent); }
+      }
+
+      .sf-stop-shake { animation: sf-shake 0.55s cubic-bezier(.36,.07,.19,.97) both; }
+      .sf-new-stop   { animation: sf-new-stop-in 0.45s cubic-bezier(0.25,1,0.5,1) forwards; }
 
       /* Responsive layout */
       .sf-itin-layout {
@@ -402,24 +464,47 @@ function TimelineNode({ color }: { color: string }) {
 
 function StopCard({
   stop, t, language,
+  cascadePhase, closedPoiId, replacementPoiId,
 }: {
   stop: ItineraryStop;
   t: (k: string) => string;
   language: string;
+  cascadePhase?: CascadePhase;
+  closedPoiId?: string | null;
+  replacementPoiId?: string | null;
 }) {
   const { poi } = stop;
 
-  return (
-    <div style={{ display: "flex", gap: "12px", alignItems: "flex-start", paddingBlock: "6px" }}>
-      <TimelineNode color={SLOT_NODE_COLOR[stop.slot] ?? "var(--sf-accent)"} />
+  const isClosed      = !!closedPoiId && poi.id === closedPoiId &&
+                        (cascadePhase === "closed" || cascadePhase === "feeding");
+  const isReplacement = !!replacementPoiId && poi.id === replacementPoiId &&
+                        cascadePhase === "replanned";
 
-      <div className="sf-stop-card" style={{ flex: 1, minWidth: 0 }}>
+  return (
+    <div
+      style={{ display: "flex", gap: "12px", alignItems: "flex-start", paddingBlock: "6px" }}
+      className={isReplacement ? "sf-new-stop" : ""}
+    >
+      <TimelineNode color={
+        isClosed ? "var(--sf-warning)" : (SLOT_NODE_COLOR[stop.slot] ?? "var(--sf-accent)")
+      } />
+
+      <div
+        className={`sf-stop-card${isClosed ? " sf-stop-shake" : ""}`}
+        style={{
+          flex: 1, minWidth: 0,
+          ...(isClosed ? {
+            borderColor: "color-mix(in srgb, var(--sf-warning) 45%, transparent)",
+            boxShadow:   "0 0 0 2px color-mix(in srgb, var(--sf-warning) 15%, transparent)",
+          } : {}),
+        }}
+      >
         {/* Time row */}
         <div style={{
-          fontSize:    "0.6875rem",
-          fontWeight:  600,
-          color:       "var(--sf-text-muted)",
-          marginBottom: "6px",
+          fontSize:      "0.6875rem",
+          fontWeight:    600,
+          color:         "var(--sf-text-muted)",
+          marginBottom:  "6px",
           letterSpacing: "0.04em",
         }}>
           {stop.startTime} – {stop.endTime}
@@ -428,11 +513,11 @@ function StopCard({
         {/* Name */}
         <div style={{ marginBottom: "8px" }}>
           <span style={{
-            fontSize:    "1rem",
-            fontWeight:  700,
-            color:       "var(--sf-text)",
-            lineHeight:  1.3,
-            display:     "block",
+            fontSize:   "1rem",
+            fontWeight: 700,
+            color:      isClosed ? "var(--sf-warning)" : "var(--sf-text)",
+            lineHeight: 1.3,
+            display:    "block",
           }}>
             {poi.name}
           </span>
@@ -440,22 +525,24 @@ function StopCard({
 
         {/* Badges row */}
         <div style={{
-          display:     "flex",
-          flexWrap:    "wrap",
-          gap:         "6px",
+          display:      "flex",
+          flexWrap:     "wrap",
+          gap:          "6px",
           marginBottom: "10px",
         }}>
           <CategoryChip category={poi.category} t={t} />
-          <VerifiedBadge t={t} />
-          {poi.hidden_gem && <HiddenGemPip t={t} />}
+          {isClosed      && <ErrorChip label={t("cascade.closed_chip")} />}
+          {isReplacement && <ReplanBadge label={t("cascade.replanned_badge")} />}
+          {!isClosed && !isReplacement && <VerifiedBadge t={t} />}
+          {poi.hidden_gem && !isClosed && <HiddenGemPip t={t} />}
         </div>
 
         {/* Culture note */}
-        {poi.culture_note && (
+        {poi.culture_note && !isClosed && (
           <p style={{
-            fontSize:    "0.8125rem",
-            color:       "var(--sf-text-muted)",
-            lineHeight:  1.65,
+            fontSize:     "0.8125rem",
+            color:        "var(--sf-text-muted)",
+            lineHeight:   1.65,
             marginBottom: "12px",
           }}>
             {poi.culture_note}
@@ -463,7 +550,7 @@ function StopCard({
         )}
 
         {/* Maps link */}
-        {poi.map_url && (
+        {poi.map_url && !isClosed && (
           <a
             href={poi.map_url}
             target="_blank"
@@ -577,13 +664,347 @@ function MealCard({
   );
 }
 
+/* ── Cascade sub-components ─────────────────────────────────────────── */
+
+function ErrorChip({ label }: { label: string }) {
+  return (
+    <span style={{
+      display:     "inline-flex",
+      alignItems:  "center",
+      gap:         "4px",
+      padding:     "3px 8px",
+      borderRadius:"999px",
+      fontSize:    "0.6875rem",
+      fontWeight:  700,
+      color:       "var(--sf-warning)",
+      background:  "color-mix(in srgb, var(--sf-warning) 14%, var(--sf-surface))",
+      border:      "1px solid color-mix(in srgb, var(--sf-warning) 35%, transparent)",
+      flexShrink:  0,
+      animation:   "sf-error-pulse 1.4s ease-in-out infinite",
+    }}>
+      <AlertTriangle size={10} aria-hidden />
+      {label}
+    </span>
+  );
+}
+
+function ReplanBadge({ label }: { label: string }) {
+  return (
+    <span style={{
+      display:     "inline-flex",
+      alignItems:  "center",
+      gap:         "4px",
+      padding:     "3px 8px",
+      borderRadius:"999px",
+      fontSize:    "0.6875rem",
+      fontWeight:  700,
+      color:       "var(--sf-accent)",
+      background:  "color-mix(in srgb, var(--sf-accent) 14%, var(--sf-surface))",
+      border:      "1px solid color-mix(in srgb, var(--sf-accent) 35%, transparent)",
+      flexShrink:  0,
+    }}>
+      ✦ {label}
+    </span>
+  );
+}
+
+function SwappedStub({ poiName, t, language }: { poiName: string; t: (k:string)=>string; language: string }) {
+  return (
+    <div style={{
+      display:   "flex",
+      gap:       "12px",
+      alignItems:"flex-start",
+      paddingBlock: "4px",
+      opacity:   0.55,
+    }}>
+      <div style={{
+        width:"24px", height:"24px", borderRadius:"50%",
+        background:"var(--sf-surface-alt)",
+        border:"2px dashed var(--sf-border)",
+        flexShrink:0, zIndex:1,
+        boxShadow:"0 0 0 3px var(--sf-bg)",
+      }} aria-hidden />
+      <div style={{
+        flex:1, minWidth:0,
+        background:"var(--sf-surface-alt)",
+        border:"1px dashed var(--sf-border)",
+        borderRadius:"10px",
+        padding:"10px 14px",
+        display:"flex", alignItems:"center", gap:"8px",
+      }}>
+        <X size={13} style={{color:"var(--sf-warning)", flexShrink:0}} aria-hidden />
+        <span style={{
+          fontSize:"0.8125rem", fontWeight:600,
+          color:"var(--sf-text-muted)",
+          textDecoration:"line-through",
+        }}>
+          {poiName}
+        </span>
+        <span style={{
+          fontSize:"0.6875rem", fontWeight:700,
+          color:"var(--sf-warning)",
+          marginInlineStart:"auto", whiteSpace:"nowrap",
+        }}>
+          {t("cascade.swapped")}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+/* ── Agent feed panel ───────────────────────────────────────────────── */
+interface AgentFeedPanelProps {
+  info: CascadeInfo;
+  t:   (k: string) => string;
+  language: string;
+}
+
+const AGENT_STEPS = [
+  {
+    key: "safety",
+    iconEl: ShieldAlert,
+    nameKey: "cascade.name.safety",
+    msgFn: (info: CascadeInfo, t: (k:string)=>string) =>
+      t("cascade.agent.safety").replace("{poi}", info.closedPoiName),
+  },
+  {
+    key: "discovery",
+    iconEl: Compass,
+    nameKey: "cascade.name.discovery",
+    msgFn: (info: CascadeInfo, t: (k:string)=>string) =>
+      t("cascade.agent.discovery").replace("{alt1}", info.altName1).replace("{alt2}", info.altName2),
+  },
+  {
+    key: "transport",
+    iconEl: Navigation,
+    nameKey: "cascade.name.transport",
+    msgFn: (info: CascadeInfo, t: (k:string)=>string) =>
+      t("cascade.agent.transport").replace("{n}", String(info.reorderedCount)),
+  },
+  {
+    key: "budget",
+    iconEl: Wallet,
+    nameKey: "cascade.name.budget",
+    msgFn: (info: CascadeInfo, t: (k:string)=>string) =>
+      t("cascade.agent.budget").replace("{cost}", String(info.newDailyCost)),
+  },
+  {
+    key: "restaurant",
+    iconEl: Utensils,
+    nameKey: "cascade.name.restaurant",
+    msgFn: (info: CascadeInfo, t: (k:string)=>string) =>
+      info.shiftedLunch
+        ? t("cascade.agent.restaurant").replace("{time}", info.shiftedLunch)
+        : t("cascade.agent.restaurant_no_shift"),
+  },
+] as const;
+
+function AgentFeedPanel({ info, t, language }: AgentFeedPanelProps) {
+  const visible = AGENT_STEPS.slice(0, info.feedStep);
+  return (
+    <div
+      role="status"
+      aria-label={t("cascade.panel.title")}
+      style={{
+        position:     "fixed",
+        insetBlockEnd:  "90px",
+        insetInlineStart: "50%",
+        transform:    "translateX(-50%)",
+        width:        "min(420px, calc(100vw - 32px))",
+        background:   "var(--sf-surface)",
+        border:       "1px solid var(--sf-border)",
+        borderRadius: "16px",
+        padding:      "16px",
+        zIndex:       200,
+        boxShadow:    "0 8px 40px rgba(0,0,0,0.28)",
+        animation:    "sf-panel-in 0.35s cubic-bezier(0.25,1,0.5,1) both",
+      }}
+    >
+      {/* Header */}
+      <div style={{
+        display:"flex", alignItems:"center", gap:"8px",
+        marginBottom:"12px",
+        paddingBottom:"10px",
+        borderBottom:"1px solid var(--sf-border)",
+      }}>
+        <span style={{
+          width:"8px", height:"8px", borderRadius:"50%",
+          background:"var(--sf-accent)",
+          boxShadow:"0 0 6px var(--sf-accent)",
+          flexShrink:0,
+          animation: info.phase === "feeding" ? "sf-error-pulse 1s ease-in-out infinite" : "none",
+        }} aria-hidden />
+        <span style={{
+          fontSize:"0.8125rem", fontWeight:700, color:"var(--sf-text)",
+        }}>
+          {t("cascade.panel.title")}
+        </span>
+        <span style={{
+          marginInlineStart:"auto",
+          fontSize:"0.6875rem", fontWeight:600,
+          color:"var(--sf-text-muted)",
+        }}>
+          {info.feedStep} / {AGENT_STEPS.length}
+        </span>
+      </div>
+
+      {/* Agent rows */}
+      <div style={{ display:"flex", flexDirection:"column", gap:"8px" }}>
+        {visible.map((step, i) => {
+          const Icon = step.iconEl;
+          return (
+            <div
+              key={step.key}
+              style={{
+                display:"flex", alignItems:"flex-start", gap:"10px",
+                animation:"sf-step-appear 0.3s ease both",
+                animationDelay:`${i * 0.04}s`,
+              }}
+            >
+              <div style={{
+                width:"28px", height:"28px", borderRadius:"8px",
+                background:"color-mix(in srgb, var(--sf-indigo) 14%, var(--sf-surface-alt))",
+                display:"flex", alignItems:"center", justifyContent:"center",
+                flexShrink:0,
+              }}>
+                <Icon size={13} style={{ color:"var(--sf-indigo)" }} aria-hidden />
+              </div>
+              <div style={{ flex:1, minWidth:0 }}>
+                <div style={{ fontSize:"0.6875rem", fontWeight:700, color:"var(--sf-text-muted)", letterSpacing:"0.04em" }}>
+                  {t(step.nameKey)}
+                </div>
+                <div style={{ fontSize:"0.8125rem", color:"var(--sf-text)", lineHeight:1.4, marginTop:"1px", wordBreak:"break-word" }}>
+                  {step.msgFn(info, t)}
+                </div>
+              </div>
+              <span style={{
+                fontSize:"0.625rem", fontWeight:700,
+                color:"var(--sf-accent)",
+                background:"color-mix(in srgb, var(--sf-accent) 12%, var(--sf-surface))",
+                padding:"2px 6px", borderRadius:"999px",
+                alignSelf:"center", flexShrink:0,
+              }}>
+                ✓
+              </span>
+            </div>
+          );
+        })}
+        {/* Typing indicator for next pending step */}
+        {info.feedStep < AGENT_STEPS.length && (
+          <div style={{ display:"flex", alignItems:"center", gap:"6px", paddingInlineStart:"4px", opacity:0.5 }}>
+            {[0,1,2].map(i => (
+              <span key={i} style={{
+                width:"5px", height:"5px", borderRadius:"50%",
+                background:"var(--sf-text-muted)",
+                display:"inline-block",
+                animation:`sf-shake 1.2s ease-in-out ${i*0.2}s infinite`,
+              }} aria-hidden />
+            ))}
+            <span style={{ fontSize:"0.6875rem", color:"var(--sf-text-muted)" }}>
+              {t("cascade.panel.thinking")}
+            </span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ── Replan toast ───────────────────────────────────────────────────── */
+function ReplanToast({
+  poiName, t, language, onUndo, onDismiss,
+}: {
+  poiName: string;
+  t: (k:string) => string;
+  language: string;
+  onUndo: () => void;
+  onDismiss: () => void;
+}) {
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      aria-atomic="true"
+      style={{
+        position:     "fixed",
+        insetBlockEnd:  "100px",
+        insetInlineStart: "50%",
+        transform:    "translateX(-50%)",
+        width:        "min(380px, calc(100vw - 32px))",
+        background:   "var(--sf-surface)",
+        border:       "1px solid var(--sf-border)",
+        borderRadius: "14px",
+        padding:      "14px 16px",
+        zIndex:       300,
+        boxShadow:    "0 8px 40px rgba(0,0,0,0.32)",
+        animation:    "sf-toast-in 0.3s cubic-bezier(0.25,1,0.5,1) both",
+        display:      "flex",
+        alignItems:   "center",
+        gap:          "10px",
+      }}
+    >
+      <div style={{
+        width:"32px", height:"32px", borderRadius:"50%",
+        background:"color-mix(in srgb, var(--sf-accent) 14%, var(--sf-surface-alt))",
+        display:"flex", alignItems:"center", justifyContent:"center",
+        flexShrink:0,
+      }}>
+        <CheckCircle2 size={16} style={{ color:"var(--sf-accent)" }} aria-hidden />
+      </div>
+      <p style={{ flex:1, fontSize:"0.8125rem", color:"var(--sf-text)", lineHeight:1.4, margin:0 }}>
+        {t("cascade.toast.msg").replace("{poi}", poiName)}
+      </p>
+      <div style={{ display:"flex", gap:"6px", flexShrink:0 }}>
+        <button
+          onClick={onUndo}
+          style={{
+            padding:      "7px 12px",
+            borderRadius: "8px",
+            border:       "1px solid var(--sf-border)",
+            background:   "transparent",
+            color:        "var(--sf-text)",
+            fontSize:     "0.75rem",
+            fontWeight:   700,
+            cursor:       "pointer",
+            minHeight:    "36px",
+            whiteSpace:   "nowrap",
+          }}
+        >
+          {t("cascade.toast.undo")}
+        </button>
+        <button
+          onClick={onDismiss}
+          aria-label={t("cascade.toast.dismiss")}
+          style={{
+            width:"32px", height:"32px",
+            borderRadius:"50%",
+            border:"none",
+            background:"var(--sf-surface-alt)",
+            color:"var(--sf-text-muted)",
+            display:"flex", alignItems:"center", justifyContent:"center",
+            cursor:"pointer",
+            flexShrink:0,
+          }}
+        >
+          <X size={14} aria-hidden />
+        </button>
+      </div>
+    </div>
+  );
+}
+
 /* ── Day timeline ───────────────────────────────────────────────────── */
 function DayTimeline({
   day, t, language,
+  cascadePhase, closedPoiId, closedPoiName, replacementPoiId,
 }: {
   day: ItineraryDay;
   t: (k: string) => string;
   language: string;
+  cascadePhase?: CascadePhase;
+  closedPoiId?: string | null;
+  closedPoiName?: string;
+  replacementPoiId?: string | null;
 }) {
   // Build interleaved items: prayer markers + stops + meals in time order
   type Item =
@@ -592,20 +1013,18 @@ function DayTimeline({
 
   const items: Item[] = [];
 
-  // Sort stops by their start time
+  // In "replanned" phase the day already has the replacement stop.
+  // In "closed"/"feeding" the original day is shown (closed stop still visible with error).
   const sortedStops = [...day.stops].sort((a, b) =>
     a.startTime.localeCompare(b.startTime)
   );
 
-  // Sorted meals
   const sortedMeals = [...day.meals].sort((a, b) =>
     a.estimatedTime.localeCompare(b.estimatedTime)
   );
 
-  // Merge stops and meals in time order
   let mealIdx = 0;
   for (const stop of sortedStops) {
-    // Insert meals that come before this stop's startTime
     while (
       mealIdx < sortedMeals.length &&
       sortedMeals[mealIdx].estimatedTime < stop.startTime
@@ -615,7 +1034,6 @@ function DayTimeline({
     }
     items.push({ kind: "stop", stop, prayer: stop.prayerGapBefore });
   }
-  // Remaining meals after last stop
   while (mealIdx < sortedMeals.length) {
     items.push({ kind: "meal", meal: sortedMeals[mealIdx] });
     mealIdx++;
@@ -623,14 +1041,26 @@ function DayTimeline({
 
   return (
     <div className="sf-tl-track" style={{ paddingBlock: "8px" }}>
+      {/* Swapped stub — shown at top of track after replanning */}
+      {cascadePhase === "replanned" && closedPoiId && closedPoiName && (
+        <SwappedStub poiName={closedPoiName} t={t} language={language} />
+      )}
+
       {items.map((item, idx) => {
         if (item.kind === "stop") {
           return (
-            <div key={`stop-${idx}`}>
+            <div key={`stop-${item.stop.poi.id}-${idx}`}>
               {item.prayer && (
                 <PrayerMarker time={item.prayer} language={language} />
               )}
-              <StopCard stop={item.stop} t={t} language={language} />
+              <StopCard
+                stop={item.stop}
+                t={t}
+                language={language}
+                cascadePhase={cascadePhase}
+                closedPoiId={closedPoiId}
+                replacementPoiId={replacementPoiId}
+              />
             </div>
           );
         }
@@ -863,13 +1293,23 @@ function TripSummary({
 
 /* ── Main page ──────────────────────────────────────────────────────── */
 export function Itinerary() {
-  const [, navigate]   = useLocation();
+  const [, navigate]    = useLocation();
   const { t, language } = useTranslation();
   useItinStyles();
 
   const [result, setResult] = useState<ItineraryResult | null>(null);
   const [trip,   setTrip]   = useState<TripSpec | null>(null);
   const [activeDay, setActiveDay] = useState(0);
+
+  /* ── Cascade state ──────────────────────────────────────────────── */
+  const [cascade, setCascade] = useState<CascadeInfo>({
+    phase: "idle", closedPoiId: "", closedPoiName: "",
+    replacementPoiId: "", altName1: "", altName2: "",
+    newDailyCost: 0, shiftedLunch: "", reorderedCount: 0, feedStep: 0,
+  });
+  const [showToast,  setShowToast]  = useState(false);
+  const [preRestore, setPreRestore] = useState<ItineraryResult | null>(null);
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     const raw = localStorage.getItem("safarly_itinerary");
@@ -890,6 +1330,161 @@ export function Itinerary() {
 
   function handleEdit() {
     navigate("/trip");
+  }
+
+  /* ── Haversine-approximation distance (deg → arbitrary unit) ──── */
+  function ptDist(a: { lat: number; lng: number }, b: { lat: number; lng: number }) {
+    return Math.sqrt((a.lat - b.lat) ** 2 + (a.lng - b.lng) ** 2);
+  }
+
+  /* ── Wrench / cascade handler ───────────────────────────────────── */
+  function handleWrench() {
+    if (!result || !trip) return;
+    if (cascade.phase !== "idle") return; // already running
+
+    const day = result.days[activeDay] ?? result.days[0];
+
+    // Find target: midday+indoor stop, then any midday, then 2nd stop, then 1st
+    const target =
+      day.stops.find(s => s.slot === "midday" && (s.poi as unknown as RawPoi).indoor) ??
+      day.stops.find(s => s.slot === "midday") ??
+      day.stops[1] ??
+      day.stops[0];
+
+    if (!target) return;
+
+    // IDs already in itinerary (across all days)
+    const usedIds = new Set(result.days.flatMap(d => d.stops.map(s => s.poi.id)));
+
+    // Candidate alternatives: same city, unused, same best_slot first
+    const sameCityUnused = ALL_POIS.filter(
+      p => p.city === trip.city && !usedIds.has(p.id) && p.id !== target.poi.id
+    );
+    const slotMatch = sameCityUnused.filter(
+      p => p.best_slot === (target.poi as unknown as RawPoi).best_slot
+    );
+    const pool = slotMatch.length >= 2 ? slotMatch : sameCityUnused;
+    if (pool.length === 0) return;
+
+    const chosen  = pool[0];
+    const altName1 = pool[0]?.name ?? "";
+    const altName2 = pool[1]?.name ?? pool[0]?.name ?? "";
+
+    // Build replacement stop (same time slot as target)
+    const replacementStop: ItineraryStop = {
+      poi:            chosen as unknown as ItineraryStop["poi"],
+      slot:           target.slot,
+      startTime:      target.startTime,
+      endTime:        target.endTime,
+      prayerGapBefore: target.prayerGapBefore,
+    };
+
+    // Remaining stops (excluding closed) + replacement → nearest-neighbour reorder
+    const remaining = day.stops.filter(s => s.poi.id !== target.poi.id);
+    const allNew    = [...remaining, replacementStop];
+
+    const reordered: ItineraryStop[] = [];
+    const pool2 = [...allNew];
+    const firstStop = pool2.find(s => s.slot === "morning") ?? pool2[0];
+    reordered.push(firstStop);
+    pool2.splice(pool2.indexOf(firstStop), 1);
+    while (pool2.length > 0) {
+      const last = reordered[reordered.length - 1];
+      let minD = Infinity, minI = 0;
+      pool2.forEach((s, i) => {
+        const d = ptDist(
+          s.poi as unknown as { lat: number; lng: number },
+          last.poi as unknown as { lat: number; lng: number }
+        );
+        if (d < minD) { minD = d; minI = i; }
+      });
+      reordered.push(pool2[minI]);
+      pool2.splice(minI, 1);
+    }
+
+    // Shift lunch by 30 minutes
+    const lunch = day.meals.find(m => m.type === "lunch");
+    let shiftedLunch = "";
+    if (lunch) {
+      const [h, m] = lunch.estimatedTime.split(":").map(Number);
+      const total  = h * 60 + m + 30;
+      shiftedLunch = `${String(Math.floor(total / 60)).padStart(2, "0")}:${String(total % 60).padStart(2, "0")}`;
+    }
+
+    // New cost: subtract closed poi price, add replacement price
+    const newDailyCost = Math.max(
+      0,
+      day.dailyCostSar
+        - ((target.poi as unknown as RawPoi).price_range ?? 0)
+        + (chosen.price_range ?? 0)
+    );
+
+    // Modified day (used when phase → replanned)
+    const modifiedMeals = shiftedLunch && lunch
+      ? day.meals.map(m => m.type === "lunch" ? { ...m, estimatedTime: shiftedLunch } : m)
+      : day.meals;
+
+    const modifiedDay: ItineraryDay = {
+      ...day,
+      stops:       reordered,
+      meals:       modifiedMeals,
+      dailyCostSar: newDailyCost,
+    };
+
+    const modifiedResult: ItineraryResult = {
+      ...result,
+      days: result.days.map((d, i) => i === activeDay ? modifiedDay : d),
+    };
+
+    // Save pre-cascade for Undo
+    setPreRestore(result);
+
+    // Start cascade animation sequence
+    const base: Omit<CascadeInfo, "phase" | "feedStep"> = {
+      closedPoiId:     target.poi.id,
+      closedPoiName:   target.poi.name,
+      replacementPoiId: chosen.id,
+      altName1,
+      altName2,
+      newDailyCost,
+      shiftedLunch,
+      reorderedCount:  reordered.length,
+    };
+
+    setCascade({ ...base, phase: "closed",  feedStep: 0 });
+
+    // Feed panel appears after short shake
+    setTimeout(() => setCascade(c => ({ ...c, phase: "feeding" })), 800);
+
+    // Reveal each agent step
+    const stepDelays = [800, 1800, 3000, 4200, 5400];
+    stepDelays.forEach((delay, i) => {
+      setTimeout(() => setCascade(c => ({ ...c, feedStep: i + 1 })), delay);
+    });
+
+    // Switch to replanned + commit result + show toast
+    setTimeout(() => {
+      setCascade(c => ({ ...c, phase: "replanned" }));
+      setResult(modifiedResult);
+      setShowToast(true);
+      if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+      toastTimerRef.current = setTimeout(() => setShowToast(false), 5000);
+    }, 6600);
+  }
+
+  /* ── Undo handler ───────────────────────────────────────────────── */
+  function handleUndo() {
+    if (!preRestore) return;
+    setResult(preRestore);
+    setPreRestore(null);
+    setCascade(c => ({ ...c, phase: "idle", feedStep: 0 }));
+    setShowToast(false);
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+  }
+
+  function handleDismissToast() {
+    setShowToast(false);
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
   }
 
   /* ── Empty / loading state ──────────────────────────────────────────── */
@@ -1046,7 +1641,15 @@ export function Itinerary() {
 
             {/* Timeline */}
             {currentDay && (
-              <DayTimeline day={currentDay} t={t} language={language} />
+              <DayTimeline
+                day={currentDay}
+                t={t}
+                language={language}
+                cascadePhase={cascade.phase}
+                closedPoiId={cascade.closedPoiId || null}
+                closedPoiName={cascade.closedPoiName}
+                replacementPoiId={cascade.replacementPoiId || null}
+              />
             )}
           </div>
         </div>
@@ -1056,11 +1659,28 @@ export function Itinerary() {
       <button
         id="demo-closure"
         className="sf-wrench-btn"
-        aria-label="Demo closure (coming soon)"
-        onClick={() => {/* Phase 3 */}}
+        aria-label={t("cascade.wrench_label")}
+        onClick={handleWrench}
+        style={cascade.phase !== "idle" ? { opacity: 0.35, pointerEvents: "none" } : {}}
       >
         <Wrench size={17} aria-hidden />
       </button>
+
+      {/* ── Agent feed panel (closed + feeding phases) ───────────────── */}
+      {(cascade.phase === "closed" || cascade.phase === "feeding") && (
+        <AgentFeedPanel info={cascade} t={t} language={language} />
+      )}
+
+      {/* ── Replan toast ─────────────────────────────────────────────── */}
+      {showToast && (
+        <ReplanToast
+          poiName={cascade.closedPoiName}
+          t={t}
+          language={language}
+          onUndo={handleUndo}
+          onDismiss={handleDismissToast}
+        />
+      )}
     </div>
   );
 }

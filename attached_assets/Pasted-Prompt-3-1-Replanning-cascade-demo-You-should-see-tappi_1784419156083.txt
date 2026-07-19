@@ -1,0 +1,84 @@
+Prompt 3.1 — Replanning cascade demo
+You should see: tapping the hidden wrench: closure alert → agent feed with two real alternative venues →
+animated timeline re-order → one summary toast with Undo. Rehearse it five times.
+You are a senior front-end engineer specializing in animation and state management; choreography and
+timing are your craft. Use only the existing design tokens. Wire the replanning cascade demo on /itinerary.
+Touch only this feature.
+When the wrench icon button (id "demo-closure") is tapped:
+1. Mark the current day's midday-indoor stop with an --error alert chip "Closed unexpectedly" and a soft
+shake animation.
+2. Slide in a compact agent feed panel showing, over ~5 seconds, each agent's REAL recomputation:
+Safety Agent detects the closure; Destination Discovery proposes 2 alternatives actually selected from
+unused pois.json entries of the same city with matching best_time (show both names); Transportation
+reorders the remaining stops by distance; Budget posts the new daily total; Restaurant shifts lunch 30
+minutes.
+3. The timeline then visibly re-orders with smooth FLIP animations - the closed stop fades to a collapsed
+"swapped" card and the chosen alternative slides into its slot with a mint "replanned" badge.
+4. A single toast notification summarizes: "Museum closed - your afternoon was replanned automatically"
+with an Undo button that restores the previous itinerary (keep the pre-cascade state in memory). The toast
+auto-dismisses after 5 seconds, uses aria-live="polite" so screen readers announce it, and never steals
+focus.
+All computed from the real data - no hardcoded venue names in the cascade code.
+MOBILE & ARABIC (mandatory for this page): build mobile-first and verify at 390px before desktop -
+controls thumb-reachable above the bottom nav, 44px+ touch targets, no horizontal scroll, works in BOTH
+Night Sky and Light Grid themes with no hardcoded colors. Add every new user-facing string to
+/locales/en.json AND /locales/ar.json with native-quality Arabic, and verify the page mirrors correctly in
+RTL (logical properties only - no raw ml-/mr-).
+Prompt 3.2 — Mobile experience perfection pass
+You should see: app-like mobile feel: sticky thumb-reachable CTAs, swipeable day tabs, correct keyboards, 60fps
+animations, flawless at 360-430px in both themes.
+You are a mobile-UX perfectionist who has shipped top-rated consumer apps; anything that feels nonnative on a phone offends you. Mobile experience perfection pass. Do not add features and do not change
+the design tokens. Goal: the site must feel like a polished native app on a phone.
+1. Audit EVERY page at 360, 390 and 430 px: no horizontal scroll, no clipped text, no cramped cards;
+primary CTAs sticky or thumb-reachable above the bottom nav; bottom nav never overlaps content (safearea-inset respected on notched phones).
+2. Touch: every tappable element at least 44x44px with an instant :active state; swipe navigation between
+itinerary day tabs; pull-down refresh feel on the dashboard (visual only).
+3. Performance on mobile: skeleton loaders instead of blank screens, images lazy-loaded and sized,
+animations at 60fps (transform/opacity only), initial JS kept lean.
+4. Forms on mobile: correct input types and keyboards (numeric for budget, etc.), no zoom-on-focus
+(16px+ inputs), date picker usable with a thumb.
+5. Then a desktop sweep at 768 / 1024 / 1440 px and a full pass in BOTH Night Sky and Light Grid - no
+hardcoded colors anywhere.
+List every file you changed and why, briefly.
+Prompt 3.3 — Arabic & RTL completeness audit
+You should see: the entire site usable natively in Arabic: 100% translated, correctly mirrored RTL, Arabic
+typography right, mixed EN/AR content stable.
+You are a native-Arabic-speaking localization engineer who has shipped RTL products used by millions;
+half-mirrored layouts are your pet hate. Arabic and RTL completeness audit. Do not change the design
+tokens.
+1. Switch the site to Arabic and walk EVERY page: no untranslated strings anywhere (check
+/locales/ar.json covers 100% of en.json keys - list any gaps and fill them with native-quality Arabic, not
+literal machine phrasing).
+2. RTL mirroring: navbar and bottom nav order, chevrons/arrows/back buttons flipped, itinerary timeline
+on the correct side, progress bars and step indicators running right-to-left, chips and badges aligned
+correctly, toasts sliding from the correct edge. Fix any raw ml-/mr-/pl-/pr- utilities by replacing them with
+logical properties (ms-/me-/ps-/pe-).
+3. Typography in Arabic: IBM Plex Sans Arabic applied everywhere including buttons and inputs, lineheight adjusted for Arabic script, numerals consistent (use Western numerals for prices and times).
+4. Mixed-direction content: English POI names and SAR prices inside Arabic sentences must not break
+layout (use dir="auto" or isolation where needed).
+5. Accessibility in both languages: focus rings (--indigo), aria-labels localized, prefers-reduced-motion
+respected, AA contrast in both themes - pay special attention to neon mint on white in light mode (use --
+accent-hover for text-sized mint on light backgrounds).
+Test the full journey in Arabic at 390px in both themes. List every file changed.
+Prompt 3.4 — SEO, meta & performance
+You should see: proper titles, a night-sky OG share image, a branded 404, and a clean production build.
+You are a web-performance and SEO engineer who treats Lighthouse scores as a competitive sport. SEO,
+meta and performance. No visual changes.
+1. Per-page titles and descriptions (e.g. "Safarly - Plan your Saudi journey"); Open Graph + Twitter card
+tags with a generated 1200x630 OG image on the night-sky background with the glowing logo mark and
+headline; favicon from the logo; site name "Safarly - Travel Companion".
+2. next/font for the three fonts (no layout shift), lazy-load below-the-fold landing sections, compress the
+demo menu images.
+3. A custom branded 404 page (night sky, the logo mark, "This road leads nowhere - let's replan" with a
+home CTA).
+4. Run a production build; fix any build errors or warnings; report the wins you made.
+Prompt 3.5 — Final QA sweep
+You should see: a numbered defect list; approve fixes selectively.
+Pre-launch QA. Act as a meticulous QA engineer and test the complete user journey end-to-end in the
+preview: landing -> onboarding (with nut allergy + solo woman + Hidden Gems goal) -> trip to AlUla 3
+days -> generating feed -> itinerary (verify: no repeated POIs, no nut dishes, prayer markers present,
+maps links open) -> lens upload -> dialect practice -> dashboard totals -> replanning cascade -> undo.
+Then repeat the journey in ARABIC (RTL) end-to-end, then in Light Grid mode, and finally at 390px width
+in both languages.
+Report every defect found as a numbered list with file/page, severity, and a one-line fix description - but
+FIX only the ones I approve. Do not refactor anything proactively.

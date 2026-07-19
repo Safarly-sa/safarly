@@ -281,5 +281,26 @@
   "dash.profile.title": "Profile",
   "dash.profile.allergies": "My Allergies",
   "dash.profile.interests": "My Interests",
-  "dash.profile.saved": "Saved"
+  "dash.profile.saved": "Saved",
+
+  "cascade.wrench_label": "Demo: simulate venue closure",
+  "cascade.closed_chip": "Closed unexpectedly",
+  "cascade.replanned_badge": "Replanned",
+  "cascade.swapped": "removed",
+  "cascade.panel.title": "Replanning your day…",
+  "cascade.panel.thinking": "thinking…",
+  "cascade.name.safety": "Safety Agent",
+  "cascade.name.discovery": "Destination Discovery",
+  "cascade.name.transport": "Transportation",
+  "cascade.name.budget": "Budget Optimizer",
+  "cascade.name.restaurant": "Restaurant Scout",
+  "cascade.agent.safety": "Closure detected: {poi}",
+  "cascade.agent.discovery": "Proposing: {alt1} · {alt2}",
+  "cascade.agent.transport": "Reordering {n} stops by distance",
+  "cascade.agent.budget": "New daily total: SAR {cost}",
+  "cascade.agent.restaurant": "Lunch shifted to {time}",
+  "cascade.agent.restaurant_no_shift": "Menu selection preserved",
+  "cascade.toast.msg": "{poi} closed — your afternoon was replanned automatically",
+  "cascade.toast.undo": "Undo",
+  "cascade.toast.dismiss": "Dismiss notification"
 }
