@@ -41,6 +41,7 @@ currently a skeleton with only a `/health` route; the frontend does not use it.
 | `lib/api-spec/openapi.yaml` | API contract — drives codegen |
 | `lib/api-client-react/`, `lib/api-zod/` | **Generated** — don't hand-edit |
 | `docs/notes/` | Architecture notes on specific flows |
+| `docs/research-data/` | Original research corpus — not used at runtime |
 
 ## Common commands
 

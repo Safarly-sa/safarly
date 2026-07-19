@@ -46,8 +46,8 @@ pnpm run build                                  # typecheck + build all packages
 | `lib/db/src/schema/` | Drizzle schema — source of truth for DB |
 | `lib/api-spec/openapi.yaml` | API contract — source of truth, drives codegen |
 | `lib/api-client-react/`, `lib/api-zod/` | **Generated** from the spec — don't hand-edit |
-| `data/` | Older top-level copies of the JSON datasets (see Gotchas) |
 | `docs/notes/` | Architecture notes on specific flows |
+| `docs/research-data/` | Original research corpus — unused at runtime (see Gotchas) |
 
 Routes are declared in `artifacts/safarly/src/App.tsx`.
 
@@ -70,9 +70,11 @@ Routes are declared in `artifacts/safarly/src/App.tsx`.
 - **`SpeechRecognition` is declared locally**, in
   `artifacts/safarly/src/types/speech-recognition.d.ts` — TypeScript's `lib.dom`
   does not ship it. Extend that file rather than reaching for `as any`.
-- **Two copies of the datasets exist.** `artifacts/safarly/src/data/*.json` is what
-  the app imports; the top-level `data/*.json` is an older, differently-sized copy.
-  Edit the one under `artifacts/safarly/`. Consider deleting the top-level copy.
+- **Two dataset families exist, and they are not duplicates.**
+  `artifacts/safarly/src/data/*.json` is what the app imports — edit that one.
+  `docs/research-data/*.json` is the original research corpus: different ids,
+  different schema, and it holds Arabic POI names and dish origin stories that
+  the live data lacks. Unused at runtime, worth mining. See its README.
 - `lib/api-client-react/` and `lib/api-zod/` are **generated**. Change
   `lib/api-spec/openapi.yaml` and re-run codegen instead of editing them.
 - `pnpm-workspace.yaml` sets `minimumReleaseAge: 1440` — a brand-new npm release

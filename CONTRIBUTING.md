@@ -66,9 +66,11 @@ from `document.documentElement.dir` and not by comparing language codes yourself
 - **`lib/api-client-react/` and `lib/api-zod/` are generated.** Edit
   `lib/api-spec/openapi.yaml` and re-run
   `pnpm --filter @workspace/api-spec run codegen` instead.
-- **There are two copies of the JSON datasets.** The app reads
-  `artifacts/safarly/src/data/`. The top-level `data/` is an older leftover — don't
-  edit it expecting the site to change.
+- **There are two dataset families, and they are not copies of each other.** The
+  app reads `artifacts/safarly/src/data/` — edit that. `docs/research-data/` is the
+  original research corpus with a different schema; editing it changes nothing on
+  the site, but don't delete it either (it holds Arabic POI names and dish origin
+  stories the live data lacks).
 - **A brand-new npm release won't install for its first 24 hours.** That's
   `minimumReleaseAge` in `pnpm-workspace.yaml`, a deliberate supply-chain defense.
   Don't disable it; add a targeted exception if you genuinely need one.
