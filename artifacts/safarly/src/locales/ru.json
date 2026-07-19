@@ -306,6 +306,7 @@
   "dialect.now_say": "Теперь произнесите",
   "dialect.i_said": "Я сказал ✓",
   "dialect.learned": "Выучено",
+  "dialect.playing": "Воспроизведение…",
   "dialect.no_audio": "Аудио недоступно в этом браузере",
   "dialect.no_trip": "Запланируйте поездку, чтобы загрузить диалект вашего направления.",
   "dialect.sit.greeting": "Приветствие",

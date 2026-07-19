@@ -316,6 +316,7 @@
   "dialect.now_say": "Now you say it",
   "dialect.i_said": "I said it ✓",
   "dialect.learned": "Learned",
+  "dialect.playing": "Playing…",
   "dialect.no_audio": "Audio unavailable in this browser",
   "dialect.no_trip": "Plan a trip to load the dialect for your destination.",
   "dialect.sit.greeting": "Greeting",

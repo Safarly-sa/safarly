@@ -306,6 +306,7 @@
   "dialect.now_say": "Dites-le maintenant",
   "dialect.i_said": "Je l'ai dit ✓",
   "dialect.learned": "Appris",
+  "dialect.playing": "Lecture…",
   "dialect.no_audio": "Audio non disponible dans ce navigateur",
   "dialect.no_trip": "Planifiez un voyage pour charger le dialecte de votre destination.",
   "dialect.sit.greeting": "Salutation",

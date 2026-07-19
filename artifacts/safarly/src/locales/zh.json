@@ -306,6 +306,7 @@
   "dialect.now_say": "现在您来说",
   "dialect.i_said": "我说了 ✓",
   "dialect.learned": "已学会",
+  "dialect.playing": "播放中…",
   "dialect.no_audio": "此浏览器不支持音频",
   "dialect.no_trip": "规划旅程以加载目的地方言。",
   "dialect.sit.greeting": "问候",

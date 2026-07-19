@@ -137,6 +137,8 @@ function PhraseCard({ phrase, practicePhase, hasAudio, t, language, onPlay, onPr
   const isListening = practicePhase === "listening";
   const isPlaying   = practicePhase === "playing";
 
+  const listenLabel = isPlaying ? t("dialect.playing") : t("dialect.play");
+
   return (
     <div className={`sf-phrase-card${isLearned ? " learned-card" : ""}`}>
       {/* Top row: situation tag + learned badge */}
@@ -209,12 +211,13 @@ function PhraseCard({ phrase, practicePhase, hasAudio, t, language, onPlay, onPr
             onClick={onPlay}
             disabled={isPlaying || !hasAudio}
             title={!hasAudio ? t("dialect.no_audio") : undefined}
-            aria-label={`${t("dialect.play")}: ${phrase.transliteration}`}
+            aria-label={`${listenLabel}: ${phrase.transliteration}`}
+            style={isPlaying ? { borderColor: "var(--sf-text-accent)", color: "var(--sf-text-accent)" } : undefined}
           >
             {hasAudio
-              ? <Volume2 size={14} aria-hidden />
+              ? <Volume2 size={14} aria-hidden style={isPlaying ? { animation: "sf-pulse-ring 1s ease-out infinite" } : undefined} />
               : <VolumeX size={14} aria-hidden />}
-            {t("dialect.play")}
+            {listenLabel}
           </button>
           <button
             className="sf-practice-btn"
@@ -232,13 +235,13 @@ function PhraseCard({ phrase, practicePhase, hasAudio, t, language, onPlay, onPr
         <button
           className="sf-play-btn"
           onClick={onPlay}
-          disabled={!hasAudio}
+          disabled={isPlaying || !hasAudio}
           title={!hasAudio ? t("dialect.no_audio") : undefined}
-          aria-label={`${t("dialect.play")}: ${phrase.transliteration}`}
-          style={{ marginTop: 4 }}
+          aria-label={`${listenLabel}: ${phrase.transliteration}`}
+          style={{ marginTop: 4, ...(isPlaying ? { borderColor: "var(--sf-text-accent)", color: "var(--sf-text-accent)" } : {}) }}
         >
           {hasAudio ? <Volume2 size={14} aria-hidden /> : <VolumeX size={14} aria-hidden />}
-          {t("dialect.play")}
+          {listenLabel}
         </button>
       )}
     </div>
@@ -269,15 +272,9 @@ export function Dialect() {
     } catch { /* default najdi */ }
   }, []);
 
-  /* ── Check for Arabic voice ───────────────────────────────────────── */
+  /* ── Check for SpeechSynthesis API availability ──────────────────── */
   useEffect(() => {
-    function check() {
-      const voices = window.speechSynthesis?.getVoices?.() ?? [];
-      setHasAudio(voices.some(v => v.lang.startsWith("ar")));
-    }
-    check();
-    window.speechSynthesis?.addEventListener?.("voiceschanged", check);
-    return () => window.speechSynthesis?.removeEventListener?.("voiceschanged", check);
+    setHasAudio(typeof window !== "undefined" && "speechSynthesis" in window);
   }, []);
 
   /* ── Pre-populate practice map from learned IDs ───────────────────── */
@@ -323,16 +320,18 @@ export function Dialect() {
   function speak(arabic: string): Promise<void> {
     return new Promise(resolve => {
       try {
+        window.speechSynthesis.cancel(); // stop anything already playing
         const u = new SpeechSynthesisUtterance(arabic);
         u.lang = "ar-SA"; u.rate = 0.8;
+        // Prefer an explicit Arabic voice if the browser has one
         const voices = window.speechSynthesis.getVoices();
         const arVoice = voices.find(v => v.lang.startsWith("ar"));
         if (arVoice) u.voice = arVoice;
         u.onend = () => resolve();
         u.onerror = () => resolve();
         window.speechSynthesis.speak(u);
-        // Safety timeout
-        setTimeout(resolve, 4000);
+        // Safety timeout – some browsers never fire onend
+        setTimeout(resolve, 5000);
       } catch { resolve(); }
     });
   }

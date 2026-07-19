@@ -316,6 +316,7 @@
   "dialect.now_say": "قلها الآن",
   "dialect.i_said": "قلتها ✓",
   "dialect.learned": "متعلَّمة",
+  "dialect.playing": "جارٍ التشغيل…",
   "dialect.no_audio": "الصوت غير متاح في هذا المتصفح",
   "dialect.no_trip": "خطط لرحلة لتظهر اللهجة المناسبة لوجهتك.",
   "dialect.sit.greeting": "التحية",
