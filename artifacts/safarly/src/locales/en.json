@@ -60,7 +60,6 @@
   "page.dialect.desc": "Practice local phrases with our interactive AI tutor.",
   "page.dashboard.title": "Dashboard",
   "page.dashboard.desc": "Your mission control for past and future adventures.",
-
   "ob.title": "Build Your Travel Profile",
   "ob.subtitle": "Help us craft your perfect Saudi journey",
   "ob.step_label": "Step {n} of 4",
@@ -112,7 +111,6 @@
   "ob.back": "Back",
   "ob.next": "Next",
   "ob.finish": "Let's Plan My Trip",
-
   "trip.title": "Plan Your Journey",
   "trip.subtitle": "Tell us where, when, and how you want to travel",
   "trip.context.label": "Who Are You Travelling With?",
@@ -183,11 +181,9 @@
   "trip.custom_goal.placeholder": "Describe your dream trip in your own words…",
   "trip.cta": "Generate My Journey",
   "trip.hint": "Select who you're travelling with, a destination, and your travel dates to continue",
-
   "gen.title": "Crafting Your Itinerary",
   "gen.subtitle": "8 AI agents are building your perfect journey",
   "gen.ready": "Itinerary ready — opening your journey…",
-
   "gen.agent.goal": "Goal Analyzer",
   "gen.agent.discovery": "Destination Discovery",
   "gen.agent.restaurant": "Restaurant Scout",
@@ -196,14 +192,12 @@
   "gen.agent.safety": "Safety Monitor",
   "gen.agent.sustainability": "Sustainability Tracker",
   "gen.agent.verification": "Verification Engine",
-
   "gen.obj.culture": "culture",
   "gen.obj.budget": "budget",
   "gen.obj.hiddenGems": "hidden gems",
   "gen.obj.food": "food",
   "gen.obj.family": "family",
   "gen.obj.photography": "photography",
-
   "gen.msg.goal": "Top objectives:",
   "gen.msg.discovery.pre": "candidates found in",
   "gen.msg.restaurant.pre": "allergen-safe dishes selected",
@@ -216,7 +210,6 @@
   "gen.msg.sustainability.stops": "stops",
   "gen.msg.verification.pre": "All",
   "gen.msg.verification.end": "stops carry verified map links ✓",
-
   "itin.day": "Day {n}",
   "itin.verified": "Verified",
   "itin.maps": "Open in Maps",
@@ -229,7 +222,6 @@
   "itin.no_data": "No itinerary found.",
   "itin.go_plan": "Plan a trip",
   "itin.days_summary": "{n}-day journey in {city}",
-
   "itin.summary.title": "Trip Summary",
   "itin.summary.objectives": "Journey Objectives",
   "itin.summary.cost": "Estimated Cost",
@@ -239,7 +231,6 @@
   "itin.summary.over": "over budget",
   "itin.summary.ok": "within budget",
   "itin.summary.sar": "SAR",
-
   "itin.cat.heritage": "Heritage",
   "itin.cat.museum": "Museum",
   "itin.cat.nature": "Nature",
@@ -250,7 +241,6 @@
   "itin.cat.food": "Food",
   "itin.cat.modern": "Modern",
   "itin.cat.entertainment": "Entertainment",
-
   "lens.subtitle": "Point your camera at a menu to scan dishes and spot allergens",
   "lens.upload.title": "Scan a Menu",
   "lens.upload.desc": "Drag & drop a menu photo here, or tap to choose",
@@ -272,35 +262,29 @@
   "lens.rescan": "Scan Another",
   "lens.try_demo": "Try a demo menu",
   "lens.demo_hint": "Try with a demo menu",
-
   "lens.tab.menu": "Menu",
   "lens.tab.place": "Place",
   "lens.tab.signage": "Signage",
-
   "lens.upload.title.place": "Identify a Landmark",
   "lens.upload.desc.place": "Drag & drop a photo of a landmark or building",
   "lens.upload.tap.place": "Choose a photo",
   "lens.upload.title.signage": "Read a Sign",
   "lens.upload.desc.signage": "Drag & drop a photo of a road sign or direction board",
   "lens.upload.tap.signage": "Choose a photo",
-
   "lens.scanning.menu": "Scanning menu…",
   "lens.scanning.place": "Identifying landmark…",
   "lens.scanning.signage": "Reading signs…",
-
   "lens.place.title": "Place Identified",
   "lens.place.unknown": "Unknown Landmark",
   "lens.place.unknown.note": "Tap to learn more about this location.",
   "lens.place.culture": "Cultural Note",
   "lens.place.maps": "Open in Maps",
   "lens.place.rescan": "Scan Another Place",
-
   "lens.sign.title": "Signs Detected",
   "lens.sign.copy": "Copy all text",
   "lens.sign.copied": "Copied!",
   "lens.sign.km": "km",
   "lens.sign.rescan": "Scan Another Sign",
-
   "dialect.title": "Dialect Tutor",
   "dialect.najdi_name": "Najdi",
   "dialect.hijazi_name": "Hijazi",
@@ -326,7 +310,6 @@
   "dialect.sit.bargaining": "Bargaining",
   "dialect.sit.thanks": "Thanks",
   "dialect.sit.directions": "Directions",
-
   "dash.title": "Dashboard",
   "dash.welcome": "Welcome back",
   "dash.city": "in {city}",
@@ -353,18 +336,15 @@
   "dash.profile.allergies": "My Allergies",
   "dash.profile.interests": "My Interests",
   "dash.profile.saved": "Saved",
-
   "dash.tab.profile": "Profile",
   "dash.tab.trips": "Trips",
   "dash.tab.ongoing": "Ongoing Trip",
-
   "dash.ongoing.empty.title": "No active trip",
   "dash.ongoing.empty.desc": "Generate a trip and tap \"Confirm Trip\" on your itinerary to pin it here.",
   "dash.ongoing.empty.cta": "Plan a Trip",
   "dash.ongoing.spend": "Estimated Spend",
   "dash.ongoing.objectives": "Trip Objectives",
   "dash.ongoing.day": "Day {n}",
-
   "dash.trips.empty.title": "No past trips yet",
   "dash.trips.empty.desc": "Once you confirm a new trip your previous one moves here.",
   "dash.trips.stops": "{n} stops",
@@ -372,11 +352,9 @@
   "dash.trips.nights": "{n} nights",
   "dash.trips.phrases": "Phrases learned",
   "dash.trips.food": "Saved dishes",
-
   "itin.confirm.btn": "Confirm Trip",
   "itin.confirm.done": "Trip Confirmed ✓",
   "itin.confirm.goto": "View in Dashboard",
-
   "cascade.wrench_label": "Demo: simulate venue closure",
   "cascade.closed_chip": "Closed unexpectedly",
   "cascade.replanned_badge": "Replanned",
@@ -397,7 +375,6 @@
   "cascade.toast.msg": "{poi} closed — your afternoon was replanned automatically",
   "cascade.toast.undo": "Undo",
   "cascade.toast.dismiss": "Dismiss notification",
-
   "poi.ruh_masmak.name": "Al-Masmak Fortress",
   "poi.ruh_masmak.culture": "18th-century mudbrick citadel; the gate still bears the spearhead from the 1902 battle that reunified Saudi Arabia.",
   "poi.ruh_natmuseum.name": "National Museum of Saudi Arabia",
@@ -461,7 +438,6 @@
   "poi.ula_visitor_center.name": "AlUla Visitor Experience Centre",
   "poi.ula_dedan.name": "Dedan Ancient Kingdom Ruins",
   "poi.ula_dedan.culture": "Seat of the Lihyan kingdom; towering lion statues once flanked the entrance to the royal tombs.",
-
   "dish.kabsa_chicken.name": "Kabsa (Chicken)",
   "dish.kabsa_chicken.desc": "Fragrant saffron-spiced rice with slow-braised chicken, dried fruits, and fried onions — the national dish.",
   "dish.kabsa_lamb.name": "Kabsa (Lamb)",
@@ -501,5 +477,7 @@
   "dish.shish_tawook.name": "Shish Tawook Platter",
   "dish.shish_tawook.desc": "Yoghurt-marinated chicken cubes charcoal-grilled on skewers; served with garlic sauce and flatbread.",
   "dish.kunafa.name": "Kunafa bil Jibneh (Cheese Pastry)",
-  "dish.kunafa.desc": "Crispy shredded pastry over white cheese soaked in rose-water syrup — the Middle East's favourite dessert."
+  "dish.kunafa.desc": "Crispy shredded pastry over white cheese soaked in rose-water syrup — the Middle East's favourite dessert.",
+  "dash.photos.of": "Photos of",
+  "dash.photos.counter": "Photo {n} of 3"
 }

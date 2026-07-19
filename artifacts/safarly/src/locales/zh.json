@@ -60,7 +60,6 @@
   "page.dialect.desc": "与我们的互动 AI 导师练习当地短语。",
   "page.dashboard.title": "仪表板",
   "page.dashboard.desc": "您过去和未来探险的控制中心。",
-
   "ob.title": "创建旅行档案",
   "ob.subtitle": "帮助我们为您打造完美的沙特之旅",
   "ob.step_label": "第 {n} 步，共 4 步",
@@ -112,7 +111,6 @@
   "ob.back": "返回",
   "ob.next": "下一步",
   "ob.finish": "规划我的旅程",
-
   "trip.title": "规划您的旅程",
   "trip.subtitle": "告诉我们您想去哪里、何时以及如何旅行",
   "trip.context.label": "和谁一起旅行？",
@@ -183,7 +181,6 @@
   "trip.custom_goal.placeholder": "用您自己的话描述梦想旅行…",
   "trip.cta": "生成我的旅程",
   "trip.hint": "选择旅伴、目的地和日期以继续",
-
   "gen.title": "正在生成您的行程",
   "gen.subtitle": "8 个 AI 代理正在构建您的完美旅程",
   "gen.ready": "行程已就绪 — 正在打开您的旅程…",
@@ -213,7 +210,6 @@
   "gen.msg.sustainability.stops": "个站点",
   "gen.msg.verification.pre": "所有",
   "gen.msg.verification.end": "个站点均有已验证地图链接 ✓",
-
   "itin.day": "第 {n} 天",
   "itin.verified": "已验证",
   "itin.maps": "在地图中打开",
@@ -245,7 +241,6 @@
   "itin.cat.food": "美食",
   "itin.cat.modern": "现代",
   "itin.cat.entertainment": "娱乐",
-
   "lens.subtitle": "将相机对准菜单，扫描菜品并检测过敏原",
   "lens.upload.title": "扫描菜单",
   "lens.upload.desc": "拖放菜单照片到此处，或点击选择",
@@ -290,7 +285,6 @@
   "lens.sign.copied": "已复制！",
   "lens.sign.km": "公里",
   "lens.sign.rescan": "扫描另一个标志",
-
   "dialect.title": "方言导师",
   "dialect.najdi_name": "纳季德方言",
   "dialect.hijazi_name": "汉志方言",
@@ -316,7 +310,6 @@
   "dialect.sit.bargaining": "讨价还价",
   "dialect.sit.thanks": "致谢",
   "dialect.sit.directions": "问路",
-
   "dash.title": "仪表板",
   "dash.welcome": "欢迎回来",
   "dash.city": "在 {city}",
@@ -359,11 +352,9 @@
   "dash.trips.nights": "{n} 晚",
   "dash.trips.phrases": "已学短语",
   "dash.trips.food": "已保存菜品",
-
   "itin.confirm.btn": "确认旅程",
   "itin.confirm.done": "旅程已确认 ✓",
   "itin.confirm.goto": "在仪表板中查看",
-
   "cascade.wrench_label": "演示：模拟场馆关闭",
   "cascade.closed_chip": "意外关闭",
   "cascade.replanned_badge": "已重新规划",
@@ -384,7 +375,6 @@
   "cascade.toast.msg": "{poi} 已关闭 — 您的下午已自动重新规划",
   "cascade.toast.undo": "撤销",
   "cascade.toast.dismiss": "关闭通知",
-
   "poi.ruh_masmak.name": "马斯马克城堡",
   "poi.ruh_natmuseum.name": "沙特阿拉伯国家博物馆",
   "poi.ruh_diriyah.name": "德里耶联合国教科文组织遗址",
@@ -427,7 +417,6 @@
   "poi.ula_jabal_ahmar.name": "红山（贾巴尔阿赫马尔）",
   "poi.ula_visitor_center.name": "阿尔乌拉游客体验中心",
   "poi.ula_dedan.name": "代丹古国遗址",
-
   "dish.kabsa_chicken.name": "鸡肉卡布萨",
   "dish.kabsa_lamb.name": "羊肉卡布萨",
   "dish.jareesh.name": "贾里什（碎麦粥）",
@@ -448,7 +437,6 @@
   "dish.fish_mandi.name": "吉达风格鱼肉满地",
   "dish.shish_tawook.name": "雪什塔吾克烤鸡串",
   "dish.kunafa.name": "库纳法芝士甜饼",
-
   "poi.ruh_masmak.culture": "18世纪泥砖城堡；城门上至今仍留有1902年统一沙特阿拉伯之战的矛头。",
   "poi.ruh_natmuseum.culture": "八个展厅，记录阿拉伯半岛从史前时代到现代王国建立的历史。",
   "poi.ruh_diriyah.culture": "沙特国家的发源地，联合国教科文组织世界遗产地；15世纪的泥砖宫殿和清真寺。",
@@ -470,7 +458,6 @@
   "poi.ula_oasis.culture": "古老的法拉杰灌溉系统至今仍浇灌着200万株枣椰树；部分树木树龄超过1000年。",
   "poi.ula_farms.culture": "70多种有名称的椰枣品种；农民仍用与祖先相同的攀爬技术手工采收。",
   "poi.ula_dedan.culture": "利赫扬王国的首府；高耸的狮子雕像曾经矗立在王陵入口两侧。",
-
   "dish.kabsa_chicken.desc": "香气浓郁的藏红花米饭配慢炖鸡肉、干果和炸洋葱——国菜。",
   "dish.kabsa_lamb.desc": "整块羊肉配阿拉伯香料混合物在长粒米饭上慢炖而成。",
   "dish.jareesh.desc": "碎麦慢炖成奶油状粥，配羊肉，顶部撒上酥脆洋葱和酥油。",
@@ -490,5 +477,7 @@
   "dish.kabsa_dinner.desc": "晚餐版卡布萨，加入干杏、杏仁和金黄葡萄干。",
   "dish.fish_mandi.desc": "红海鱼以曼迪风格在木炭上熏制，加入姜黄和海湾香料。",
   "dish.shish_tawook.desc": "酸奶腌制鸡肉块串烤在炭火上；配大蒜酱和薄饼上桌。",
-  "dish.kunafa.desc": "酥脆细丝酥皮覆盖在玫瑰露糖浆浸泡的白奶酪上——中东最受欢迎的甜点。"
+  "dish.kunafa.desc": "酥脆细丝酥皮覆盖在玫瑰露糖浆浸泡的白奶酪上——中东最受欢迎的甜点。",
+  "dash.photos.of": "照片",
+  "dash.photos.counter": "第 {n} 张，共 3 张"
 }

@@ -60,7 +60,6 @@
   "page.dialect.desc": "مارس العبارات المحلية مع معلمنا التفاعلي.",
   "page.dashboard.title": "لوحة التحكم",
   "page.dashboard.desc": "مركز التحكم الخاص بمغامراتك السابقة والقادمة.",
-
   "ob.title": "أنشئ ملفك الشخصي",
   "ob.subtitle": "أخبرنا عن نفسك لنصمم رحلتك السعودية المثالية",
   "ob.step_label": "الخطوة {n} من ٤",
@@ -112,7 +111,6 @@
   "ob.back": "رجوع",
   "ob.next": "التالي",
   "ob.finish": "لنخطط رحلتي",
-
   "trip.title": "خطط رحلتك",
   "trip.subtitle": "أخبرنا عن وجهتك وتوقيتك وأسلوب سفرك",
   "trip.context.label": "مع من ستسافر؟",
@@ -183,11 +181,9 @@
   "trip.custom_goal.placeholder": "صف رحلة أحلامك بكلماتك الخاصة…",
   "trip.cta": "أنشئ رحلتي",
   "trip.hint": "اختر رفيق سفرك ووجهتك وتواريخ الرحلة للمتابعة",
-
   "gen.title": "جاري تصميم خطة رحلتك",
   "gen.subtitle": "٨ وكلاء ذكاء اصطناعي يبنون رحلتك المثالية",
   "gen.ready": "الخطة جاهزة — نفتح رحلتك الآن…",
-
   "gen.agent.goal": "محلل الأهداف",
   "gen.agent.discovery": "مستكشف الوجهات",
   "gen.agent.restaurant": "كشاف المطاعم",
@@ -196,14 +192,12 @@
   "gen.agent.safety": "مراقب السلامة",
   "gen.agent.sustainability": "متتبع الاستدامة",
   "gen.agent.verification": "محرك التحقق",
-
   "gen.obj.culture": "الثقافة",
   "gen.obj.budget": "الميزانية",
   "gen.obj.hiddenGems": "الكنوز المخفية",
   "gen.obj.food": "الطعام",
   "gen.obj.family": "العائلة",
   "gen.obj.photography": "التصوير",
-
   "gen.msg.goal": "الأهداف الرئيسية:",
   "gen.msg.discovery.pre": "وجهة مرشحة في",
   "gen.msg.restaurant.pre": "طبقًا آمنًا بدون مسببات حساسية",
@@ -216,7 +210,6 @@
   "gen.msg.sustainability.stops": "محطة",
   "gen.msg.verification.pre": "جميع",
   "gen.msg.verification.end": "محطة تحمل روابط خرائط موثقة ✓",
-
   "itin.day": "اليوم {n}",
   "itin.verified": "موثّق",
   "itin.maps": "فتح الخريطة",
@@ -229,7 +222,6 @@
   "itin.no_data": "لم يتم العثور على خطة رحلة.",
   "itin.go_plan": "خطّط رحلة",
   "itin.days_summary": "رحلة {n} أيام في {city}",
-
   "itin.summary.title": "ملخص الرحلة",
   "itin.summary.objectives": "أهداف الرحلة",
   "itin.summary.cost": "التكلفة المقدرة",
@@ -239,7 +231,6 @@
   "itin.summary.over": "تجاوز الميزانية",
   "itin.summary.ok": "ضمن الميزانية",
   "itin.summary.sar": "ريال",
-
   "itin.cat.heritage": "تراث",
   "itin.cat.museum": "متحف",
   "itin.cat.nature": "طبيعة",
@@ -250,7 +241,6 @@
   "itin.cat.food": "طعام",
   "itin.cat.modern": "حديث",
   "itin.cat.entertainment": "ترفيه",
-
   "lens.subtitle": "وجّه كاميرتك نحو قائمة الطعام لمسح الأطباق ورصد مسببات الحساسية",
   "lens.upload.title": "امسح قائمة الطعام",
   "lens.upload.desc": "اسحب وأفلت صورة القائمة هنا، أو اضغط للاختيار",
@@ -272,35 +262,29 @@
   "lens.rescan": "امسح قائمة أخرى",
   "lens.try_demo": "جرّب قائمة تجريبية",
   "lens.demo_hint": "جرّب مع قائمة تجريبية",
-
   "lens.tab.menu": "قائمة الطعام",
   "lens.tab.place": "مكان",
   "lens.tab.signage": "اللافتات",
-
   "lens.upload.title.place": "تعرّف على معلم",
   "lens.upload.desc.place": "اسحب وأفلت صورة لمعلم أو مبنى",
   "lens.upload.tap.place": "اختر صورة",
   "lens.upload.title.signage": "اقرأ لافتة",
   "lens.upload.desc.signage": "اسحب وأفلت صورة للافتة طريق أو لوحة إرشادية",
   "lens.upload.tap.signage": "اختر صورة",
-
   "lens.scanning.menu": "جاري مسح القائمة…",
   "lens.scanning.place": "جاري التعرف على المعلم…",
   "lens.scanning.signage": "جاري قراءة اللافتات…",
-
   "lens.place.title": "تم التعرف على المكان",
   "lens.place.unknown": "معلم غير معروف",
   "lens.place.unknown.note": "اضغط لمعرفة المزيد عن هذا المكان.",
   "lens.place.culture": "ملاحظة ثقافية",
   "lens.place.maps": "فتح الخريطة",
   "lens.place.rescan": "امسح مكانًا آخر",
-
   "lens.sign.title": "اللافتات المكتشفة",
   "lens.sign.copy": "نسخ كل النصوص",
   "lens.sign.copied": "تم النسخ!",
   "lens.sign.km": "كم",
   "lens.sign.rescan": "امسح لافتة أخرى",
-
   "dialect.title": "معلم اللهجات",
   "dialect.najdi_name": "النجدية",
   "dialect.hijazi_name": "الحجازية",
@@ -326,7 +310,6 @@
   "dialect.sit.bargaining": "المساومة",
   "dialect.sit.thanks": "الشكر",
   "dialect.sit.directions": "الاتجاهات",
-
   "dash.title": "لوحة التحكم",
   "dash.welcome": "أهلاً بعودتك",
   "dash.city": "في {city}",
@@ -353,18 +336,15 @@
   "dash.profile.allergies": "حساسيتي",
   "dash.profile.interests": "اهتماماتي",
   "dash.profile.saved": "تم الحفظ",
-
   "dash.tab.profile": "ملفي الشخصي",
   "dash.tab.trips": "رحلاتي",
   "dash.tab.ongoing": "الرحلة الحالية",
-
   "dash.ongoing.empty.title": "لا توجد رحلة نشطة",
   "dash.ongoing.empty.desc": "أنشئ رحلة واضغط على «تأكيد الرحلة» لتثبيتها هنا.",
   "dash.ongoing.empty.cta": "خطط لرحلة",
   "dash.ongoing.spend": "الإنفاق المتوقع",
   "dash.ongoing.objectives": "أهداف الرحلة",
   "dash.ongoing.day": "اليوم {n}",
-
   "dash.trips.empty.title": "لا توجد رحلات سابقة",
   "dash.trips.empty.desc": "عند تأكيد رحلة جديدة تنتقل السابقة إلى هنا.",
   "dash.trips.stops": "{n} محطة",
@@ -372,11 +352,9 @@
   "dash.trips.nights": "{n} ليالٍ",
   "dash.trips.phrases": "عبارات تعلّمتها",
   "dash.trips.food": "أطباق محفوظة",
-
   "itin.confirm.btn": "تأكيد الرحلة",
   "itin.confirm.done": "تم تأكيد الرحلة ✓",
   "itin.confirm.goto": "عرض في لوحة التحكم",
-
   "cascade.wrench_label": "عرض توضيحي: محاكاة إغلاق وجهة",
   "cascade.closed_chip": "مغلق فجأة",
   "cascade.replanned_badge": "أُعيد التخطيط",
@@ -397,7 +375,6 @@
   "cascade.toast.msg": "أُغلق {poi} — أُعيد تخطيط فترة ما بعد الظهر تلقائياً",
   "cascade.toast.undo": "تراجع",
   "cascade.toast.dismiss": "إخفاء الإشعار",
-
   "poi.ruh_masmak.name": "قلعة المصمك",
   "poi.ruh_masmak.culture": "قلعة طينية تعود للقرن الثامن عشر؛ لا تزال البوابة تحتفظ برأس الرمح من معركة 1902 التي أعادت توحيد الجزيرة العربية.",
   "poi.ruh_natmuseum.name": "المتحف الوطني للمملكة العربية السعودية",
@@ -461,7 +438,6 @@
   "poi.ula_visitor_center.name": "مركز زوار العُلا",
   "poi.ula_dedan.name": "أطلال مملكة دادان القديمة",
   "poi.ula_dedan.culture": "مقر مملكة لحيان؛ كانت تماثيل الأسود الشاهقة تُحاذي مدخل المقابر الملكية.",
-
   "dish.kabsa_chicken.name": "كبسة دجاج",
   "dish.kabsa_chicken.desc": "أرز معطر بالزعفران مع الدجاج المطهو ببطء والفواكه المجففة والبصل المقلي — الطبق الوطني.",
   "dish.kabsa_lamb.name": "كبسة لحم",
@@ -501,5 +477,7 @@
   "dish.shish_tawook.name": "شيش طاووق",
   "dish.shish_tawook.desc": "مكعبات الدجاج المتبلة باللبن مشوية على فحم في سيخ؛ تُقدَّم مع صلصة الثوم والخبز المرقق.",
   "dish.kunafa.name": "كنافة بالجبن",
-  "dish.kunafa.desc": "عجين مبروش مقرمش فوق جبنة بيضاء منقوعة في قطر ماء الورد — الحلوى المفضلة في الشرق الأوسط."
+  "dish.kunafa.desc": "عجين مبروش مقرمش فوق جبنة بيضاء منقوعة في قطر ماء الورد — الحلوى المفضلة في الشرق الأوسط.",
+  "dash.photos.of": "صور",
+  "dash.photos.counter": "صورة {n} من ٣"
 }

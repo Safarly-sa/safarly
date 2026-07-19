@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Camera, CheckCircle2, AlertTriangle, X, Plus, ScanLine, RotateCcw, ChevronRight, MapPin, ExternalLink, Copy, Check } from "lucide-react";
 import { useTranslation } from "@/providers/translation-context";
 import { usePageMeta } from "@/lib/usePageMeta";
+import { poiName, poiCulture } from "@/lib/poi-i18n";
 import dishesRaw from "@/data/dishes.json";
 import poisRaw   from "@/data/pois.json";
 
@@ -19,7 +20,9 @@ interface Poi {
   map_url?: string; culture_note?: string; hidden_gem?: boolean;
 }
 
-interface PlaceResult { name: string; category: string; culture_note?: string; map_url?: string; }
+// `id` is carried so the card can look up `poi.<id>.name` / `.culture`; the raw
+// English `name` / `culture_note` stay as the fallback.
+interface PlaceResult { id: string; name: string; category: string; culture_note?: string; map_url?: string; }
 interface SignRow     { arrow: string; city: string; distance: number; }
 
 /* ── Static data ────────────────────────────────────────────────────── */
@@ -40,10 +43,10 @@ function strHash(s: string): number {
 }
 
 function scanPlace(filename: string): PlaceResult {
-  if (POIS_WITH_NOTE.length === 0) return { name: "Unknown Landmark", category: "heritage" };
+  if (POIS_WITH_NOTE.length === 0) return { id: "", name: "Unknown Landmark", category: "heritage" };
   const idx = strHash(filename) % POIS_WITH_NOTE.length;
   const poi  = POIS_WITH_NOTE[idx];
-  return { name: poi.name, category: poi.category, culture_note: poi.culture_note, map_url: poi.map_url };
+  return { id: poi.id, name: poi.name, category: poi.category, culture_note: poi.culture_note, map_url: poi.map_url };
 }
 
 function scanSignage(filename: string): SignRow[] {
@@ -278,9 +281,9 @@ function AllergenChip({ allergen, t }: { allergen: string; t: (k: string) => str
 }
 
 /* ── Dish card ──────────────────────────────────────────────────────── */
-function DishCard({ dish, userAllergens, t, language, onClick }: {
+function DishCard({ dish, userAllergens, t, onClick }: {
   dish: Dish; userAllergens: string[]; t: (k: string) => string;
-  language: string; onClick: () => void;
+  onClick: () => void;
 }) {
   const warnings = dish.common_allergens.filter(a => userAllergens.includes(a));
   return (
@@ -294,7 +297,7 @@ function DishCard({ dish, userAllergens, t, language, onClick }: {
             {dish.name_ar}
           </div>
           <div style={{ fontSize: "0.875rem", fontWeight: 600, color: "var(--sf-text-muted)", marginTop: 3 }}>
-            {language === "ar" ? dish.name : dish.name}
+            {dish.name}
           </div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 4, flexShrink: 0 }}>
@@ -319,9 +322,9 @@ function DishCard({ dish, userAllergens, t, language, onClick }: {
 }
 
 /* ── Dish modal ─────────────────────────────────────────────────────── */
-function DishModal({ dish, userAllergens, isFav, t, language, onClose, onAddFav }: {
+function DishModal({ dish, userAllergens, isFav, t, onClose, onAddFav }: {
   dish: Dish; userAllergens: string[]; isFav: boolean;
-  t: (k: string) => string; language: string;
+  t: (k: string) => string;
   onClose: () => void; onAddFav: () => void;
 }) {
   const warnings = dish.common_allergens.filter(a => userAllergens.includes(a));
@@ -487,7 +490,7 @@ function PlaceCard({ result, t, onReset }: {
           </div>
           <div>
             <h3 style={{ fontWeight: 800, color: "var(--sf-text)", fontSize: "1.125rem", lineHeight: 1.25, marginBottom: 6 }}>
-              {result.name}
+              {poiName(t, result)}
             </h3>
             <span style={{
               display: "inline-block", fontSize: "0.6875rem", fontWeight: 700,
@@ -506,7 +509,7 @@ function PlaceCard({ result, t, onReset }: {
             {t("lens.place.culture")}
           </p>
           <p style={{ fontSize: "0.9375rem", color: "var(--sf-text)", lineHeight: 1.7 }}>
-            {result.culture_note ?? t("lens.place.unknown.note")}
+            {poiCulture(t, result) ?? t("lens.place.unknown.note")}
           </p>
         </div>
 
@@ -833,7 +836,7 @@ export function Lens() {
                 <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 16 }}>
                   {dishes.map(d => (
                     <DishCard key={d.id} dish={d} userAllergens={userAllergens}
-                      t={t} language={language} onClick={() => setSelected(d)} />
+                      t={t} onClick={() => setSelected(d)} />
                   ))}
                 </div>
                 <p style={{ fontSize: "0.75rem", color: "var(--sf-text-muted)", textAlign: "center", lineHeight: 1.6 }}>
@@ -860,7 +863,7 @@ export function Lens() {
         <DishModal
           dish={selected} userAllergens={userAllergens}
           isFav={favorites.includes(selected.id)}
-          t={t} language={language}
+          t={t}
           onClose={() => setSelected(null)}
           onAddFav={() => { addFavorite(selected.id); }}
         />

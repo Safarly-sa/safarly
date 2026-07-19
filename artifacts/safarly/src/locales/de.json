@@ -60,7 +60,6 @@
   "page.dialect.desc": "Üben Sie lokale Phrasen mit unserem interaktiven KI-Tutor.",
   "page.dashboard.title": "Dashboard",
   "page.dashboard.desc": "Ihre Schaltzentrale für vergangene und zukünftige Abenteuer.",
-
   "ob.title": "Reiseprofil erstellen",
   "ob.subtitle": "Helfen Sie uns, Ihre perfekte Saudi-Reise zu planen",
   "ob.step_label": "Schritt {n} von 4",
@@ -112,7 +111,6 @@
   "ob.back": "Zurück",
   "ob.next": "Weiter",
   "ob.finish": "Meine Reise planen",
-
   "trip.title": "Ihre Reise planen",
   "trip.subtitle": "Sagen Sie uns, wo, wann und wie Sie reisen möchten",
   "trip.context.label": "Mit wem reisen Sie?",
@@ -183,7 +181,6 @@
   "trip.custom_goal.placeholder": "Beschreiben Sie Ihre Traumreise in eigenen Worten…",
   "trip.cta": "Meine Reise generieren",
   "trip.hint": "Wählen Sie Reisebegleiter, Reiseziel und Daten, um fortzufahren",
-
   "gen.title": "Ihre Reiseroute wird erstellt",
   "gen.subtitle": "8 KI-Agenten bauen Ihre perfekte Reise",
   "gen.ready": "Reiseroute bereit — Ihre Reise wird geöffnet…",
@@ -213,7 +210,6 @@
   "gen.msg.sustainability.stops": "Stopps",
   "gen.msg.verification.pre": "Alle",
   "gen.msg.verification.end": "Stopps mit verifizierten Kartenlinks ✓",
-
   "itin.day": "Tag {n}",
   "itin.verified": "Verifiziert",
   "itin.maps": "In Karten öffnen",
@@ -245,7 +241,6 @@
   "itin.cat.food": "Essen",
   "itin.cat.modern": "Modern",
   "itin.cat.entertainment": "Unterhaltung",
-
   "lens.subtitle": "Richten Sie Ihre Kamera auf eine Speisekarte, um Gerichte zu scannen und Allergene zu erkennen",
   "lens.upload.title": "Speisekarte scannen",
   "lens.upload.desc": "Speisekarten-Foto hierher ziehen oder tippen, um es auszuwählen",
@@ -290,7 +285,6 @@
   "lens.sign.copied": "Kopiert!",
   "lens.sign.km": "km",
   "lens.sign.rescan": "Weiteres Schild scannen",
-
   "dialect.title": "Dialekt-Tutor",
   "dialect.najdi_name": "Nadschdi",
   "dialect.hijazi_name": "Hidschasi",
@@ -316,7 +310,6 @@
   "dialect.sit.bargaining": "Feilschen",
   "dialect.sit.thanks": "Danke",
   "dialect.sit.directions": "Wegbeschreibung",
-
   "dash.title": "Dashboard",
   "dash.welcome": "Willkommen zurück",
   "dash.city": "in {city}",
@@ -359,11 +352,9 @@
   "dash.trips.nights": "{n} Nächte",
   "dash.trips.phrases": "Gelernte Phrasen",
   "dash.trips.food": "Gespeicherte Gerichte",
-
   "itin.confirm.btn": "Reise bestätigen",
   "itin.confirm.done": "Reise bestätigt ✓",
   "itin.confirm.goto": "Im Dashboard anzeigen",
-
   "cascade.wrench_label": "Demo: Schließung eines Ortes simulieren",
   "cascade.closed_chip": "Unerwartet geschlossen",
   "cascade.replanned_badge": "Neu geplant",
@@ -384,7 +375,6 @@
   "cascade.toast.msg": "{poi} geschlossen — Ihr Nachmittag wurde automatisch neu geplant",
   "cascade.toast.undo": "Rückgängig",
   "cascade.toast.dismiss": "Benachrichtigung schließen",
-
   "poi.ruh_masmak.name": "Al-Masmak-Festung",
   "poi.ruh_natmuseum.name": "Nationalmuseum Saudi-Arabien",
   "poi.ruh_diriyah.name": "Diriyah UNESCO-Welterbegebiet",
@@ -427,7 +417,6 @@
   "poi.ula_jabal_ahmar.name": "Jabal Al-Ahmar (Roter Berg)",
   "poi.ula_visitor_center.name": "AlUla Besucherzentrum",
   "poi.ula_dedan.name": "Dedan Antike Königsruinen",
-
   "dish.kabsa_chicken.name": "Kabsa (Huhn)",
   "dish.kabsa_lamb.name": "Kabsa (Lamm)",
   "dish.jareesh.name": "Jareesh",
@@ -448,7 +437,6 @@
   "dish.fish_mandi.name": "Fischmandi (Jeddah-Stil)",
   "dish.shish_tawook.name": "Shish Tawook Platte",
   "dish.kunafa.name": "Kunafa bil Jibneh (Käsepastete)",
-
   "poi.ruh_masmak.culture": "Lehmzitadelle aus dem 18. Jahrhundert; am Tor ist noch die Lanzenspitze der Battle von 1902 zu sehen, die Saudi-Arabien vereinte.",
   "poi.ruh_natmuseum.culture": "Acht Galerien, die die Geschichte der Arabischen Halbinsel von der Vorgeschichte bis zur Gründung des modernen Königreichs nachzeichnen.",
   "poi.ruh_diriyah.culture": "Geburtsort des saudischen Staates und UNESCO-Weltkulturerbe; Lehmpaläste und Moscheen aus dem 15. Jahrhundert.",
@@ -470,7 +458,6 @@
   "poi.ula_oasis.culture": "Das antike Falaj-Bewässerungssystem bewässert noch immer 2 Millionen Dattelpalmen; einige Bäume sind über 1.000 Jahre alt.",
   "poi.ula_farms.culture": "Über 70 benannte Dattelssorten; Bauern ernten immer noch per Hand mit derselben Klettertechnik wie ihre Vorfahren.",
   "poi.ula_dedan.culture": "Sitz des Lihyan-Königreichs; aufragende Löwenstatuen flankierten einst den Eingang zu den Königsgräbern.",
-
   "dish.kabsa_chicken.desc": "Duftender Safranreis mit langsam geschmortem Huhn, Trockenfrüchten und gebratenen Zwiebeln — das Nationalgericht.",
   "dish.kabsa_lamb.desc": "Ganzes Lammstück langsam mit der aromatischen Kabsa-Gewürzmischung auf Langkornreis gegart.",
   "dish.jareesh.desc": "Geschroteter Weizen, langsam zu einem cremigen Brei mit Lammfleisch gekocht, mit knusprigen Zwiebeln und Ghee garniert.",
@@ -490,5 +477,7 @@
   "dish.kabsa_dinner.desc": "Abend-Kabsa mit zusätzlichen getrockneten Aprikosen, Mandeln und goldenen Rosinen.",
   "dish.fish_mandi.desc": "Rotes-Meer-Fisch, Mandi-Style über Holzkohle mit Kurkuma und Golfgewürzen geräuchert.",
   "dish.shish_tawook.desc": "Joghurtmarinierte Hähnchenstücke, auf Spießen über Holzkohle gegrillt; serviert mit Knoblauchsauce und Fladenbrot.",
-  "dish.kunafa.desc": "Knuspriges Engelshaar-Gebäck über Weißkäse, in Rosenwasser-Sirup getränkt — das beliebteste Dessert des Nahen Ostens."
+  "dish.kunafa.desc": "Knuspriges Engelshaar-Gebäck über Weißkäse, in Rosenwasser-Sirup getränkt — das beliebteste Dessert des Nahen Ostens.",
+  "dash.photos.of": "Fotos von",
+  "dash.photos.counter": "Foto {n} von 3"
 }

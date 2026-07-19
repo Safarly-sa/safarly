@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { useTranslation } from "@/providers/translation-context";
 import { usePageMeta } from "@/lib/usePageMeta";
+import { poiName, poiCulture } from "@/lib/poi-i18n";
 import { generateItinerary, type ItineraryResult, type ItineraryDay, type ItineraryStop, type ItineraryMeal, type TripSpec, type TravelerProfile, type Objectives } from "@/lib/engine";
 import poisRaw from "@/data/pois.json";
 
@@ -624,7 +625,7 @@ function StopCard({
             lineHeight: 1.3,
             display:    "block",
           }}>
-            {t("poi." + poi.id + ".name") || poi.name}
+            {poiName(t, poi)}
           </span>
         </div>
 
@@ -650,7 +651,7 @@ function StopCard({
             lineHeight:   1.65,
             marginBottom: "12px",
           }}>
-            {t("poi." + poi.id + ".culture") || poi.culture_note}
+            {poiCulture(t, poi)}
           </p>
         )}
 
@@ -1522,7 +1523,7 @@ const CATEGORY_ICONS: Record<string, string> = {
 function PoiPhotoModal({ poi, onClose }: { poi: RawPoi; onClose: () => void }) {
   const { t } = useTranslation();
   const icon = CATEGORY_ICONS[poi.category] ?? "📍";
-  const displayName = t("poi." + poi.id + ".name") || poi.name;
+  const displayName = poiName(t, poi);
 
   useEffect(() => {
     const prev = document.body.style.overflow;
@@ -1735,8 +1736,8 @@ export function Itinerary() {
     if (pool.length === 0) return;
 
     const chosen  = pool[0];
-    const altName1 = (pool[0] ? (t("poi." + pool[0].id + ".name") || pool[0].name) : "");
-    const altName2 = (pool[1] ? (t("poi." + pool[1].id + ".name") || pool[1].name) : altName1);
+    const altName1 = (pool[0] ? poiName(t, pool[0]) : "");
+    const altName2 = (pool[1] ? poiName(t, pool[1]) : altName1);
 
     // Build replacement stop (same time slot as target)
     const replacementStop: ItineraryStop = {
@@ -1810,7 +1811,7 @@ export function Itinerary() {
     // Start cascade animation sequence
     const base: Omit<CascadeInfo, "phase" | "feedStep"> = {
       closedPoiId:     target.poi.id,
-      closedPoiName:   t("poi." + target.poi.id + ".name") || target.poi.name,
+      closedPoiName:   poiName(t, target.poi),
       replacementPoiId: chosen.id,
       altName1,
       altName2,

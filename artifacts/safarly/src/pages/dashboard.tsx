@@ -13,6 +13,7 @@ import {
 import { useTranslation } from "@/providers/translation-context";
 import { usePageMeta } from "@/lib/usePageMeta";
 import { getAuth, setAuth } from "@/lib/auth";
+import { poiName, poiCulture } from "@/lib/poi-i18n";
 import {
   Chip, NationalityDropdown, SectionLabel, Toggle,
 } from "./profile-setup";
@@ -529,7 +530,9 @@ function poiGradient(category: string, slot: number): string {
 const CAT_ICONS: Record<string, string> = { heritage: "🏛️", museum: "🏺", nature: "🌿", culture: "🕌", food: "🍽️", shopping: "🛍️", park: "🌳", beach: "🏖️" };
 
 function DashPhotoModal({ poi, onClose }: { poi: ModalPoi; onClose: () => void }) {
+  const { t } = useTranslation();
   const icon = CAT_ICONS[poi.category] ?? "📍";
+  const name = poiName(t, poi);
   useEffect(() => {
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
@@ -540,14 +543,14 @@ function DashPhotoModal({ poi, onClose }: { poi: ModalPoi; onClose: () => void }
 
   return (
     <div
-      role="dialog" aria-modal="true" aria-label={`Photos of ${poi.name}`}
+      role="dialog" aria-modal="true" aria-label={`${t("dash.photos.of")} ${name}`}
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}
       style={{ position: "fixed", inset: 0, zIndex: 9100, background: "rgba(0,0,0,0.72)", backdropFilter: "blur(5px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}
     >
       <div onClick={e => e.stopPropagation()} style={{ background: "var(--sf-surface)", borderRadius: 16, width: "100%", maxWidth: 500, maxHeight: "90dvh", overflowY: "auto", boxShadow: "0 24px 64px rgba(0,0,0,0.55)", display: "flex", flexDirection: "column" }}>
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, padding: "16px 16px 12px", borderBottom: "1px solid var(--sf-border)", flexShrink: 0 }}>
           <div>
-            <p style={{ fontWeight: 800, fontSize: "1.0625rem", color: "var(--sf-text)", lineHeight: 1.25, marginBottom: 5 }}>{poi.name}</p>
+            <p style={{ fontWeight: 800, fontSize: "1.0625rem", color: "var(--sf-text)", lineHeight: 1.25, marginBottom: 5 }}>{name}</p>
             <span style={{ display: "inline-block", fontSize: "0.6875rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", padding: "2px 8px", borderRadius: 20, background: "var(--sf-surface-alt)", color: "var(--sf-text-muted)" }}>{poi.category}</span>
           </div>
           <button type="button" onClick={onClose} aria-label="Close" style={{ width: 32, height: 32, borderRadius: 8, border: "1px solid var(--sf-border)", background: "var(--sf-surface-alt)", cursor: "pointer", color: "var(--sf-text-muted)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
@@ -559,8 +562,8 @@ function DashPhotoModal({ poi, onClose }: { poi: ModalPoi; onClose: () => void }
             <div key={slot} style={{ borderRadius: 10, overflow: "hidden", aspectRatio: "16/9", background: poiGradient(poi.category, slot), display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 10 }}>
               <span style={{ fontSize: "2.25rem", opacity: 0.88 }}>{icon}</span>
               <div style={{ textAlign: "center", padding: "0 16px" }}>
-                <p style={{ fontSize: "0.8125rem", fontWeight: 700, color: "rgba(255,255,255,0.95)", lineHeight: 1.3, marginBottom: 2 }}>{poi.name}</p>
-                <p style={{ fontSize: "0.6875rem", color: "rgba(255,255,255,0.6)" }}>Photo {slot + 1} of 3</p>
+                <p style={{ fontSize: "0.8125rem", fontWeight: 700, color: "rgba(255,255,255,0.95)", lineHeight: 1.3, marginBottom: 2 }}>{name}</p>
+                <p style={{ fontSize: "0.6875rem", color: "rgba(255,255,255,0.6)" }}>{t("dash.photos.counter").replace("{n}", String(slot + 1))}</p>
               </div>
             </div>
           ))}
@@ -581,6 +584,7 @@ function DashPhotoModal({ poi, onClose }: { poi: ModalPoi; onClose: () => void }
 
 /* ── Ongoing: stop card ─────────────────────────────────────────────── */
 function DashStopCard({ stop, onPhotoClick }: { stop: ItineraryStop; onPhotoClick: () => void }) {
+  const { t } = useTranslation();
   const poi = stop.poi as unknown as ModalPoi & { culture_note?: string; hidden_gem?: boolean };
   return (
     <div className="sf-dash-stop">
@@ -593,7 +597,7 @@ function DashStopCard({ stop, onPhotoClick }: { stop: ItineraryStop; onPhotoClic
         </div>
         {/* Name */}
         <div style={{ fontWeight: 700, color: "var(--sf-text)", fontSize: "0.9375rem", marginBottom: 6, lineHeight: 1.3 }}>
-          {poi.name}
+          {poiName(t, poi)}
         </div>
         {/* Badges */}
         <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: poi.culture_note ? 8 : 10 }}>
@@ -614,7 +618,7 @@ function DashStopCard({ stop, onPhotoClick }: { stop: ItineraryStop; onPhotoClic
         {/* Culture note */}
         {poi.culture_note && (
           <p style={{ fontSize: "0.8125rem", color: "var(--sf-text-muted)", lineHeight: 1.6, marginBottom: 10 }}>
-            {poi.culture_note}
+            {poiCulture(t, poi)}
           </p>
         )}
         {/* Actions */}

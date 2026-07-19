@@ -60,7 +60,6 @@
   "page.dialect.desc": "Pratiquez des expressions locales avec notre tuteur IA interactif.",
   "page.dashboard.title": "Tableau de bord",
   "page.dashboard.desc": "Votre centre de contrôle pour les aventures passées et futures.",
-
   "ob.title": "Créez votre profil de voyage",
   "ob.subtitle": "Aidez-nous à concevoir votre voyage parfait en Arabie Saoudite",
   "ob.step_label": "Étape {n} sur 4",
@@ -112,7 +111,6 @@
   "ob.back": "Retour",
   "ob.next": "Suivant",
   "ob.finish": "Planifier mon voyage",
-
   "trip.title": "Planifiez votre voyage",
   "trip.subtitle": "Dites-nous où, quand et comment vous souhaitez voyager",
   "trip.context.label": "Avec qui voyagez-vous ?",
@@ -183,7 +181,6 @@
   "trip.custom_goal.placeholder": "Décrivez le voyage de vos rêves avec vos propres mots…",
   "trip.cta": "Générer mon voyage",
   "trip.hint": "Sélectionnez vos compagnons, une destination et vos dates pour continuer",
-
   "gen.title": "Création de votre itinéraire",
   "gen.subtitle": "8 agents IA construisent votre voyage parfait",
   "gen.ready": "Itinéraire prêt — ouverture de votre voyage…",
@@ -213,7 +210,6 @@
   "gen.msg.sustainability.stops": "arrêts",
   "gen.msg.verification.pre": "Tous les",
   "gen.msg.verification.end": "arrêts avec liens cartes vérifiés ✓",
-
   "itin.day": "Jour {n}",
   "itin.verified": "Vérifié",
   "itin.maps": "Ouvrir dans Maps",
@@ -245,7 +241,6 @@
   "itin.cat.food": "Nourriture",
   "itin.cat.modern": "Moderne",
   "itin.cat.entertainment": "Divertissement",
-
   "lens.subtitle": "Pointez votre appareil photo sur un menu pour scanner les plats et détecter les allergènes",
   "lens.upload.title": "Scanner un menu",
   "lens.upload.desc": "Glissez-déposez une photo de menu ici ou appuyez pour choisir",
@@ -290,7 +285,6 @@
   "lens.sign.copied": "Copié !",
   "lens.sign.km": "km",
   "lens.sign.rescan": "Scanner un autre panneau",
-
   "dialect.title": "Tuteur de dialectes",
   "dialect.najdi_name": "Najdi",
   "dialect.hijazi_name": "Hijazi",
@@ -316,7 +310,6 @@
   "dialect.sit.bargaining": "Marchander",
   "dialect.sit.thanks": "Remerciements",
   "dialect.sit.directions": "Directions",
-
   "dash.title": "Tableau de bord",
   "dash.welcome": "Bon retour",
   "dash.city": "à {city}",
@@ -359,11 +352,9 @@
   "dash.trips.nights": "{n} nuits",
   "dash.trips.phrases": "Expressions apprises",
   "dash.trips.food": "Plats sauvegardés",
-
   "itin.confirm.btn": "Confirmer le voyage",
   "itin.confirm.done": "Voyage confirmé ✓",
   "itin.confirm.goto": "Voir dans le tableau de bord",
-
   "cascade.wrench_label": "Démo : simuler la fermeture d'un lieu",
   "cascade.closed_chip": "Fermé inopinément",
   "cascade.replanned_badge": "Replanifié",
@@ -384,7 +375,6 @@
   "cascade.toast.msg": "{poi} fermé — votre après-midi a été replanifié automatiquement",
   "cascade.toast.undo": "Annuler",
   "cascade.toast.dismiss": "Fermer la notification",
-
   "poi.ruh_masmak.name": "Forteresse d'Al-Masmak",
   "poi.ruh_natmuseum.name": "Musée national d'Arabie Saoudite",
   "poi.ruh_diriyah.name": "Site de Diriyah (UNESCO)",
@@ -427,7 +417,6 @@
   "poi.ula_jabal_ahmar.name": "Jabal Al-Ahmar (Montagne rouge)",
   "poi.ula_visitor_center.name": "Centre d'expérience des visiteurs d'AlUla",
   "poi.ula_dedan.name": "Ruines de l'antique royaume de Dedan",
-
   "dish.kabsa_chicken.name": "Kabsa (Poulet)",
   "dish.kabsa_lamb.name": "Kabsa (Agneau)",
   "dish.jareesh.name": "Jareesh",
@@ -448,7 +437,6 @@
   "dish.fish_mandi.name": "Mandi de poisson (Style Djeddah)",
   "dish.shish_tawook.name": "Plateau Shish Tawook",
   "dish.kunafa.name": "Kunafa bil Jibneh (Pâtisserie au fromage)",
-
   "poi.ruh_masmak.culture": "Citadelle en pisé du XVIIIe siècle; la porte conserve encore le fer de lance de la bataille de 1902 qui réunifa l'Arabie Saoudite.",
   "poi.ruh_natmuseum.culture": "Huit galeries retraçant l'histoire de la péninsule arabique, de la préhistoire jusqu'à la fondation du royaume moderne.",
   "poi.ruh_diriyah.culture": "Lieu de naissance de l'État saoudien et site du patrimoine mondial de l'UNESCO; palais et mosquées en pisé datant du XVe siècle.",
@@ -470,7 +458,6 @@
   "poi.ula_oasis.culture": "L'ancien système d'irrigation falaj arrose encore 2 millions de palmiers dattiers; certains arbres ont plus de 1 000 ans.",
   "poi.ula_farms.culture": "Plus de 70 variétés de dattes nommées; les agriculteurs récoltent encore à la main en utilisant la même technique d'escalade que leurs ancêtres.",
   "poi.ula_dedan.culture": "Siège du royaume Lihyan; de grandes statues de lions flanquaient autrefois l'entrée des tombes royales.",
-
   "dish.kabsa_chicken.desc": "Riz parfumé au safran avec du poulet braisé lentement, des fruits secs et des oignons frits — le plat national.",
   "dish.kabsa_lamb.desc": "Gigot d'agneau entier cuit lentement avec le mélange d'épices Kabsa sur du riz à longs grains.",
   "dish.jareesh.desc": "Blé concassé mitonné en bouillie crémeuse avec de l'agneau, garni d'oignons croustillants et de ghee.",
@@ -490,5 +477,7 @@
   "dish.kabsa_dinner.desc": "Kabsa du soir avec des abricots secs supplémentaires, des amandes et des raisins dorés.",
   "dish.fish_mandi.desc": "Poisson de la mer Rouge fumé à la Mandi sur des braises de bois avec du curcuma et des épices du Golfe.",
   "dish.shish_tawook.desc": "Cubes de poulet marinés au yaourt, grillés au charbon de bois sur des brochettes; servis avec sauce à l'ail et pain plat.",
-  "dish.kunafa.desc": "Pâte filée croustillante sur du fromage blanc imbibé de sirop à l'eau de rose — le dessert préféré du Moyen-Orient."
+  "dish.kunafa.desc": "Pâte filée croustillante sur du fromage blanc imbibé de sirop à l'eau de rose — le dessert préféré du Moyen-Orient.",
+  "dash.photos.of": "Photos de",
+  "dash.photos.counter": "Photo {n} sur 3"
 }
