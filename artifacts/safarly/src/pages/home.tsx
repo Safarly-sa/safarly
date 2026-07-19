@@ -1,10 +1,8 @@
 import { lazy, Suspense } from "react";
 import { useTranslation } from "@/providers/translation-context";
-import { useTheme } from "@/providers/ThemeProvider";
 import { Link } from "wouter";
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
-import safarlyLogo from "@assets/safarly-transparent_1784408718766.png";
 import { usePageMeta } from "@/lib/usePageMeta";
 
 /* Below-fold sections (Features, Agents, How It Works, Vision, CTA)
@@ -16,26 +14,17 @@ const LazyBelowFold = lazy(() =>
 /* ── Landing page ──────────────────────────────────────────────────── */
 export function Home() {
   const { t } = useTranslation();
-  const { theme } = useTheme();
 
   usePageMeta(
     "Plan Your Saudi Journey",
     "Eight AI agents plan, guide, translate and enrich every moment of your Saudi journey.",
   );
 
-  const heroLogoStyle =
-    theme === "dark"
-      ? {
-          filter:
-            "drop-shadow(0 0 18px rgba(0,216,164,0.5)) drop-shadow(0 0 42px rgba(92,108,255,0.22))",
-        }
-      : undefined;
-
   return (
     <div className="flex flex-col min-h-screen">
 
       {/* ── 1. Hero ─────────────────────────────────────────────────── */}
-      <section className="relative pt-28 pb-20 md:pt-44 md:pb-32 overflow-hidden px-4">
+      <section className="relative pt-20 pb-10 md:pt-28 md:pb-16 overflow-hidden px-4">
         {/* Geometric background rings */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden flex items-center justify-center opacity-[0.03] dark:opacity-[0.05]">
           <svg
@@ -51,24 +40,9 @@ export function Home() {
 
         <div className="max-w-4xl mx-auto text-center relative z-10">
           <motion.div
-            initial={{ opacity: 0, scale: 0.88 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-            className="flex justify-center mb-8"
-          >
-            <img
-              src={safarlyLogo}
-              alt="Safarly logo"
-              className="h-28 md:h-36 w-auto object-contain transition-[filter] duration-500"
-              style={heroLogoStyle}
-              data-testid="img-hero-logo"
-            />
-          </motion.div>
-
-          <motion.div
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.15 }}
+            transition={{ duration: 0.6, delay: 0.05 }}
           >
             <h1 className="text-4xl md:text-5xl lg:text-7xl font-extrabold tracking-[-0.02em] leading-tight mb-6 text-foreground">
               {t("hero.headline")}

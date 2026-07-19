@@ -111,7 +111,7 @@ export function Footer() {
           className="mt-12 pt-8 flex flex-col md:flex-row items-center justify-between gap-4"
           style={{ borderTop: `1px solid ${C.border}` }}
         >
-          <p className="text-xs" style={{ color: C.muted }}>{t("footer.rights")}</p>
+          <p className="text-xs" style={{ color: C.muted }}>© {new Date().getFullYear()} Safarly. All rights reserved.</p>
           <div className="flex gap-4">
             {["Privacy", "Terms"].map((label) => (
               <span

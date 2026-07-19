@@ -5,7 +5,7 @@
 import { useTranslation } from "@/providers/translation-context";
 import { motion } from "framer-motion";
 import {
-  MapPin, MessageCircle, Camera, Languages, Compass, ArrowRight, Globe,
+  MapPin, MessageCircle, Camera, Languages, Compass, ArrowRight, Globe, BookOpen,
 } from "lucide-react";
 import { Link } from "wouter";
 
@@ -41,11 +41,12 @@ function DottedDivider() {
 }
 
 const FEATURES = [
-  { id: "planner",     icon: MapPin,       titleKey: "feature.planner.title",     descKey: "feature.planner.desc"     },
-  { id: "dialect",     icon: MessageCircle,titleKey: "feature.dialect.title",      descKey: "feature.dialect.desc"     },
-  { id: "lens",        icon: Camera,       titleKey: "feature.lens.title",         descKey: "feature.lens.desc"        },
-  { id: "translation", icon: Languages,    titleKey: "feature.translation.title",  descKey: "feature.translation.desc" },
-  { id: "guides",      icon: Compass,      titleKey: "feature.guides.title",       descKey: "feature.guides.desc"      },
+  { id: "planner",     icon: MapPin,       titleKey: "feature.planner.title",     descKey: "feature.planner.desc",     comingSoon: false },
+  { id: "dialect",     icon: MessageCircle,titleKey: "feature.dialect.title",      descKey: "feature.dialect.desc",     comingSoon: false },
+  { id: "lens",        icon: Camera,       titleKey: "feature.lens.title",         descKey: "feature.lens.desc",        comingSoon: false },
+  { id: "translation", icon: Languages,    titleKey: "feature.translation.title",  descKey: "feature.translation.desc", comingSoon: false },
+  { id: "guides",      icon: Compass,      titleKey: "feature.guides.title",       descKey: "feature.guides.desc",      comingSoon: true  },
+  { id: "culture",     icon: BookOpen,     titleKey: "feature.culture.title",      descKey: "feature.culture.desc",     comingSoon: false },
 ];
 
 const AGENT_CHIPS = [
@@ -86,6 +87,14 @@ export function HomeBelowFold() {
                 data-testid={`card-feature-${feature.id}`}
               >
                 <div className="absolute inset-0 bg-gradient-to-br from-[var(--sf-indigo)]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+                {feature.comingSoon && (
+                  <span
+                    className="absolute top-4 end-4 text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full z-10"
+                    style={{ background: "rgba(92,108,255,0.15)", color: "var(--sf-indigo)", border: "1px solid rgba(92,108,255,0.3)" }}
+                  >
+                    Coming soon
+                  </span>
+                )}
                 <feature.icon className="w-8 h-8 text-[var(--sf-indigo)] mb-4 relative z-10" />
                 <h3 className="text-xl font-bold mb-2 text-foreground relative z-10">
                   {t(feature.titleKey)}

@@ -338,7 +338,7 @@ export function Dashboard() {
           </h1>
           {/* Welcome line */}
           <p style={{ color: "var(--sf-text-muted)", fontSize: "0.9375rem" }}>
-            {t("dash.welcome")}
+            {t("dash.welcome")}{profile?.name ? `, ${profile.name}` : ""}
             {cityName && ` — ${t("dash.city").replace("{city}", cityName)}`}
             {trip?.dateStart && trip?.dateEnd && (
               <span style={{ marginInlineStart: 8, fontSize: "0.8125rem" }}>
@@ -367,29 +367,30 @@ export function Dashboard() {
             <div className="sf-dash-card">
               <CardTitle>{t("dash.stats.title")}</CardTitle>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
-                {[
-                  { label: t("dash.stats.stops"),     val: totalStops },
-                  { label: t("dash.stats.gems"),       val: gemCount },
-                  { label: t("dash.stats.verified"),   val: itin.verifiedCount ?? 0 },
-                  { label: t("dash.stats.phrases"),    val: learnedIds.length },
-                  { label: t("dash.stats.favorites"),  val: favorites.length },
-                ].map(({ label, val }) => (
-                  <div key={label} className="sf-stat-tile" style={{ minWidth: "calc(50% - 5px)" }}>
-                    <div style={{ fontSize: "1.5rem", fontWeight: 800, color: "var(--sf-text)" }}>{val}</div>
-                    <div style={{ fontSize: "0.6875rem", color: "var(--sf-text-muted)", fontWeight: 600, marginTop: 2 }}>{label}</div>
-                  </div>
-                ))}
-                {/* Progress ring tile */}
-                <div className="sf-stat-tile" style={{ minWidth: "calc(50% - 5px)", display: "flex", flexDirection: "column", alignItems: "center" }}>
-                  <div style={{ position: "relative", display: "inline-flex", alignItems: "center", justifyContent: "center", marginBottom: 4 }}>
-                    <ProgressRing learned={learnedIds.length} total={totalPhrases} size={44} />
-                    <span style={{ position: "absolute", fontSize: "0.6875rem", fontWeight: 800, color: "var(--sf-text)" }}>
-                      {Math.round(totalPhrases > 0 ? learnedIds.length / totalPhrases * 100 : 0)}%
-                    </span>
-                  </div>
-                  <div style={{ fontSize: "0.6875rem", color: "var(--sf-text-muted)", fontWeight: 600 }}>
-                    {t("dash.stats.phrases")}
-                  </div>
+                {/* Stops + verified merged */}
+                <div className="sf-stat-tile" style={{ minWidth: "calc(50% - 5px)" }}>
+                  <div style={{ fontSize: "1.5rem", fontWeight: 800, color: "var(--sf-text)" }}>{totalStops}</div>
+                  <div style={{ fontSize: "0.6875rem", color: "var(--sf-text-muted)", fontWeight: 600, marginTop: 2 }}>{t("dash.stats.stops")}</div>
+                  {(itin.verifiedCount ?? 0) > 0 && (
+                    <div style={{ fontSize: "0.625rem", color: "var(--sf-text-accent)", marginTop: 2 }}>
+                      {itin.verifiedCount} verified
+                    </div>
+                  )}
+                </div>
+                {/* Hidden gems */}
+                <div className="sf-stat-tile" style={{ minWidth: "calc(50% - 5px)" }}>
+                  <div style={{ fontSize: "1.5rem", fontWeight: 800, color: "var(--sf-text)" }}>{gemCount}</div>
+                  <div style={{ fontSize: "0.6875rem", color: "var(--sf-text-muted)", fontWeight: 600, marginTop: 2 }}>{t("dash.stats.gems")}</div>
+                </div>
+                {/* Phrases learned — count only */}
+                <div className="sf-stat-tile" style={{ minWidth: "calc(50% - 5px)" }}>
+                  <div style={{ fontSize: "1.5rem", fontWeight: 800, color: "var(--sf-text)" }}>{learnedIds.length}</div>
+                  <div style={{ fontSize: "0.6875rem", color: "var(--sf-text-muted)", fontWeight: 600, marginTop: 2 }}>{t("dash.stats.phrases")}</div>
+                </div>
+                {/* Favourite dishes */}
+                <div className="sf-stat-tile" style={{ minWidth: "calc(50% - 5px)" }}>
+                  <div style={{ fontSize: "1.5rem", fontWeight: 800, color: "var(--sf-text)" }}>{favorites.length}</div>
+                  <div style={{ fontSize: "0.6875rem", color: "var(--sf-text-muted)", fontWeight: 600, marginTop: 2 }}>{t("dash.stats.favorites")}</div>
                 </div>
               </div>
             </div>

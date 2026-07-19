@@ -37,7 +37,7 @@ export function Navbar() {
           <img
             src={safarlyLogo}
             alt="Safarly"
-            style={{ height: "46px", width: "auto", objectFit: "contain" }}
+            style={{ height: "56px", width: "auto", objectFit: "contain" }}
           />
         </Link>
 

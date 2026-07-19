@@ -290,6 +290,7 @@ export function Onboarding() {
   const [dir, setDir] = useState(1);
 
   // Step 1
+  const [name, setName]           = useState("");
   const [nationality, setNationality] = useState("");
   const [language, setLanguage] = useState("");
   const [ageRange, setAgeRange] = useState("");
@@ -315,12 +316,12 @@ export function Onboarding() {
     setStep((s) => Math.max(s - 1, 0));
   }
   function finish() {
-    const profile = { nationality, language, ageRange, dietary, allergies, travelType, accessibility, interests };
+    const profile = { name, nationality, language, ageRange, dietary, allergies, travelType, accessibility, interests };
     localStorage.setItem("safarly_profile", JSON.stringify(profile));
     navigate("/trip");
   }
 
-  const langs = ["English", "中文", "Русский", "اردو", "Français"];
+  const langs = ["العربية", "English", "اردو", "中文", "Русский", "Français"];
   const ages = ["ob.age.18", "ob.age.25", "ob.age.35", "ob.age.45", "ob.age.55"];
   const diets = ["ob.diet.vegetarian", "ob.diet.vegan", "ob.diet.halal", "ob.diet.none"];
   const allergyList = ["ob.allergy.nuts", "ob.allergy.dairy", "ob.allergy.gluten", "ob.allergy.sesame", "ob.allergy.eggs", "ob.allergy.shellfish"];
@@ -341,6 +342,29 @@ export function Onboarding() {
   const steps = [
     /* Step 1 */ (
       <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+        <div>
+          <SectionLabel label={t("ob.name.label")} />
+          <input
+            type="text"
+            value={name}
+            onChange={e => setName(e.target.value)}
+            placeholder={t("ob.name.placeholder")}
+            autoComplete="given-name"
+            style={{
+              width: "100%",
+              padding: "10px 14px",
+              borderRadius: 10,
+              border: "1px solid var(--sf-border)",
+              background: "var(--sf-surface-alt)",
+              color: "var(--sf-text)",
+              fontSize: "0.9375rem",
+              outline: "none",
+              boxSizing: "border-box",
+            }}
+            onFocus={e => (e.currentTarget.style.borderColor = "var(--sf-indigo)")}
+            onBlur={e => (e.currentTarget.style.borderColor = "var(--sf-border)")}
+          />
+        </div>
         <div>
           <SectionLabel label={t("ob.nationality.label")} />
           <NationalityDropdown
