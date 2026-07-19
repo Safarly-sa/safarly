@@ -8,6 +8,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Link } from "wouter";
 import { ArrowRight } from "lucide-react";
 import { useTranslation } from "@/providers/translation-context";
+import { getStartPath } from "@/lib/auth";
 
 interface HeroSlide {
   id: string;
@@ -324,7 +325,7 @@ export function DestinationCarousel({
           transition={{ duration: 0.6, delay: 0.2 }}
         >
           <Link
-            href="/onboarding"
+            href={getStartPath()}
             data-testid="link-start-planning"
             className="w-full sm:w-auto px-8 py-4 bg-[var(--sf-accent)] hover:bg-[var(--sf-accent-hover)] text-[#0A0E16] font-semibold text-lg transition-all duration-200 shadow-[0_0_20px_rgba(0,216,164,0.4)] hover:shadow-[0_0_36px_rgba(0,216,164,0.65)] flex items-center justify-center gap-2 active:scale-[0.98]"
             style={{ borderRadius: "10px" }}

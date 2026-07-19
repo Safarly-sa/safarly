@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import { useLocation } from "wouter";
-import { Volume2, VolumeX, X, CheckCircle2 } from "lucide-react";
+import { useLocation, Link } from "wouter";
+import { Volume2, VolumeX, X, UserCircle, ArrowRight } from "lucide-react";
 import { useTranslation } from "@/providers/translation-context";
 import { usePageMeta } from "@/lib/usePageMeta";
+import { getAuth } from "@/lib/auth";
 import dishesRaw  from "@/data/dishes.json";
 import phrasesRaw from "@/data/phrases.json";
 
@@ -156,74 +157,95 @@ function BudgetBar({ itin, trip, t }: { itin: ItinResult; trip: TripSpec; t: (k:
   );
 }
 
-/* ── Profile editor ─────────────────────────────────────────────────── */
-function ProfileEditor({ profile, onUpdate, t }: { profile: Profile; onUpdate: (p: Profile) => void; t: (k: string) => string }) {
-  const [saved, setSaved] = useState(false);
-
-  function toggle<T extends string>(arr: T[], val: T): T[] {
-    return arr.includes(val) ? arr.filter(x => x !== val) : [...arr, val];
-  }
-
-  function update(patch: Partial<Profile>) {
-    const next = { ...profile, ...patch };
-    onUpdate(next);
-    try { localStorage.setItem("safarly_profile", JSON.stringify(next)); } catch { /* */ }
-    setSaved(true);
-    setTimeout(() => setSaved(false), 1800);
-  }
-
+/* ── Profile summary card ────────────────────────────────────────────── */
+function ProfileCard({ profile, t }: { profile: Profile; t: (k: string) => string }) {
+  const auth = getAuth();
   const allergies = profile.allergies ?? [];
   const interests = profile.interests ?? [];
 
   return (
     <div>
-      <div style={{ marginBottom: 18 }}>
-        <p style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--sf-text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 10 }}>
-          {t("dash.profile.allergies")}
-        </p>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-          {ALLERGIES.map(a => {
-            const on = allergies.includes(a);
-            return (
-              <button key={a} className="sf-chip-toggle"
-                onClick={() => update({ allergies: toggle(allergies, a) })}
-                style={{
-                  background: on ? "color-mix(in srgb, var(--sf-error) 12%, var(--sf-surface))" : "var(--sf-surface)",
-                  color:      on ? "var(--sf-error)" : "var(--sf-text-muted)",
-                  borderColor:on ? "color-mix(in srgb, var(--sf-error) 30%, transparent)" : "var(--sf-border)",
-                }}
-              >
+      {/* Name + nationality row */}
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
+        <div style={{
+          width: 40, height: 40, borderRadius: "50%", flexShrink: 0,
+          background: "var(--sf-primary-soft)",
+          border: "1.5px solid var(--sf-indigo)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+        }}>
+          <UserCircle size={20} style={{ color: "var(--sf-indigo)" }} aria-hidden />
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <p style={{ fontWeight: 700, color: "var(--sf-text)", fontSize: "0.9375rem", lineHeight: 1.2 }}>
+            {auth?.name ?? profile.nationality ?? "—"}
+          </p>
+          {profile.nationality && (
+            <p style={{ fontSize: "0.8125rem", color: "var(--sf-text-muted)", marginTop: 2 }}>
+              {profile.nationality}
+            </p>
+          )}
+        </div>
+      </div>
+
+      {/* Allergies (read-only chips) */}
+      {allergies.length > 0 && (
+        <div style={{ marginBottom: 12 }}>
+          <p style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--sf-text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>
+            {t("dash.profile.allergies")}
+          </p>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+            {allergies.map(a => (
+              <span key={a} className="sf-chip-toggle" style={{
+                background: "color-mix(in srgb, var(--sf-error) 10%, var(--sf-surface))",
+                color: "var(--sf-error)",
+                borderColor: "color-mix(in srgb, var(--sf-error) 28%, transparent)",
+                cursor: "default",
+              }}>
                 {t(ALLERGY_KEY[a] ?? a)}
-              </button>
-            );
-          })}
+              </span>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
-      <div>
-        <p style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--sf-text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 10 }}>
-          {t("dash.profile.interests")}
-        </p>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-          {INTERESTS.map(i => {
-            const on = interests.includes(i);
-            return (
-              <button key={i} className="sf-chip-toggle"
-                onClick={() => update({ interests: toggle(interests, i) })}
-                style={{
-                  background: on ? "color-mix(in srgb, var(--sf-indigo) 12%, var(--sf-surface))" : "var(--sf-surface)",
-                  color:      on ? "var(--sf-indigo)" : "var(--sf-text-muted)",
-                  borderColor:on ? "color-mix(in srgb, var(--sf-indigo) 25%, transparent)" : "var(--sf-border)",
-                }}
-              >
+      {/* Interests (read-only chips) */}
+      {interests.length > 0 && (
+        <div style={{ marginBottom: 16 }}>
+          <p style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--sf-text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>
+            {t("dash.profile.interests")}
+          </p>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+            {interests.map(i => (
+              <span key={i} className="sf-chip-toggle" style={{
+                background: "color-mix(in srgb, var(--sf-indigo) 10%, var(--sf-surface))",
+                color: "var(--sf-indigo)",
+                borderColor: "color-mix(in srgb, var(--sf-indigo) 22%, transparent)",
+                cursor: "default",
+              }}>
                 {t(INTEREST_KEY[i] ?? i)}
-              </button>
-            );
-          })}
+              </span>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
-      {saved && <p className="sf-saved-notice" style={{ marginTop: 12 }}><CheckCircle2 size={12} style={{ display: "inline", marginInlineEnd: 4 }} />{t("dash.profile.saved")}</p>}
+      {/* Edit Profile link */}
+      <Link
+        href="/profile"
+        style={{
+          display: "inline-flex", alignItems: "center", gap: 6,
+          padding: "10px 18px", borderRadius: 10,
+          border: "1.5px solid var(--sf-border)",
+          background: "var(--sf-surface-alt)",
+          color: "var(--sf-text)", fontWeight: 600, fontSize: "0.875rem",
+          textDecoration: "none", transition: "border-color .18s, background .18s",
+        }}
+        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = "var(--sf-indigo)"; (e.currentTarget as HTMLElement).style.background = "var(--sf-primary-soft)"; }}
+        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = "var(--sf-border)"; (e.currentTarget as HTMLElement).style.background = "var(--sf-surface-alt)"; }}
+      >
+        Edit Profile
+        <ArrowRight size={14} aria-hidden />
+      </Link>
     </div>
   );
 }
@@ -310,7 +332,7 @@ export function Dashboard() {
             {t("page.itinerary.desc")}
           </p>
           <button
-            onClick={() => navigate("/onboarding")}
+            onClick={() => navigate("/login")}
             style={{
               background: "var(--sf-accent)", color: "#0A0E16",
               border: "none", borderRadius: 10, padding: "13px 28px",
@@ -396,11 +418,11 @@ export function Dashboard() {
             </div>
           )}
 
-          {/* ── Profile editor ── */}
+          {/* ── Profile summary ── */}
           {profile && (
             <div className="sf-dash-card">
               <CardTitle>{t("dash.profile.title")}</CardTitle>
-              <ProfileEditor profile={profile} onUpdate={setProfile} t={t} />
+              <ProfileCard profile={profile} t={t} />
             </div>
           )}
 

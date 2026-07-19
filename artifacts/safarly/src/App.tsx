@@ -12,7 +12,9 @@ import { BottomNav } from '@/components/BottomNav';
 import { Footer } from '@/components/Footer';
 
 import { Home } from '@/pages/home';
-import { Onboarding } from '@/pages/onboarding';
+import { Login } from '@/pages/login';
+import { ProfileSetup } from '@/pages/profile-setup';
+import { Profile } from '@/pages/profile';
 import { Trip } from '@/pages/trip';
 import { Generating } from '@/pages/generating';
 import { Itinerary } from '@/pages/itinerary';
@@ -75,8 +77,12 @@ function Router() {
         <Switch>
           <Route path="/" component={Home} />
           
-          <Route path="/onboarding" component={Onboarding} />
-          
+          <Route path="/login"         component={Login} />
+          <Route path="/profile-setup" component={ProfileSetup} />
+          <Route path="/profile"       component={Profile} />
+          {/* Legacy redirect: old /onboarding links go to /login */}
+          <Route path="/onboarding"    component={Login} />
+
           <Route path="/trip" component={Trip} />
           
           <Route path="/generating" component={Generating} />
