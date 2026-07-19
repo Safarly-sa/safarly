@@ -264,6 +264,14 @@ function CalendarPicker({ startDate, endDate, onChange, isRTL }: CalendarProps) 
   const [viewMonth, setViewMonth] = useState(todayDate.getMonth());
   const [hover, setHover]         = useState("");
 
+  // When a pre-filled startDate arrives (Edit Trip flow), jump the calendar to that month
+  useEffect(() => {
+    if (!startDate) return;
+    const d = new Date(startDate + "T00:00:00");
+    setViewYear(d.getFullYear());
+    setViewMonth(d.getMonth());
+  }, [startDate]);
+
   function parseD(s: string) { return new Date(s + "T00:00:00"); }
   function fmtD(d: Date) { return d.toISOString().split("T")[0]; }
   function isPast(s: string) { return parseD(s) < todayDate; }
@@ -559,6 +567,22 @@ export function Trip() {
   const [budget, setBudget]               = useState(3000);
   const [moods, setMoods]                 = useState<string[]>([]);
   const [goals, setGoals]                 = useState<string[]>([]);
+
+  /* Prefill from saved trip on mount (Edit Trip flow) */
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("safarly_trip");
+      if (!raw) return;
+      const saved = JSON.parse(raw) as Record<string, unknown>;
+      if (typeof saved.travelContext === "string") setTravelContext(saved.travelContext);
+      if (typeof saved.city         === "string") setCity(saved.city);
+      if (typeof saved.dateStart    === "string") setDateStart(saved.dateStart);
+      if (typeof saved.dateEnd      === "string") setDateEnd(saved.dateEnd);
+      if (typeof saved.budget       === "number") setBudget(saved.budget);
+      if (Array.isArray(saved.moods)) setMoods(saved.moods as string[]);
+      if (Array.isArray(saved.goals)) setGoals(saved.goals as string[]);
+    } catch { /* ignore parse errors */ }
+  }, []);
 
   function toggleMood(m: string) {
     setMoods(prev => prev.includes(m) ? prev.filter(x => x !== m) : [...prev, m]);

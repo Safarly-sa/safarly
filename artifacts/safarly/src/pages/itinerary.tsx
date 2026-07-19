@@ -3,7 +3,7 @@ import { useLocation } from "wouter";
 import {
   CheckCircle2, ExternalLink, MapPin, Utensils,
   Wrench, RotateCcw, ArrowLeft, Moon, Gem,
-  AlertTriangle, ShieldAlert, Compass, Navigation, Wallet, X,
+  AlertTriangle, ShieldAlert, Compass, Navigation, Wallet, X, Camera,
 } from "lucide-react";
 import { useTranslation } from "@/providers/translation-context";
 import { usePageMeta } from "@/lib/usePageMeta";
@@ -466,6 +466,7 @@ function TimelineNode({ color }: { color: string }) {
 function StopCard({
   stop, t, language,
   cascadePhase, closedPoiId, replacementPoiId,
+  onPhotoClick,
 }: {
   stop: ItineraryStop;
   t: (k: string) => string;
@@ -473,6 +474,7 @@ function StopCard({
   cascadePhase?: CascadePhase;
   closedPoiId?: string | null;
   replacementPoiId?: string | null;
+  onPhotoClick?: () => void;
 }) {
   const { poi } = stop;
 
@@ -550,18 +552,48 @@ function StopCard({
           </p>
         )}
 
-        {/* Maps link */}
-        {poi.map_url && !isClosed && (
-          <a
-            href={poi.map_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="sf-maps-link"
-          >
-            <MapPin size={12} aria-hidden />
-            {t("itin.maps")}
-            <ExternalLink size={11} aria-hidden style={{ opacity: 0.7 }} />
-          </a>
+        {/* Action row: Photos button + Maps link */}
+        {!isClosed && (
+          <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+            {onPhotoClick && (
+              <button
+                type="button"
+                onClick={onPhotoClick}
+                style={{
+                  display: "inline-flex", alignItems: "center", gap: 5,
+                  padding: "5px 11px", borderRadius: 8,
+                  border: "1.5px solid var(--sf-border)",
+                  background: "var(--sf-surface-alt)",
+                  color: "var(--sf-text-muted)", cursor: "pointer",
+                  fontSize: "0.8125rem", fontWeight: 600,
+                  transition: "border-color .15s, color .15s",
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.borderColor = "var(--sf-indigo)";
+                  e.currentTarget.style.color = "var(--sf-text)";
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.borderColor = "var(--sf-border)";
+                  e.currentTarget.style.color = "var(--sf-text-muted)";
+                }}
+              >
+                <Camera size={12} aria-hidden />
+                Photos
+              </button>
+            )}
+            {poi.map_url && (
+              <a
+                href={poi.map_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="sf-maps-link"
+              >
+                <MapPin size={12} aria-hidden />
+                {t("itin.maps")}
+                <ExternalLink size={11} aria-hidden style={{ opacity: 0.7 }} />
+              </a>
+            )}
+          </div>
         )}
       </div>
     </div>
@@ -998,6 +1030,7 @@ function ReplanToast({
 function DayTimeline({
   day, t, language,
   cascadePhase, closedPoiId, closedPoiName, replacementPoiId,
+  onPhotoClick,
 }: {
   day: ItineraryDay;
   t: (k: string) => string;
@@ -1006,6 +1039,7 @@ function DayTimeline({
   closedPoiId?: string | null;
   closedPoiName?: string;
   replacementPoiId?: string | null;
+  onPhotoClick?: (poi: RawPoi) => void;
 }) {
   // Build interleaved items: prayer markers + stops + meals in time order
   type Item =
@@ -1061,6 +1095,9 @@ function DayTimeline({
                 cascadePhase={cascadePhase}
                 closedPoiId={closedPoiId}
                 replacementPoiId={replacementPoiId}
+                onPhotoClick={onPhotoClick
+                  ? () => onPhotoClick(item.stop.poi as unknown as RawPoi)
+                  : undefined}
               />
             </div>
           );
@@ -1292,6 +1329,143 @@ function TripSummary({
   );
 }
 
+/* ── POI Photo Modal ────────────────────────────────────────────────── */
+function poiCategoryGradient(category: string, slot: number): string {
+  const sets: Record<string, string[]> = {
+    heritage: ["135deg,#92400E,#C17900", "90deg,#B45309,#D97706", "45deg,#78350F,#A16207"],
+    museum:   ["135deg,#0F766E,#14B8A6", "90deg,#0D9488,#2DD4BF", "45deg,#134E4A,#0F766E"],
+    nature:   ["135deg,#14532D,#16A34A", "90deg,#166534,#4ADE80", "45deg,#052E16,#166534"],
+    culture:  ["135deg,#3730A3,#6D28D9", "90deg,#4338CA,#7C3AED", "45deg,#312E81,#5B21B6"],
+    food:     ["135deg,#991B1B,#C2410C", "90deg,#B91C1C,#EA580C", "45deg,#7F1D1D,#9A3412"],
+    shopping: ["135deg,#065F46,#059669", "90deg,#047857,#10B981", "45deg,#064E3B,#047857"],
+  };
+  const slots = sets[category] ?? ["135deg,#334155,#475569", "90deg,#475569,#64748B", "45deg,#1E293B,#334155"];
+  return `linear-gradient(${slots[slot % 3]})`;
+}
+
+const CATEGORY_ICONS: Record<string, string> = {
+  heritage: "🏛️", museum: "🏺", nature: "🌿", culture: "🕌",
+  food: "🍽️", shopping: "🛍️", park: "🌳", beach: "🏖️",
+};
+
+function PoiPhotoModal({ poi, onClose }: { poi: RawPoi; onClose: () => void }) {
+  const icon = CATEGORY_ICONS[poi.category] ?? "📍";
+
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    function onKey(e: KeyboardEvent) { if (e.key === "Escape") onClose(); }
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = prev;
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [onClose]);
+
+  return (
+    <div
+      role="dialog" aria-modal="true" aria-label={`Photos of ${poi.name}`}
+      onClick={e => { if (e.target === e.currentTarget) onClose(); }}
+      style={{
+        position: "fixed", inset: 0, zIndex: 9100,
+        background: "rgba(0,0,0,0.72)", backdropFilter: "blur(5px)",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        padding: "20px",
+      }}
+    >
+      <div
+        onClick={e => e.stopPropagation()}
+        style={{
+          background: "var(--sf-surface)", borderRadius: 16,
+          width: "100%", maxWidth: 500,
+          maxHeight: "90dvh", overflowY: "auto",
+          boxShadow: "0 24px 64px rgba(0,0,0,0.55)",
+          display: "flex", flexDirection: "column",
+        }}
+      >
+        {/* Header */}
+        <div style={{
+          display: "flex", alignItems: "flex-start", justifyContent: "space-between",
+          gap: 12, padding: "16px 16px 12px",
+          borderBottom: "1px solid var(--sf-border)", flexShrink: 0,
+        }}>
+          <div>
+            <p style={{ fontWeight: 800, fontSize: "1.0625rem", color: "var(--sf-text)", lineHeight: 1.25, marginBottom: 5 }}>
+              {poi.name}
+            </p>
+            <span style={{
+              display: "inline-block", fontSize: "0.6875rem", fontWeight: 700,
+              textTransform: "uppercase", letterSpacing: "0.07em",
+              padding: "2px 8px", borderRadius: 20,
+              background: "var(--sf-surface-alt)", color: "var(--sf-text-muted)",
+            }}>
+              {poi.category}
+            </span>
+          </div>
+          <button
+            type="button" onClick={onClose} aria-label="Close photos"
+            style={{
+              width: 32, height: 32, borderRadius: 8,
+              border: "1px solid var(--sf-border)",
+              background: "var(--sf-surface-alt)", cursor: "pointer",
+              color: "var(--sf-text-muted)", display: "flex",
+              alignItems: "center", justifyContent: "center", flexShrink: 0,
+            }}
+          >
+            <X size={15} aria-hidden />
+          </button>
+        </div>
+
+        {/* Photo tiles */}
+        <div style={{ padding: "14px 16px", display: "flex", flexDirection: "column", gap: 10 }}>
+          {[0, 1, 2].map(slot => (
+            <div
+              key={slot}
+              style={{
+                borderRadius: 10, overflow: "hidden", aspectRatio: "16/9",
+                background: poiCategoryGradient(poi.category, slot),
+                display: "flex", flexDirection: "column",
+                alignItems: "center", justifyContent: "center", gap: 10,
+              }}
+            >
+              <span style={{ fontSize: "2.25rem", opacity: 0.88 }}>{icon}</span>
+              <div style={{ textAlign: "center", padding: "0 16px" }}>
+                <p style={{ fontSize: "0.8125rem", fontWeight: 700, color: "rgba(255,255,255,0.95)", lineHeight: 1.3, marginBottom: 2 }}>
+                  {poi.name}
+                </p>
+                <p style={{ fontSize: "0.6875rem", color: "rgba(255,255,255,0.6)" }}>
+                  Photo {slot + 1} of 3
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Footer — maps link */}
+        <div style={{
+          padding: "10px 16px 16px",
+          borderTop: "1px solid var(--sf-border)", flexShrink: 0,
+        }}>
+          {poi.map_url ? (
+            <a
+              href={poi.map_url} target="_blank" rel="noopener noreferrer"
+              className="sf-maps-link"
+            >
+              <MapPin size={12} aria-hidden />
+              Open in Google Maps
+              <ExternalLink size={11} aria-hidden style={{ opacity: 0.7 }} />
+            </a>
+          ) : (
+            <p style={{ fontSize: "0.8125rem", color: "var(--sf-text-muted)" }}>
+              No maps link available for this place.
+            </p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ── Main page ──────────────────────────────────────────────────────── */
 export function Itinerary() {
   const [, navigate]    = useLocation();
@@ -1302,6 +1476,7 @@ export function Itinerary() {
   const [result, setResult] = useState<ItineraryResult | null>(null);
   const [trip,   setTrip]   = useState<TripSpec | null>(null);
   const [activeDay, setActiveDay] = useState(0);
+  const [modalPoi, setModalPoi] = useState<RawPoi | null>(null);
 
   /* ── Cascade state ──────────────────────────────────────────────── */
   const [cascade, setCascade] = useState<CascadeInfo>({
@@ -1651,11 +1826,17 @@ export function Itinerary() {
                 closedPoiId={cascade.closedPoiId || null}
                 closedPoiName={cascade.closedPoiName}
                 replacementPoiId={cascade.replacementPoiId || null}
+                onPhotoClick={setModalPoi}
               />
             )}
           </div>
         </div>
       </div>
+
+      {/* ── POI photo modal ──────────────────────────────────────────── */}
+      {modalPoi && (
+        <PoiPhotoModal poi={modalPoi} onClose={() => setModalPoi(null)} />
+      )}
 
       {/* ── Fixed wrench ghost button ────────────────────────────────── */}
       <button
