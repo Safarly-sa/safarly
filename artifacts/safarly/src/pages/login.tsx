@@ -10,6 +10,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Mail, User, ArrowRight } from "lucide-react";
 import { usePageMeta } from "@/lib/usePageMeta";
 import { getAuth, setAuth, isProfileComplete } from "@/lib/auth";
+import { isValidEmail } from "@/lib/validation";
 import safarlyLogo from "@assets/safarly-lockup-light_1784459757614.png";
 
 export function Login() {
@@ -32,6 +33,10 @@ export function Login() {
     const trimName = name.trim();
 
     if (!trimEmail) { setError("Please enter your email address."); return; }
+    if (!isValidEmail(trimEmail)) {
+      setError("Please enter a valid email address, like you@example.com.");
+      return;
+    }
     if (mode === "signup" && !trimName) { setError("Please enter your name."); return; }
 
     if (mode === "signup") {

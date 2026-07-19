@@ -3,9 +3,10 @@ import { useLocation } from "wouter";
 import { Link } from "wouter";
 import { useTranslation } from "@/providers/translation-context";
 import { useTheme } from "@/providers/ThemeProvider";
-import { getAuth } from "@/lib/auth";
+import { getAuth, signOut } from "@/lib/auth";
+import { SignOutDialog } from "@/components/SignOutDialog";
 import safarlyLogo from "@assets/safarly-lockup-light_1784459757614.png";
-import { Sun, Moon, UserCircle, LogIn, Globe, ChevronDown } from "lucide-react";
+import { Sun, Moon, UserCircle, LogIn, LogOut, Globe, ChevronDown } from "lucide-react";
 import clsx from "clsx";
 import type { Language } from "@/providers/translation-context";
 
@@ -23,10 +24,11 @@ const LANGS: { code: Language; label: string; flag: string }[] = [
 export function Navbar() {
   const { t, language, setLanguage } = useTranslation();
   const { theme, toggleTheme } = useTheme();
-  const [location] = useLocation();
+  const [location, navigate] = useLocation();
 
   /* Auth-aware — re-reads whenever safarly-auth-changed fires */
   const [authed, setAuthed] = useState(() => !!getAuth());
+  const [confirmSignOut, setConfirmSignOut] = useState(false);
   useEffect(() => {
     function sync() { setAuthed(!!getAuth()); }
     window.addEventListener("safarly-auth-changed", sync);
@@ -172,18 +174,34 @@ export function Navbar() {
             )}
           </div>
 
-          {/* Auth button */}
+          {/* Auth buttons. Sign out is a separate control rather than a menu
+              item so it is reachable in one click from any page; it is kept
+              visually subordinate (muted until hover) because it is
+              destructive. It always confirms before clearing data. */}
           {authed ? (
-            <Link
-              href="/profile"
-              style={{ ...controlBtn, textDecoration: "none" }}
-              aria-label="My profile"
-              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "#EDEFF3"; (e.currentTarget as HTMLElement).style.borderColor = "#5C6CFF"; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "#8A93A6"; (e.currentTarget as HTMLElement).style.borderColor = "#232C3D"; }}
-            >
-              <UserCircle size={18} aria-hidden />
-              <span className="hidden sm:inline">Profile</span>
-            </Link>
+            <>
+              <Link
+                href="/profile"
+                style={{ ...controlBtn, textDecoration: "none" }}
+                aria-label="My profile"
+                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "#EDEFF3"; (e.currentTarget as HTMLElement).style.borderColor = "#5C6CFF"; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "#8A93A6"; (e.currentTarget as HTMLElement).style.borderColor = "#232C3D"; }}
+              >
+                <UserCircle size={18} aria-hidden />
+                <span className="hidden sm:inline">Profile</span>
+              </Link>
+              <button
+                type="button"
+                onClick={() => setConfirmSignOut(true)}
+                style={{ ...controlBtn }}
+                aria-label={t("profile.signout.button")}
+                onMouseEnter={(e) => { e.currentTarget.style.color = "#F87171"; e.currentTarget.style.borderColor = "#DC2626"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.color = "#8A93A6"; e.currentTarget.style.borderColor = "#232C3D"; }}
+              >
+                <LogOut size={16} aria-hidden />
+                <span className="hidden md:inline">{t("profile.signout.button")}</span>
+              </button>
+            </>
           ) : (
             <Link
               href="/login"
@@ -199,6 +217,18 @@ export function Navbar() {
 
         </div>
       </div>
+
+      {confirmSignOut && (
+        <SignOutDialog
+          t={t}
+          onCancel={() => setConfirmSignOut(false)}
+          onConfirm={() => {
+            signOut();
+            setConfirmSignOut(false);
+            navigate("/");
+          }}
+        />
+      )}
     </header>
   );
 }
