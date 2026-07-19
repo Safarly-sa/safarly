@@ -1,12 +1,24 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { Link } from "wouter";
 import { useTranslation } from "@/providers/translation-context";
 import { useTheme } from "@/providers/ThemeProvider";
 import { getAuth } from "@/lib/auth";
 import safarlyLogo from "@assets/safarly-lockup-light_1784459757614.png";
-import { Sun, Moon, UserCircle, LogIn } from "lucide-react";
+import { Sun, Moon, UserCircle, LogIn, Globe, ChevronDown } from "lucide-react";
 import clsx from "clsx";
+import type { Language } from "@/providers/translation-context";
+
+const LANGS: { code: Language; label: string; flag: string }[] = [
+  { code: "en", label: "English",   flag: "🇬🇧" },
+  { code: "ar", label: "العربية",   flag: "🇸🇦" },
+  { code: "de", label: "Deutsch",   flag: "🇩🇪" },
+  { code: "it", label: "Italiano",  flag: "🇮🇹" },
+  { code: "fr", label: "Français",  flag: "🇫🇷" },
+  { code: "ur", label: "اردو",      flag: "🇵🇰" },
+  { code: "zh", label: "中文",      flag: "🇨🇳" },
+  { code: "ru", label: "Русский",   flag: "🇷🇺" },
+];
 
 export function Navbar() {
   const { t, language, setLanguage } = useTranslation();
@@ -25,7 +37,19 @@ export function Navbar() {
     };
   }, []);
 
-  const toggleLanguage = () => setLanguage(language === "en" ? "ar" : "en");
+  /* Language dropdown */
+  const [langOpen, setLangOpen] = useState(false);
+  const langRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!langOpen) return;
+    function close(e: MouseEvent) {
+      if (langRef.current && !langRef.current.contains(e.target as Node)) setLangOpen(false);
+    }
+    document.addEventListener("mousedown", close);
+    return () => document.removeEventListener("mousedown", close);
+  }, [langOpen]);
+
+  const currentLang = LANGS.find(l => l.code === language) ?? LANGS[0];
 
   const navLinks = [
     { href: "/",         label: t("nav.plan")      },
@@ -91,16 +115,62 @@ export function Navbar() {
             {theme === "dark" ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
           </button>
 
-          {/* Language toggle */}
-          <button
-            onClick={toggleLanguage}
-            style={controlBtn}
-            onMouseEnter={(e) => { e.currentTarget.style.color = "#EDEFF3"; e.currentTarget.style.borderColor = "#5C6CFF"; }}
-            onMouseLeave={(e) => { e.currentTarget.style.color = "#8A93A6"; e.currentTarget.style.borderColor = "#232C3D"; }}
-            aria-label={t("nav.toggle_lang")}
-          >
-            {language === "en" ? "العربية" : "EN"}
-          </button>
+          {/* Language dropdown */}
+          <div ref={langRef} style={{ position: "relative" }}>
+            <button
+              onClick={() => setLangOpen(o => !o)}
+              style={{ ...controlBtn, gap: 5 }}
+              onMouseEnter={(e) => { e.currentTarget.style.color = "#EDEFF3"; e.currentTarget.style.borderColor = "#5C6CFF"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.color = "#8A93A6"; e.currentTarget.style.borderColor = "#232C3D"; }}
+              aria-label="Select language"
+              aria-expanded={langOpen}
+            >
+              <Globe size={13} aria-hidden />
+              <span style={{ maxWidth: 52, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {currentLang.label}
+              </span>
+              <ChevronDown size={11} aria-hidden style={{ opacity: 0.6, transition: "transform .15s", transform: langOpen ? "rotate(180deg)" : "none" }} />
+            </button>
+
+            {langOpen && (
+              <div style={{
+                position: "absolute",
+                top: "calc(100% + 8px)",
+                insetInlineEnd: 0,
+                zIndex: 200,
+                background: "#111827",
+                border: "1px solid #232C3D",
+                borderRadius: 12,
+                minWidth: 162,
+                overflow: "hidden",
+                boxShadow: "0 8px 32px rgba(0,0,0,0.45)",
+              }}>
+                {LANGS.map(l => (
+                  <button
+                    key={l.code}
+                    onClick={() => { setLanguage(l.code); setLangOpen(false); }}
+                    style={{
+                      display: "flex", alignItems: "center", gap: 10,
+                      width: "100%", padding: "10px 14px",
+                      background: language === l.code ? "#1A2233" : "transparent",
+                      color: language === l.code ? "#EDEFF3" : "#8A93A6",
+                      fontSize: "0.875rem",
+                      fontWeight: language === l.code ? 700 : 500,
+                      cursor: "pointer", border: "none",
+                      textAlign: "start",
+                      transition: "background .12s, color .12s",
+                    }}
+                    onMouseEnter={(e) => { if (language !== l.code) e.currentTarget.style.background = "#1A2233"; e.currentTarget.style.color = "#EDEFF3"; }}
+                    onMouseLeave={(e) => { if (language !== l.code) { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#8A93A6"; } }}
+                  >
+                    <span style={{ fontSize: "1.125rem", lineHeight: 1 }}>{l.flag}</span>
+                    <span>{l.label}</span>
+                    {language === l.code && <span style={{ marginInlineStart: "auto", color: "#5C6CFF", fontSize: "0.75rem" }}>✓</span>}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
 
           {/* Auth button */}
           {authed ? (

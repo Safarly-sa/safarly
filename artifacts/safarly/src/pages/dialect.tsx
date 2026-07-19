@@ -5,8 +5,10 @@ import { usePageMeta } from "@/lib/usePageMeta";
 import phrasesRaw from "@/data/phrases.json";
 
 /* ── Types ──────────────────────────────────────────────────────────── */
+type DialectKey = "najdi" | "hijazi" | "janubi" | "shamali";
+
 interface Phrase {
-  id: string; dialect: "najdi" | "hijazi";
+  id: string; dialect: DialectKey;
   situation: string; arabic: string;
   transliteration: string; english: string;
 }
@@ -249,7 +251,7 @@ export function Dialect() {
   usePageMeta("Dialect Tutor", "Learn Najdi and Hijazi Arabic phrases for your Saudi destination.");
   useDialectStyles();
 
-  const [dialect,      setDialect]   = useState<"najdi" | "hijazi">("najdi");
+  const [dialect,      setDialect]   = useState<DialectKey>("najdi");
   const [learnedIds,   setLearned]   = useState<string[]>(() => {
     try { return JSON.parse(localStorage.getItem("safarly_learned") ?? "[]"); } catch { return []; }
   });
@@ -261,7 +263,8 @@ export function Dialect() {
   useEffect(() => {
     try {
       const trip = JSON.parse(localStorage.getItem("safarly_trip") ?? "{}");
-      if (trip.city === "jeddah") setDialect("hijazi");
+      if (trip.city === "jeddah" || trip.city === "madinah" || trip.city === "taif") setDialect("hijazi");
+      else if (trip.city === "abha") setDialect("janubi");
       else setDialect("najdi");
     } catch { /* default najdi */ }
   }, []);
@@ -356,8 +359,14 @@ export function Dialect() {
     localStorage.setItem("safarly_learned", JSON.stringify(next));
   }
 
-  const dialectName = dialect === "najdi" ? t("dialect.najdi_name") : t("dialect.hijazi_name");
-  const dialectDesc = dialect === "najdi" ? t("dialect.najdi_desc") : t("dialect.hijazi_desc");
+  const DIALECT_I18N: Record<DialectKey, { name: string; desc: string }> = {
+    najdi:   { name: "dialect.najdi_name",   desc: "dialect.najdi_desc"   },
+    hijazi:  { name: "dialect.hijazi_name",  desc: "dialect.hijazi_desc"  },
+    janubi:  { name: "dialect.janubi_name",  desc: "dialect.janubi_desc"  },
+    shamali: { name: "dialect.shamali_name", desc: "dialect.shamali_desc" },
+  };
+  const dialectName = t(DIALECT_I18N[dialect].name);
+  const dialectDesc = t(DIALECT_I18N[dialect].desc);
 
   return (
     <div style={{ paddingTop: 68, paddingBottom: 88, background: "var(--sf-bg)", minHeight: "100dvh" }}>
@@ -399,8 +408,8 @@ export function Dialect() {
           </div>
 
           {/* Dialect switcher */}
-          <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
-            {(["najdi","hijazi"] as const).map(d => (
+          <div style={{ display: "flex", gap: 8, marginTop: 14, flexWrap: "wrap" }}>
+            {(["najdi","hijazi","janubi","shamali"] as const).map(d => (
               <button
                 key={d}
                 onClick={() => setDialect(d)}
@@ -413,7 +422,7 @@ export function Dialect() {
                   borderColor:dialect === d ? "var(--sf-indigo)" : "var(--sf-border)",
                 }}
               >
-                {d === "najdi" ? t("dialect.najdi_name") : t("dialect.hijazi_name")}
+                {t(DIALECT_I18N[d].name)}
               </button>
             ))}
           </div>
