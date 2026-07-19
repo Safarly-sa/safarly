@@ -13,12 +13,23 @@ type Translations = Record<string, string>;
 
 const LOCALES: Record<Language, Translations> = { en, ar, de, it, fr, ur, zh, ru };
 const RTL_LANGS = new Set<Language>(["ar", "ur"]);
+const SUPPORTED_LANGS = new Set<Language>(["en", "ar", "de", "it", "fr", "ur", "zh", "ru"]);
+
+function detectLocale(): Language {
+  const stored = localStorage.getItem("safarly-lang");
+  if (stored && SUPPORTED_LANGS.has(stored as Language)) {
+    return stored as Language;
+  }
+  // Map navigator.language (e.g. "de-AT", "zh-CN", "ar") to nearest supported locale
+  const nav = (navigator.language || "en").split("-")[0].toLowerCase();
+  if (SUPPORTED_LANGS.has(nav as Language)) {
+    return nav as Language;
+  }
+  return "en";
+}
 
 export function I18nProvider({ children }: { children: React.ReactNode }) {
-  const [language, setLanguage] = useState<Language>(() => {
-    const stored = localStorage.getItem("safarly-lang");
-    return (stored as Language) || "en";
-  });
+  const [language, setLanguage] = useState<Language>(detectLocale);
 
   useEffect(() => {
     localStorage.setItem("safarly-lang", language);
