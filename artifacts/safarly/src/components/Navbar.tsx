@@ -77,7 +77,7 @@ export function Navbar() {
 
         {/* Brand */}
         <Link href="/" className="flex items-center shrink-0 group" aria-label="Safarly — Home">
-          <img src={safarlyLogo} alt="Safarly" style={{ height: "56px", width: "auto", objectFit: "contain" }} />
+          <img src={safarlyLogo} alt="Safarly" style={{ height: "40px", width: "auto", objectFit: "contain" }} />
         </Link>
 
         {/* Nav links */}

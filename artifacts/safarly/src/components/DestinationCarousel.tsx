@@ -9,6 +9,7 @@ import { Link } from "wouter";
 import { ArrowRight } from "lucide-react";
 import { useTranslation } from "@/providers/translation-context";
 import { getStartPath } from "@/lib/auth";
+import safarlyLogo from "@assets/safarly-lockup-light_1784459757614.png";
 
 interface HeroSlide {
   id: string;
@@ -289,6 +290,27 @@ export function DestinationCarousel({
           </motion.div>
         </AnimatePresence>
 
+        {/* Safarly logo */}
+        {!children && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.88 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.55, ease: "easeOut" }}
+            style={{ display: "flex", justifyContent: "center", marginBottom: 28 }}
+          >
+            <img
+              src={safarlyLogo}
+              alt="Safarly"
+              style={{
+                height: "clamp(100px, 16vw, 240px)",
+                width: "auto",
+                objectFit: "contain",
+                filter: "drop-shadow(0 0 32px rgba(0,216,164,0.55)) drop-shadow(0 0 64px rgba(0,216,164,0.25))",
+              }}
+            />
+          </motion.div>
+        )}
+
         {/* Main headline — always visible, children or default */}
         {children ?? (
           <motion.h1
@@ -334,7 +356,7 @@ export function DestinationCarousel({
             <ArrowRight className="w-5 h-5 rtl:rotate-180" />
           </Link>
           <Link
-            href="/lens"
+            href="/about"
             data-testid="link-see-how"
             className="w-full sm:w-auto px-8 py-4 font-semibold text-lg transition-all duration-200 flex items-center justify-center gap-2 active:scale-[0.98]"
             style={{

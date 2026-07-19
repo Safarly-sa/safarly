@@ -4,6 +4,7 @@ import {
   CheckCircle2, ExternalLink, MapPin, Utensils,
   Wrench, RotateCcw, ArrowLeft, Moon, Gem,
   AlertTriangle, ShieldAlert, Compass, Navigation, Wallet, X, Camera,
+  ZoomIn, ZoomOut,
 } from "lucide-react";
 import { useTranslation } from "@/providers/translation-context";
 import { usePageMeta } from "@/lib/usePageMeta";
@@ -20,6 +21,107 @@ interface RawPoi {
   map_url?: string; culture_note?: string;
 }
 const ALL_POIS = poisRaw as RawPoi[];
+
+/* ── City coordinates for embedded map ─────────────────────────────── */
+const CITY_COORDS: Record<string, [number, number]> = {
+  riyadh:  [24.6877, 46.7219],
+  jeddah:  [21.4858, 39.1925],
+  madinah: [24.5247, 39.5692],
+  makkah:  [21.3891, 39.8579],
+  abha:    [18.2164, 42.5053],
+  alula:   [26.6133, 37.9169],
+  taif:    [21.2702, 40.4158],
+  khobar:  [26.2854, 50.2088],
+  dammam:  [26.4207, 50.0888],
+  neom:    [28.3000, 35.3000],
+  ai:      [24.6877, 46.7219],
+};
+
+const ZOOM_DELTAS = [0.35, 0.18, 0.09, 0.045, 0.022, 0.011, 0.006, 0.003];
+
+function osmSrc(lat: number, lng: number, zoom: number): string {
+  const d = ZOOM_DELTAS[Math.max(0, zoom - 10)] ?? 0.35;
+  return `https://www.openstreetmap.org/export/embed.html?bbox=${lng - d},${lat - d},${lng + d},${lat + d}&layer=mapnik&marker=${lat},${lng}`;
+}
+
+function DestinationMap({ city }: { city: string }) {
+  const [zoom, setZoom] = useState(13);
+  const coords = CITY_COORDS[city] ?? CITY_COORDS["riyadh"];
+  const [lat, lng] = coords;
+  const src = osmSrc(lat, lng, zoom);
+
+  return (
+    <div style={{ marginTop: 32, marginBottom: 8 }}>
+      <div style={{
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        marginBottom: 12,
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <MapPin size={15} style={{ color: "var(--sf-text-accent)" }} aria-hidden />
+          <span style={{ fontSize: "0.875rem", fontWeight: 700, color: "var(--sf-text)" }}>
+            Destination Map
+          </span>
+          <span style={{ fontSize: "0.75rem", color: "var(--sf-text-muted)", textTransform: "capitalize" }}>
+            — {city}
+          </span>
+        </div>
+        {/* Zoom controls */}
+        <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+          <button
+            onClick={() => setZoom(z => Math.min(17, z + 1))}
+            disabled={zoom >= 17}
+            aria-label="Zoom in"
+            style={{
+              display: "flex", alignItems: "center", justifyContent: "center",
+              width: 34, height: 34, borderRadius: 8,
+              border: "1px solid var(--sf-border)", background: "var(--sf-surface)",
+              color: "var(--sf-text-muted)", cursor: zoom >= 17 ? "not-allowed" : "pointer",
+              opacity: zoom >= 17 ? 0.4 : 1, transition: "border-color 0.15s, color 0.15s",
+            }}
+            onMouseEnter={e => { if (zoom < 17) { (e.currentTarget as HTMLElement).style.borderColor = "var(--sf-indigo)"; (e.currentTarget as HTMLElement).style.color = "var(--sf-indigo)"; } }}
+            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = "var(--sf-border)"; (e.currentTarget as HTMLElement).style.color = "var(--sf-text-muted)"; }}
+          >
+            <ZoomIn size={16} aria-hidden />
+          </button>
+          <span style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--sf-text-muted)", minWidth: 28, textAlign: "center" }}>
+            {zoom}
+          </span>
+          <button
+            onClick={() => setZoom(z => Math.max(10, z - 1))}
+            disabled={zoom <= 10}
+            aria-label="Zoom out"
+            style={{
+              display: "flex", alignItems: "center", justifyContent: "center",
+              width: 34, height: 34, borderRadius: 8,
+              border: "1px solid var(--sf-border)", background: "var(--sf-surface)",
+              color: "var(--sf-text-muted)", cursor: zoom <= 10 ? "not-allowed" : "pointer",
+              opacity: zoom <= 10 ? 0.4 : 1, transition: "border-color 0.15s, color 0.15s",
+            }}
+            onMouseEnter={e => { if (zoom > 10) { (e.currentTarget as HTMLElement).style.borderColor = "var(--sf-indigo)"; (e.currentTarget as HTMLElement).style.color = "var(--sf-indigo)"; } }}
+            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = "var(--sf-border)"; (e.currentTarget as HTMLElement).style.color = "var(--sf-text-muted)"; }}
+          >
+            <ZoomOut size={16} aria-hidden />
+          </button>
+        </div>
+      </div>
+      <div style={{ borderRadius: 14, overflow: "hidden", border: "1px solid var(--sf-border)", height: 320 }}>
+        <iframe
+          key={src}
+          src={src}
+          title={`Map of ${city}`}
+          width="100%"
+          height="100%"
+          style={{ border: "none", display: "block" }}
+          loading="lazy"
+          referrerPolicy="no-referrer"
+        />
+      </div>
+      <p style={{ fontSize: "0.6875rem", color: "var(--sf-text-muted)", marginTop: 6, textAlign: "end" }}>
+        © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer" style={{ color: "inherit" }}>OpenStreetMap</a> contributors
+      </p>
+    </div>
+  );
+}
 
 /* ── Cascade state shape ────────────────────────────────────────────── */
 type CascadePhase = "idle" | "closed" | "feeding" | "replanned";
@@ -1914,6 +2016,10 @@ export function Itinerary() {
             )}
           </div>
         </div>
+
+        {/* ── Destination map ──────────────────────────────────────────── */}
+        <DestinationMap city={trip.city} />
+
       </div>
 
       {/* ── POI photo modal ──────────────────────────────────────────── */}

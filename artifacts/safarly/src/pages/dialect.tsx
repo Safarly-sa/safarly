@@ -13,7 +13,7 @@ interface Phrase {
   transliteration: string; english: string;
 }
 
-type PracticePhase = "idle" | "playing" | "listening" | "done";
+type PracticePhase = "idle" | "playing" | "listening" | "recording" | "result" | "done";
 
 /* ── Static data ────────────────────────────────────────────────────── */
 const ALL_PHRASES = phrasesRaw as Phrase[];
@@ -115,6 +115,35 @@ function useDialectStyles() {
         min-height: 44px; width: 100%; transition: opacity 0.15s;
       }
       .sf-confirm-btn:hover { opacity: 0.85; }
+      @keyframes sf-mic-pulse {
+        0%   { transform: scale(1);   opacity: 0.7; }
+        50%  { transform: scale(1.35); opacity: 0; }
+        100% { transform: scale(1);   opacity: 0; }
+      }
+      .sf-mic-outer {
+        position: absolute; inset: 0; border-radius: 50%;
+        border: 2px solid #EF4444;
+        animation: sf-mic-pulse 1.2s ease-out infinite;
+      }
+      .sf-result-pass {
+        background: color-mix(in srgb, var(--sf-accent) 8%, var(--sf-surface));
+        border: 1px solid color-mix(in srgb, var(--sf-accent) 30%, var(--sf-border));
+        border-radius: 12px; padding: 16px 14px; margin-bottom: 14px; text-align: center;
+      }
+      .sf-result-fail {
+        background: color-mix(in srgb, #EF4444 6%, var(--sf-surface));
+        border: 1px solid color-mix(in srgb, #EF4444 25%, var(--sf-border));
+        border-radius: 12px; padding: 16px 14px; margin-bottom: 14px; text-align: center;
+      }
+      .sf-skip-btn {
+        display: flex; align-items: center; justify-content: center;
+        gap: 6px; padding: 9px 16px; border-radius: 999px;
+        border: 1px solid var(--sf-border); background: transparent;
+        color: var(--sf-text-muted); font-size: 0.8125rem; font-weight: 600;
+        cursor: pointer; min-height: 40px; white-space: nowrap;
+        transition: border-color 0.15s, color 0.15s;
+      }
+      .sf-skip-btn:hover { border-color: var(--sf-text-muted); color: var(--sf-text); }
       .sf-learned-badge {
         display: inline-flex; align-items: center; gap: 4px;
         padding: 3px 10px; border-radius: 999px;
@@ -127,15 +156,34 @@ function useDialectStyles() {
   }, []);
 }
 
+/* ── Arabic comparison helpers ──────────────────────────────────────── */
+function stripTashkeel(s: string): string {
+  return s.replace(/[\u064B-\u065F\u0670]/g, "").trim();
+}
+function arabicMatch(transcript: string, expected: string): boolean {
+  const t = stripTashkeel(transcript);
+  const e = stripTashkeel(expected);
+  const tWords = t.split(/\s+/).filter(w => w.length > 1);
+  const eWords = e.split(/\s+/).filter(w => w.length > 1);
+  if (eWords.length === 0) return false;
+  const matched = eWords.filter(ew => tWords.some(tw => tw.includes(ew) || ew.includes(tw)));
+  return matched.length >= Math.max(1, Math.ceil(eWords.length * 0.4));
+}
+
 /* ── Phrase card ────────────────────────────────────────────────────── */
-function PhraseCard({ phrase, practicePhase, hasAudio, t, language, onPlay, onPractice, onConfirm }: {
+function PhraseCard({ phrase, practicePhase, hasAudio, t, language, onPlay, onPractice, onConfirm, onRetry, onSkip, practiceResult, noMic }: {
   phrase: Phrase; practicePhase: PracticePhase; hasAudio: boolean;
   t: (k: string) => string; language: string;
   onPlay: () => void; onPractice: () => void; onConfirm: () => void;
+  onRetry: () => void; onSkip: () => void;
+  practiceResult: { passed: boolean } | null;
+  noMic: boolean;
 }) {
-  const isLearned   = practicePhase === "done";
-  const isListening = practicePhase === "listening";
-  const isPlaying   = practicePhase === "playing";
+  const isLearned    = practicePhase === "done";
+  const isListening  = practicePhase === "listening"; // fallback: no mic
+  const isPlaying    = practicePhase === "playing";
+  const isRecording  = practicePhase === "recording";
+  const isResult     = practicePhase === "result";
 
   const listenLabel = isPlaying ? t("dialect.playing") : t("dialect.play");
 
@@ -172,34 +220,79 @@ function PhraseCard({ phrase, practicePhase, hasAudio, t, language, onPlay, onPr
         {phrase.english}
       </div>
 
-      {/* Practice panel */}
+      {/* Recording panel — mic is active */}
+      {isRecording && (
+        <div style={{
+          background: "color-mix(in srgb, #EF4444 6%, var(--sf-surface))",
+          border: "1px solid color-mix(in srgb, #EF4444 20%, var(--sf-border))",
+          borderRadius: 12, padding: "16px 14px", marginBottom: 14, textAlign: "center",
+        }}>
+          <div style={{ display: "flex", justifyContent: "center", marginBottom: 10 }}>
+            <div style={{ position: "relative", width: 52, height: 52, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <div className="sf-mic-outer" />
+              <Mic size={22} style={{ color: "#EF4444", position: "relative", zIndex: 1 }} aria-hidden />
+            </div>
+          </div>
+          <p style={{ fontSize: "0.9375rem", fontWeight: 700, color: "#EF4444", marginBottom: 4 }}>Listening…</p>
+          <p style={{ fontSize: "0.8125rem", color: "var(--sf-text-muted)" }}>Say the phrase aloud</p>
+        </div>
+      )}
+
+      {/* Result panel — pass */}
+      {isResult && practiceResult?.passed && (
+        <div className="sf-result-pass" style={{ marginBottom: 14 }}>
+          <div style={{ fontSize: "2rem", marginBottom: 6 }}>✓</div>
+          <p style={{ fontSize: "1rem", fontWeight: 800, color: "var(--sf-text-accent)", marginBottom: 4 }}>Got it!</p>
+          <p style={{ fontSize: "0.8125rem", color: "var(--sf-text-muted)", marginBottom: 14 }}>Great pronunciation.</p>
+          <button className="sf-confirm-btn" onClick={onConfirm}>
+            <CheckCircle2 size={16} aria-hidden />
+            Mark as learned
+          </button>
+        </div>
+      )}
+
+      {/* Result panel — fail */}
+      {isResult && practiceResult && !practiceResult.passed && (
+        <div className="sf-result-fail" style={{ marginBottom: 14 }}>
+          <div style={{ fontSize: "1.75rem", marginBottom: 6 }}>✗</div>
+          <p style={{ fontSize: "0.9375rem", fontWeight: 700, color: "#EF4444", marginBottom: 4 }}>Try again</p>
+          <p style={{ fontSize: "0.8125rem", color: "var(--sf-text-muted)", marginBottom: 14 }}>
+            Listen for: <span style={{ color: "var(--sf-text-accent)", fontStyle: "italic" }}>{phrase.transliteration}</span>
+          </p>
+          <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap" }}>
+            <button className="sf-play-btn" onClick={onPlay} disabled={!hasAudio} style={{ minWidth: 90 }}>
+              <Volume2 size={13} aria-hidden /> Listen first
+            </button>
+            <button className="sf-practice-btn" onClick={onRetry} style={{ minWidth: 90 }}>
+              <Mic size={13} aria-hidden /> Try again
+            </button>
+            <button className="sf-skip-btn" onClick={onSkip}>Skip →</button>
+          </div>
+        </div>
+      )}
+
+      {/* Fallback panel — no mic / no SpeechRecognition */}
       {isListening && (
         <div style={{
           background: "color-mix(in srgb, var(--sf-indigo) 8%, var(--sf-surface))",
           border: "1px solid color-mix(in srgb, var(--sf-indigo) 20%, var(--sf-border))",
-          borderRadius: 12, padding: "16px 14px", marginBottom: 14,
-          textAlign: "center",
+          borderRadius: 12, padding: "16px 14px", marginBottom: 14, textAlign: "center",
         }}>
-          {/* Pulse ring */}
-          <div style={{ display: "flex", justifyContent: "center", marginBottom: 12 }}>
+          <div style={{ display: "flex", justifyContent: "center", marginBottom: 10 }}>
             <div style={{ position: "relative", width: 52, height: 52, display: "flex", alignItems: "center", justifyContent: "center" }}>
               <div className="sf-pulse-outer" />
-              <div style={{ position: "relative", zIndex: 1 }}>
-                <Mic size={22} style={{ color: "var(--sf-indigo)" }} aria-hidden />
-              </div>
+              <Mic size={22} style={{ color: "var(--sf-indigo)", position: "relative", zIndex: 1 }} aria-hidden />
             </div>
           </div>
-          <p style={{ fontSize: "0.9375rem", fontWeight: 700, color: "var(--sf-indigo)", marginBottom: 12 }}>
-            {t("dialect.now_say")}
+          <p style={{ fontSize: "0.8125rem", color: "var(--sf-text-muted)", marginBottom: 14 }}>
+            {noMic ? "Mic unavailable — tap when you've said it" : t("dialect.now_say")}
           </p>
-          <button
-            className="sf-confirm-btn"
-            onClick={onConfirm}
-            aria-label={t("dialect.i_said")}
-          >
-            <CheckCircle2 size={16} aria-hidden />
-            {t("dialect.i_said")}
-          </button>
+          <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
+            <button className="sf-confirm-btn" onClick={onConfirm} style={{ flex: 1 }}>
+              <CheckCircle2 size={16} aria-hidden /> {t("dialect.i_said")}
+            </button>
+            <button className="sf-skip-btn" onClick={onSkip}>Skip</button>
+          </div>
         </div>
       )}
 
@@ -259,8 +352,10 @@ export function Dialect() {
     try { return JSON.parse(localStorage.getItem("safarly_learned") ?? "[]"); } catch { return []; }
   });
   const [practiceMap,  setPMap]      = useState<Record<string, PracticePhase>>({});
+  const [resultMap,    setResultMap] = useState<Record<string, { passed: boolean }>>({});
+  const [micMissing,   setMicMissing] = useState<Record<string, boolean>>({});
   const [hasAudio,     setHasAudio]  = useState(false);
-  const timerRefs = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+  const timerRefs = useRef<Record<string, ReturnType<typeof setTimeout>>>({}); 
 
   /* ── Determine dialect from trip ──────────────────────────────────── */
   useEffect(() => {
@@ -344,10 +439,64 @@ export function Dialect() {
   }
 
   function handlePractice(phrase: Phrase) {
-    setPMap(m => ({ ...m, [phrase.id]: "playing" }));
-    speak(phrase.arabic).then(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const SR = (window as any).SpeechRecognition ?? (window as any).webkitSpeechRecognition;
+
+    if (!SR) {
+      // Browser doesn't support SpeechRecognition — fall back to manual confirmation
+      setMicMissing(m => ({ ...m, [phrase.id]: true }));
       setPMap(m => ({ ...m, [phrase.id]: "listening" }));
-    });
+      return;
+    }
+
+    setPMap(m => ({ ...m, [phrase.id]: "recording" }));
+
+    let handled = false;
+    const rec = new SR() as SpeechRecognition;
+    rec.lang = "ar-SA";
+    rec.maxAlternatives = 5;
+    rec.interimResults = false;
+
+    rec.onresult = (event: SpeechRecognitionEvent) => {
+      handled = true;
+      const alternatives = Array.from({ length: event.results[0].length }, (_, i) => event.results[0][i].transcript);
+      const passed = alternatives.some(alt => arabicMatch(alt, phrase.arabic));
+      if (passed) {
+        // Auto-mark as learned on correct pronunciation
+        handleConfirm(phrase.id);
+      } else {
+        setResultMap(prev => ({ ...prev, [phrase.id]: { passed: false } }));
+        setPMap(m => ({ ...m, [phrase.id]: "result" }));
+      }
+    };
+
+    rec.onerror = () => {
+      if (!handled) {
+        handled = true;
+        setMicMissing(m => ({ ...m, [phrase.id]: true }));
+        setPMap(m => ({ ...m, [phrase.id]: "listening" }));
+      }
+    };
+
+    rec.onend = () => {
+      if (!handled) {
+        handled = true;
+        // No speech detected — treat as failed attempt
+        setResultMap(prev => ({ ...prev, [phrase.id]: { passed: false } }));
+        setPMap(m => ({ ...m, [phrase.id]: "result" }));
+      }
+    };
+
+    try { rec.start(); }
+    catch {
+      setMicMissing(m => ({ ...m, [phrase.id]: true }));
+      setPMap(m => ({ ...m, [phrase.id]: "listening" }));
+    }
+  }
+
+  function handleRetry(phraseId: string) {
+    setResultMap(prev => { const next = { ...prev }; delete next[phraseId]; return next; });
+    setPMap(m => ({ ...m, [phraseId]: "idle" }));
   }
 
   function handleConfirm(phraseId: string) {
@@ -449,6 +598,10 @@ export function Dialect() {
                   onPlay={() => handlePlay(p)}
                   onPractice={() => handlePractice(p)}
                   onConfirm={() => handleConfirm(p.id)}
+                  onRetry={() => handleRetry(p.id)}
+                  onSkip={() => handleConfirm(p.id)}
+                  practiceResult={resultMap[p.id] ?? null}
+                  noMic={micMissing[p.id] ?? false}
                 />
               ))}
             </div>
