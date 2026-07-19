@@ -273,6 +273,34 @@
   "lens.try_demo": "Try a demo menu",
   "lens.demo_hint": "Try with a demo menu",
 
+  "lens.tab.menu": "Menu",
+  "lens.tab.place": "Place",
+  "lens.tab.signage": "Signage",
+
+  "lens.upload.title.place": "Identify a Landmark",
+  "lens.upload.desc.place": "Drag & drop a photo of a landmark or building",
+  "lens.upload.tap.place": "Choose a photo",
+  "lens.upload.title.signage": "Read a Sign",
+  "lens.upload.desc.signage": "Drag & drop a photo of a road sign or direction board",
+  "lens.upload.tap.signage": "Choose a photo",
+
+  "lens.scanning.menu": "Scanning menu…",
+  "lens.scanning.place": "Identifying landmark…",
+  "lens.scanning.signage": "Reading signs…",
+
+  "lens.place.title": "Place Identified",
+  "lens.place.unknown": "Unknown Landmark",
+  "lens.place.unknown.note": "Tap to learn more about this location.",
+  "lens.place.culture": "Cultural Note",
+  "lens.place.maps": "Open in Maps",
+  "lens.place.rescan": "Scan Another Place",
+
+  "lens.sign.title": "Signs Detected",
+  "lens.sign.copy": "Copy all text",
+  "lens.sign.copied": "Copied!",
+  "lens.sign.km": "km",
+  "lens.sign.rescan": "Scan Another Sign",
+
   "dialect.title": "Dialect Tutor",
   "dialect.najdi_name": "Najdi",
   "dialect.hijazi_name": "Hijazi",

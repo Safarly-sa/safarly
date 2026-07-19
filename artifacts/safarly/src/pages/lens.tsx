@@ -1,19 +1,68 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Camera, CheckCircle2, AlertTriangle, X, Plus, ScanLine, RotateCcw, ChevronRight } from "lucide-react";
+import { Camera, CheckCircle2, AlertTriangle, X, Plus, ScanLine, RotateCcw, ChevronRight, MapPin, ExternalLink, Copy, Check } from "lucide-react";
 import { useTranslation } from "@/providers/translation-context";
 import { usePageMeta } from "@/lib/usePageMeta";
 import dishesRaw from "@/data/dishes.json";
+import poisRaw   from "@/data/pois.json";
 
 /* ── Types ──────────────────────────────────────────────────────────── */
+type LensMode = "menu" | "place" | "signage";
+
 interface Dish {
   id: string; name: string; name_ar: string;
   meal_type: string; price_sar: number;
   common_allergens: string[]; food_weight: number; description: string;
 }
 
+interface Poi {
+  id: string; name: string; city: string; category: string;
+  map_url?: string; culture_note?: string; hidden_gem?: boolean;
+}
+
+interface PlaceResult { name: string; category: string; culture_note?: string; map_url?: string; }
+interface SignRow     { arrow: string; city: string; distance: number; }
+
 /* ── Static data ────────────────────────────────────────────────────── */
 const ALL_DISHES = dishesRaw as Dish[];
 const DISHES_BY_ID = Object.fromEntries(ALL_DISHES.map(d => [d.id, d]));
+
+const ALL_POIS = poisRaw as Poi[];
+const POIS_WITH_NOTE = ALL_POIS.filter(p => p.culture_note);
+
+const SIGN_CITIES = ["Riyadh","Jeddah","AlUla","Madinah","Dammam","Makkah","Taif","Abha","Yanbu","Al Khobar"];
+const SIGN_ARROWS = ["→","←","↑","↗","↖"];
+
+/* Deterministic hash — same filename always gives same result */
+function strHash(s: string): number {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (Math.imul(31, h) + s.charCodeAt(i)) | 0;
+  return Math.abs(h);
+}
+
+function scanPlace(filename: string): PlaceResult {
+  if (POIS_WITH_NOTE.length === 0) return { name: "Unknown Landmark", category: "heritage" };
+  const idx = strHash(filename) % POIS_WITH_NOTE.length;
+  const poi  = POIS_WITH_NOTE[idx];
+  return { name: poi.name, category: poi.category, culture_note: poi.culture_note, map_url: poi.map_url };
+}
+
+function scanSignage(filename: string): SignRow[] {
+  const h    = strHash(filename);
+  const count = 2 + (h % 3); // 2-4 rows
+  const rows: SignRow[] = [];
+  const usedCities = new Set<string>();
+  for (let i = 0; i < count; i++) {
+    let cityIdx = (h + i * 7) % SIGN_CITIES.length;
+    while (usedCities.has(SIGN_CITIES[cityIdx])) cityIdx = (cityIdx + 1) % SIGN_CITIES.length;
+    usedCities.add(SIGN_CITIES[cityIdx]);
+    rows.push({
+      arrow:    SIGN_ARROWS[(h + i * 3) % SIGN_ARROWS.length],
+      city:     SIGN_CITIES[cityIdx],
+      distance: 5 + ((h + i * 11) % 195), // 5–199 km
+    });
+  }
+  return rows;
+}
 
 // filename-substring → dish ID list (swap scanMenu() body for real vision API)
 const DEMO_LOOKUP: Record<string, string[]> = {
@@ -156,6 +205,41 @@ function useLensStyles() {
         border-color: var(--sf-accent);
         border-style: solid;
       }
+      /* mode tabs */
+      .sf-lens-tab {
+        padding: 8px 20px; border-radius: 8px; font-size: 0.875rem;
+        font-weight: 700; cursor: pointer; border: 1.5px solid transparent;
+        transition: all .18s; white-space: nowrap;
+        background: transparent; color: var(--sf-text-muted);
+      }
+      .sf-lens-tab.active {
+        background: var(--sf-surface); color: var(--sf-text);
+        border-color: var(--sf-border);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+      }
+      .sf-lens-tab:not(.active):hover { color: var(--sf-text); }
+      /* place card */
+      .sf-place-card {
+        background: var(--sf-surface); border: 1px solid var(--sf-border);
+        border-radius: 14px; padding: 24px; display: flex; flex-direction: column; gap: 16px;
+      }
+      /* sign row */
+      .sf-sign-row {
+        display: flex; align-items: center; gap: 16px;
+        padding: 14px 16px; border-radius: 12px;
+        background: var(--sf-surface); border: 1px solid var(--sf-border);
+        transition: border-color .15s;
+      }
+      .sf-sign-row:hover { border-color: color-mix(in srgb, var(--sf-accent) 40%, var(--sf-border)); }
+      .sf-copy-btn {
+        display: inline-flex; align-items: center; gap: 7px;
+        padding: 10px 18px; border-radius: 999px; border: 1.5px solid var(--sf-border);
+        background: var(--sf-surface); color: var(--sf-text-muted);
+        font-size: 0.8125rem; font-weight: 600; cursor: pointer;
+        transition: border-color .15s, color .15s;
+      }
+      .sf-copy-btn:hover { border-color: var(--sf-accent); color: var(--sf-accent); }
+      .sf-copy-btn.copied { border-color: var(--sf-success); color: var(--sf-success); }
     `;
     document.head.appendChild(s);
   }, []);
@@ -338,6 +422,195 @@ function DishModal({ dish, userAllergens, isFav, t, language, onClose, onAddFav 
   );
 }
 
+/* ── Mode tab bar ───────────────────────────────────────────────────── */
+function ModeTabs({ mode, onSwitch, t }: {
+  mode: LensMode; onSwitch: (m: LensMode) => void; t: (k: string) => string;
+}) {
+  const tabs: { key: LensMode; icon: string; label: string }[] = [
+    { key: "menu",    icon: "🍽️", label: t("lens.tab.menu")    },
+    { key: "place",   icon: "📍", label: t("lens.tab.place")   },
+    { key: "signage", icon: "🪧", label: t("lens.tab.signage") },
+  ];
+  return (
+    <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 2 }}>
+      {tabs.map(({ key, icon, label }) => (
+        <button
+          key={key} type="button"
+          className={`sf-lens-tab${mode === key ? " active" : ""}`}
+          onClick={() => onSwitch(key)}
+        >
+          <span style={{ marginInlineEnd: 6 }}>{icon}</span>
+          {label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/* ── Place result card ──────────────────────────────────────────────── */
+function PlaceCard({ result, t, onReset }: {
+  result: PlaceResult; t: (k: string) => string; onReset: () => void;
+}) {
+  const CAT_ICONS: Record<string, string> = {
+    heritage: "🏛️", museum: "🏺", nature: "🌿", culture: "🕌",
+    food: "🍽️", shopping: "🛍️", park: "🌳", beach: "🏖️",
+    modern: "🏙️", entertainment: "🎡", art: "🎨", adventure: "🧗", religion: "☪️",
+  };
+  const icon = CAT_ICONS[result.category] ?? "📍";
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+      {/* Header */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <h2 style={{ fontSize: "1.0625rem", fontWeight: 800, color: "var(--sf-text)" }}>
+          {t("lens.place.title")}
+        </h2>
+        <button
+          onClick={onReset}
+          style={{ display: "flex", alignItems: "center", gap: 6, padding: "9px 16px", borderRadius: 999, minHeight: 40, border: "1px solid var(--sf-border)", background: "var(--sf-surface)", color: "var(--sf-text-muted)", fontSize: "0.8125rem", fontWeight: 600, cursor: "pointer" }}
+        >
+          <RotateCcw size={13} aria-hidden /> {t("lens.place.rescan")}
+        </button>
+      </div>
+
+      <div className="sf-place-card">
+        {/* Icon + name */}
+        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+          <div style={{
+            width: 64, height: 64, borderRadius: 14, flexShrink: 0,
+            background: "color-mix(in srgb, var(--sf-accent) 12%, var(--sf-surface))",
+            border: "1px solid var(--sf-border)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: "1.875rem",
+          }}>
+            {icon}
+          </div>
+          <div>
+            <h3 style={{ fontWeight: 800, color: "var(--sf-text)", fontSize: "1.125rem", lineHeight: 1.25, marginBottom: 6 }}>
+              {result.name}
+            </h3>
+            <span style={{
+              display: "inline-block", fontSize: "0.6875rem", fontWeight: 700,
+              textTransform: "uppercase", letterSpacing: "0.07em",
+              padding: "3px 10px", borderRadius: 20,
+              background: "var(--sf-surface-alt)", color: "var(--sf-text-muted)",
+            }}>
+              {result.category}
+            </span>
+          </div>
+        </div>
+
+        {/* Culture note */}
+        <div>
+          <p style={{ fontSize: "0.6875rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: "var(--sf-text-muted)", marginBottom: 8 }}>
+            {t("lens.place.culture")}
+          </p>
+          <p style={{ fontSize: "0.9375rem", color: "var(--sf-text)", lineHeight: 1.7 }}>
+            {result.culture_note ?? t("lens.place.unknown.note")}
+          </p>
+        </div>
+
+        {/* Maps link */}
+        {result.map_url ? (
+          <a
+            href={result.map_url} target="_blank" rel="noopener noreferrer"
+            style={{
+              display: "inline-flex", alignItems: "center", gap: 7, alignSelf: "flex-start",
+              padding: "10px 18px", borderRadius: 999,
+              border: "1.5px solid var(--sf-indigo)",
+              background: "color-mix(in srgb, var(--sf-indigo) 8%, var(--sf-surface))",
+              color: "var(--sf-indigo)", fontWeight: 700, fontSize: "0.875rem",
+              textDecoration: "none", transition: "background .15s",
+            }}
+          >
+            <MapPin size={14} aria-hidden />
+            {t("lens.place.maps")}
+            <ExternalLink size={12} aria-hidden style={{ opacity: 0.7 }} />
+          </a>
+        ) : (
+          <a
+            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(result.name + " Saudi Arabia")}`}
+            target="_blank" rel="noopener noreferrer"
+            style={{
+              display: "inline-flex", alignItems: "center", gap: 7, alignSelf: "flex-start",
+              padding: "10px 18px", borderRadius: 999,
+              border: "1.5px solid var(--sf-indigo)",
+              background: "color-mix(in srgb, var(--sf-indigo) 8%, var(--sf-surface))",
+              color: "var(--sf-indigo)", fontWeight: 700, fontSize: "0.875rem",
+              textDecoration: "none",
+            }}
+          >
+            <MapPin size={14} aria-hidden />
+            {t("lens.place.maps")}
+            <ExternalLink size={12} aria-hidden style={{ opacity: 0.7 }} />
+          </a>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ── Signage result ─────────────────────────────────────────────────── */
+function SignResults({ rows, t, onReset }: {
+  rows: SignRow[]; t: (k: string) => string; onReset: () => void;
+}) {
+  const [copied, setCopied] = useState(false);
+
+  function copyAll() {
+    const text = rows.map(r => `${r.arrow} ${r.city} — ${r.distance} ${t("lens.sign.km")}`).join("\n");
+    navigator.clipboard.writeText(text).catch(() => { /* silent */ });
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+      {/* Header */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
+        <h2 style={{ fontSize: "1.0625rem", fontWeight: 800, color: "var(--sf-text)" }}>
+          {t("lens.sign.title")}
+        </h2>
+        <button
+          onClick={onReset}
+          style={{ display: "flex", alignItems: "center", gap: 6, padding: "9px 16px", borderRadius: 999, minHeight: 40, border: "1px solid var(--sf-border)", background: "var(--sf-surface)", color: "var(--sf-text-muted)", fontSize: "0.8125rem", fontWeight: 600, cursor: "pointer" }}
+        >
+          <RotateCcw size={13} aria-hidden /> {t("lens.sign.rescan")}
+        </button>
+      </div>
+
+      {/* Sign rows */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        {rows.map((row, i) => (
+          <div key={i} className="sf-sign-row">
+            <span style={{ fontSize: "2rem", lineHeight: 1, flexShrink: 0 }}>{row.arrow}</span>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontWeight: 800, color: "var(--sf-text)", fontSize: "1.0625rem", lineHeight: 1.2 }}>
+                {row.city}
+              </div>
+              <div style={{ fontSize: "0.8125rem", color: "var(--sf-text-muted)", marginTop: 3 }}>
+                {row.distance} {t("lens.sign.km")}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Copy button */}
+      <div style={{ display: "flex", justifyContent: "center", marginTop: 4 }}>
+        <button
+          type="button" onClick={copyAll}
+          className={`sf-copy-btn${copied ? " copied" : ""}`}
+        >
+          {copied
+            ? <><Check size={14} aria-hidden /> {t("lens.sign.copied")}</>
+            : <><Copy size={14} aria-hidden /> {t("lens.sign.copy")}</>
+          }
+        </button>
+      </div>
+    </div>
+  );
+}
+
 /* ── Main Lens page ─────────────────────────────────────────────────── */
 type Phase = "upload" | "scanning" | "results";
 
@@ -346,14 +619,20 @@ export function Lens() {
   usePageMeta("Live Lens", "Scan restaurant menus and spot allergens instantly with AI.");
   useLensStyles();
 
+  const [mode,        setMode]        = useState<LensMode>("menu");
   const [phase,       setPhase]       = useState<Phase>("upload");
   const [imageUrl,    setImageUrl]    = useState<string | null>(null);
   const [scanFilename,setScanFilename]= useState("");
+  // Menu-mode state
   const [dishes,      setDishes]      = useState<Dish[]>([]);
   const [selected,    setSelected]    = useState<Dish | null>(null);
   const [favorites,   setFavorites]   = useState<string[]>(() => {
     try { return JSON.parse(localStorage.getItem("safarly_favorites") ?? "[]"); } catch { return []; }
   });
+  // Place-mode state
+  const [placeResult, setPlaceResult] = useState<PlaceResult | null>(null);
+  // Signage-mode state
+  const [signRows,    setSignRows]    = useState<SignRow[]>([]);
   const [userAllergens, setAllergens] = useState<string[]>([]);
   const [isDragging,  setIsDragging]  = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -367,12 +646,18 @@ export function Lens() {
     return () => { if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current); };
   }, []);
 
-  function startScan(filename: string, imgUrl: string) {
+  function startScan(filename: string, imgUrl: string, currentMode: LensMode = mode) {
     setScanFilename(filename);
     setImageUrl(imgUrl);
     setPhase("scanning");
     setTimeout(() => {
-      setDishes(scanMenu(filename));
+      if (currentMode === "menu") {
+        setDishes(scanMenu(filename));
+      } else if (currentMode === "place") {
+        setPlaceResult(scanPlace(filename));
+      } else {
+        setSignRows(scanSignage(filename));
+      }
       setPhase("results");
     }, 2200);
   }
@@ -400,6 +685,19 @@ export function Lens() {
     setImageUrl(null);
     setDishes([]);
     setSelected(null);
+    setPlaceResult(null);
+    setSignRows([]);
+    if (objectUrlRef.current) { URL.revokeObjectURL(objectUrlRef.current); objectUrlRef.current = null; }
+  }
+
+  function switchMode(m: LensMode) {
+    setMode(m);
+    setPhase("upload");
+    setImageUrl(null);
+    setDishes([]);
+    setSelected(null);
+    setPlaceResult(null);
+    setSignRows([]);
     if (objectUrlRef.current) { URL.revokeObjectURL(objectUrlRef.current); objectUrlRef.current = null; }
   }
 
@@ -407,12 +705,14 @@ export function Lens() {
   return (
     <div style={{ paddingTop: 68, paddingBottom: 88, background: "var(--sf-bg)", minHeight: "100dvh" }}>
       {/* Header */}
-      <div style={{ borderBottom: "1px solid var(--sf-border)", padding: "20px 20px 16px" }}>
+      <div style={{ borderBottom: "1px solid var(--sf-border)", padding: "20px 20px 0" }}>
         <div style={{ maxWidth: 680, margin: "0 auto" }}>
           <h1 style={{ fontSize: "clamp(1.25rem,4vw,1.625rem)", fontWeight: 800, color: "var(--sf-text)", letterSpacing: "-0.02em", marginBottom: 4 }}>
             {t("page.lens.title")}
           </h1>
-          <p style={{ color: "var(--sf-text-muted)", fontSize: "0.875rem" }}>{t("lens.subtitle")}</p>
+          <p style={{ color: "var(--sf-text-muted)", fontSize: "0.875rem", marginBottom: 16 }}>{t("lens.subtitle")}</p>
+          {/* Mode tab strip */}
+          <ModeTabs mode={mode} onSwitch={switchMode} t={t} />
         </div>
       </div>
 
@@ -438,17 +738,19 @@ export function Lens() {
                 <ViewfinderCorners />
                 <Camera size={40} style={{ color: "var(--sf-accent)", margin: "0 auto 16px" }} aria-hidden />
                 <p style={{ fontSize: "1.0625rem", fontWeight: 700, color: "var(--sf-text)", marginBottom: 8 }}>
-                  {isDragging ? t("lens.drag_here") : t("lens.upload.title")}
+                  {isDragging
+                    ? t("lens.drag_here")
+                    : t(mode === "place" ? "lens.upload.title.place" : mode === "signage" ? "lens.upload.title.signage" : "lens.upload.title")}
                 </p>
                 <p style={{ fontSize: "0.875rem", color: "var(--sf-text-muted)", marginBottom: 16 }}>
-                  {t("lens.upload.desc")}
+                  {t(mode === "place" ? "lens.upload.desc.place" : mode === "signage" ? "lens.upload.desc.signage" : "lens.upload.desc")}
                 </p>
                 <span style={{
                   display: "inline-block", padding: "10px 22px", borderRadius: 999,
                   background: "var(--sf-accent)", color: "#0A0E16",
                   fontWeight: 700, fontSize: "0.875rem", pointerEvents: "none",
                 }}>
-                  {t("lens.upload.tap")}
+                  {t(mode === "place" ? "lens.upload.tap.place" : mode === "signage" ? "lens.upload.tap.signage" : "lens.upload.tap")}
                 </span>
                 <p style={{ fontSize: "0.75rem", color: "var(--sf-text-muted)", marginTop: 12 }}>
                   {t("lens.upload.hint")}
@@ -469,20 +771,22 @@ export function Lens() {
               </p>
             )}
 
-            {/* Demo menu buttons */}
-            <div style={{ marginTop: 28 }}>
-              <p style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--sf-text-muted)", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 12, textAlign: "center" }}>
-                {t("lens.demo_hint")}
-              </p>
-              <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap" }}>
-                {DEMO_MENUS.map(m => (
-                  <button key={m.key} className="sf-demo-btn" onClick={() => tryDemo(m.key)}>
-                    <ScanLine size={13} style={{ display: "inline", marginInlineEnd: 5 }} aria-hidden />
-                    {m.label}
-                  </button>
-                ))}
+            {/* Demo menu buttons — only in Menu mode */}
+            {mode === "menu" && (
+              <div style={{ marginTop: 28 }}>
+                <p style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--sf-text-muted)", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 12, textAlign: "center" }}>
+                  {t("lens.demo_hint")}
+                </p>
+                <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap" }}>
+                  {DEMO_MENUS.map(m => (
+                    <button key={m.key} className="sf-demo-btn" onClick={() => tryDemo(m.key)}>
+                      <ScanLine size={13} style={{ display: "inline", marginInlineEnd: 5 }} aria-hidden />
+                      {m.label}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
           </>
         )}
 
@@ -493,7 +797,7 @@ export function Lens() {
             <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.35)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16 }}>
               <div className="sf-scan-sweep" />
               <p style={{ color: "#fff", fontWeight: 700, fontSize: "1.0625rem", textShadow: "0 2px 8px rgba(0,0,0,0.5)" }}>
-                {t("lens.scanning")}
+                {t(mode === "place" ? "lens.scanning.place" : mode === "signage" ? "lens.scanning.signage" : "lens.scanning.menu")}
               </p>
             </div>
           </div>
@@ -502,38 +806,51 @@ export function Lens() {
         {/* ── Results phase ── */}
         {phase === "results" && (
           <>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20, flexWrap: "wrap", gap: 10 }}>
-              <div>
-                <h2 style={{ fontSize: "1.0625rem", fontWeight: 800, color: "var(--sf-text)", marginBottom: 2 }}>
-                  {t("lens.results.title")}
-                </h2>
-                <p style={{ fontSize: "0.8125rem", color: "var(--sf-text-muted)" }}>
-                  {t("lens.results.count").replace("{n}", String(dishes.length))}
+            {/* Menu mode — dish cards */}
+            {mode === "menu" && (
+              <>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20, flexWrap: "wrap", gap: 10 }}>
+                  <div>
+                    <h2 style={{ fontSize: "1.0625rem", fontWeight: 800, color: "var(--sf-text)", marginBottom: 2 }}>
+                      {t("lens.results.title")}
+                    </h2>
+                    <p style={{ fontSize: "0.8125rem", color: "var(--sf-text-muted)" }}>
+                      {t("lens.results.count").replace("{n}", String(dishes.length))}
+                    </p>
+                  </div>
+                  <button
+                    onClick={reset}
+                    style={{
+                      display: "flex", alignItems: "center", gap: 6,
+                      padding: "9px 16px", borderRadius: 999, minHeight: 40,
+                      border: "1px solid var(--sf-border)", background: "var(--sf-surface)",
+                      color: "var(--sf-text-muted)", fontSize: "0.8125rem", fontWeight: 600, cursor: "pointer",
+                    }}
+                  >
+                    <RotateCcw size={13} aria-hidden /> {t("lens.rescan")}
+                  </button>
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 16 }}>
+                  {dishes.map(d => (
+                    <DishCard key={d.id} dish={d} userAllergens={userAllergens}
+                      t={t} language={language} onClick={() => setSelected(d)} />
+                  ))}
+                </div>
+                <p style={{ fontSize: "0.75rem", color: "var(--sf-text-muted)", textAlign: "center", lineHeight: 1.6 }}>
+                  ⚠ {t("lens.results.disclaimer")}
                 </p>
-              </div>
-              <button
-                onClick={reset}
-                style={{
-                  display: "flex", alignItems: "center", gap: 6,
-                  padding: "9px 16px", borderRadius: 999, minHeight: 40,
-                  border: "1px solid var(--sf-border)", background: "var(--sf-surface)",
-                  color: "var(--sf-text-muted)", fontSize: "0.8125rem", fontWeight: 600, cursor: "pointer",
-                }}
-              >
-                <RotateCcw size={13} aria-hidden /> {t("lens.rescan")}
-              </button>
-            </div>
+              </>
+            )}
 
-            <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 16 }}>
-              {dishes.map(d => (
-                <DishCard key={d.id} dish={d} userAllergens={userAllergens}
-                  t={t} language={language} onClick={() => setSelected(d)} />
-              ))}
-            </div>
+            {/* Place mode — single place card */}
+            {mode === "place" && placeResult && (
+              <PlaceCard result={placeResult} t={t} onReset={reset} />
+            )}
 
-            <p style={{ fontSize: "0.75rem", color: "var(--sf-text-muted)", textAlign: "center", lineHeight: 1.6 }}>
-              ⚠ {t("lens.results.disclaimer")}
-            </p>
+            {/* Signage mode — direction rows */}
+            {mode === "signage" && signRows.length > 0 && (
+              <SignResults rows={signRows} t={t} onReset={reset} />
+            )}
           </>
         )}
       </div>

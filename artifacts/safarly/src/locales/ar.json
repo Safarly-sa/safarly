@@ -273,6 +273,34 @@
   "lens.try_demo": "جرّب قائمة تجريبية",
   "lens.demo_hint": "جرّب مع قائمة تجريبية",
 
+  "lens.tab.menu": "قائمة الطعام",
+  "lens.tab.place": "مكان",
+  "lens.tab.signage": "اللافتات",
+
+  "lens.upload.title.place": "تعرّف على معلم",
+  "lens.upload.desc.place": "اسحب وأفلت صورة لمعلم أو مبنى",
+  "lens.upload.tap.place": "اختر صورة",
+  "lens.upload.title.signage": "اقرأ لافتة",
+  "lens.upload.desc.signage": "اسحب وأفلت صورة للافتة طريق أو لوحة إرشادية",
+  "lens.upload.tap.signage": "اختر صورة",
+
+  "lens.scanning.menu": "جاري مسح القائمة…",
+  "lens.scanning.place": "جاري التعرف على المعلم…",
+  "lens.scanning.signage": "جاري قراءة اللافتات…",
+
+  "lens.place.title": "تم التعرف على المكان",
+  "lens.place.unknown": "معلم غير معروف",
+  "lens.place.unknown.note": "اضغط لمعرفة المزيد عن هذا المكان.",
+  "lens.place.culture": "ملاحظة ثقافية",
+  "lens.place.maps": "فتح الخريطة",
+  "lens.place.rescan": "امسح مكانًا آخر",
+
+  "lens.sign.title": "اللافتات المكتشفة",
+  "lens.sign.copy": "نسخ كل النصوص",
+  "lens.sign.copied": "تم النسخ!",
+  "lens.sign.km": "كم",
+  "lens.sign.rescan": "امسح لافتة أخرى",
+
   "dialect.title": "معلم اللهجات",
   "dialect.najdi_name": "النجدية",
   "dialect.hijazi_name": "الحجازية",
