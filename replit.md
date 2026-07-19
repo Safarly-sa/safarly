@@ -1,15 +1,16 @@
-# [Project name]
+# Safarly — Travel Companion
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+A Saudi-focused travel companion app that helps users plan trips, browse destinations, scan menus with Live Lens, and learn local dialect phrases.
 
 ## Run & Operate
 
-- `pnpm --filter @workspace/api-server run dev` — run the API server (port 5000)
+- Frontend runs on port 25035 via `pnpm --filter @workspace/safarly run dev`
+- API server runs on port 8080 via `pnpm --filter @workspace/api-server run dev`
 - `pnpm run typecheck` — full typecheck across all packages
 - `pnpm run build` — typecheck + build all packages
 - `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
 - `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
-- Required env: `DATABASE_URL` — Postgres connection string
+- Required env: `DATABASE_URL` — Postgres connection string (needed for API server DB calls)
 
 ## Stack
 
