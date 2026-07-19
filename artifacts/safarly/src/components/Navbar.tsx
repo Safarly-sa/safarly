@@ -2,7 +2,7 @@ import { useLocation } from "wouter";
 import { Link } from "wouter";
 import { useTranslation } from "@/providers/translation-context";
 import { useTheme } from "@/providers/ThemeProvider";
-import safarlyLogo from "@assets/safarly-transparent_1784408718766.png";
+import safarlyLogo from "@assets/safarly-lockup-light_1784459757614.png";
 import { Sun, Moon } from "lucide-react";
 import clsx from "clsx";
 
@@ -33,23 +33,12 @@ export function Navbar() {
     >
       <div className="max-w-7xl mx-auto px-6 lg:px-8 h-full flex items-center justify-between">
         {/* Brand */}
-        <Link href="/" className="flex items-center gap-2.5 group shrink-0" aria-label="Safarly — Home">
+        <Link href="/" className="flex items-center shrink-0 group" aria-label="Safarly — Home">
           <img
             src={safarlyLogo}
             alt="Safarly"
-            style={{ height: "38px", width: "auto", objectFit: "contain" }}
+            style={{ height: "46px", width: "auto", objectFit: "contain" }}
           />
-          <span
-            className="font-bold text-xl tracking-tight"
-            style={{
-              background: "linear-gradient(90deg, #00D8A4, #5C6CFF)",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-              backgroundClip: "text",
-            }}
-          >
-            Safarly
-          </span>
         </Link>
 
         {/* Nav links */}

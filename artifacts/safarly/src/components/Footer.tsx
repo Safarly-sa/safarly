@@ -1,4 +1,4 @@
-import safarlyLogo from "@assets/safarly-transparent_1784408718766.png";
+import safarlyLogo from "@assets/safarly-lockup-light_1784459757614.png";
 import { useTranslation } from "@/providers/translation-context";
 import { Link } from "wouter";
 
@@ -24,21 +24,16 @@ export function Footer() {
 
           {/* Brand column */}
           <div className="md:col-span-2">
-            <Link href="/" className="flex items-center gap-2 group outline-none inline-flex mb-4">
+            <Link href="/" className="inline-flex group outline-none mb-5">
               <img
                 src={safarlyLogo}
                 alt="Safarly"
-                className="h-8 w-auto object-contain transition-opacity duration-300"
-                style={{ opacity: 0.8 }}
+                className="w-auto object-contain transition-opacity duration-300"
+                style={{ height: "52px", opacity: 0.9 }}
                 onMouseEnter={e => (e.currentTarget.style.opacity = "1")}
-                onMouseLeave={e => (e.currentTarget.style.opacity = "0.8")}
+                onMouseLeave={e => (e.currentTarget.style.opacity = "0.9")}
               />
             </Link>
-
-            <p className="font-bold text-lg tracking-tight mb-1" style={{ color: C.text }}>
-              Safarly —{" "}
-              <span className="font-normal" style={{ color: C.muted }}>Travel Companion</span>
-            </p>
 
             <p className="text-sm max-w-sm mb-6" style={{ color: C.muted }}>
               {t("footer.tagline")}
