@@ -21,9 +21,7 @@ export function BottomNav() {
     >
       <div className="flex justify-around items-center h-16 px-2">
         {links.map((link) => {
-          const isActive =
-            location === link.href ||
-            (link.href === "/itinerary" && location === "/trip");
+          const isActive = location === link.href;
           return (
             <Link
               key={link.href}

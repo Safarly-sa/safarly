@@ -851,11 +851,13 @@ function OngoingTripTab({ confirmed, language, learnedIds, favorites, t }: {
           </div>
           <Link href="/itinerary" style={{
             marginInlineStart: "auto", display: "inline-flex", alignItems: "center", gap: 6,
-            padding: "7px 14px", borderRadius: 8, border: "1px solid var(--sf-border)",
-            background: "var(--sf-surface-alt)", color: "var(--sf-text)", fontWeight: 600,
-            fontSize: "0.8125rem", textDecoration: "none",
+            padding: "8px 16px", borderRadius: 8,
+            border: "1.5px solid var(--sf-indigo)",
+            background: "color-mix(in srgb, var(--sf-indigo) 10%, var(--sf-surface))",
+            color: "var(--sf-indigo)", fontWeight: 700,
+            fontSize: "0.8125rem", textDecoration: "none", flexShrink: 0,
           }}>
-            Full view <ArrowRight size={13} aria-hidden />
+            Open Itinerary <ArrowRight size={13} aria-hidden />
           </Link>
         </div>
       </div>
