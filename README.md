@@ -55,17 +55,11 @@ that's a real regression — please don't merge past it.
 
 ## Contributing
 
-`main` should stay deployable. Work on a branch and open a pull request:
+**Never commit directly to `main`** — branch, then open a pull request. Run
+`pnpm run build` before pushing, and check your change in both English and Arabic
+(the app has two right-to-left locales).
 
-```bash
-git checkout -b your-feature
-# ... make changes ...
-git push -u origin your-feature
-gh pr create
-```
-
-Before opening a PR, run `pnpm --filter @workspace/safarly run build` to confirm
-the site still builds.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the full workflow and the sharp edges.
 
 ## Further reading
 
