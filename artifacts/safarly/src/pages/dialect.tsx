@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Volume2, Mic, CheckCircle2, VolumeX } from "lucide-react";
 import { useTranslation } from "@/providers/translation-context";
+import { usePageMeta } from "@/lib/usePageMeta";
 import phrasesRaw from "@/data/phrases.json";
 
 /* ── Types ──────────────────────────────────────────────────────────── */
@@ -245,6 +246,7 @@ function PhraseCard({ phrase, practicePhase, hasAudio, t, language, onPlay, onPr
 /* ── Main Dialect page ──────────────────────────────────────────────── */
 export function Dialect() {
   const { t, language } = useTranslation();
+  usePageMeta("Dialect Tutor", "Learn Najdi and Hijazi Arabic phrases for your Saudi destination.");
   useDialectStyles();
 
   const [dialect,      setDialect]   = useState<"najdi" | "hijazi">("najdi");

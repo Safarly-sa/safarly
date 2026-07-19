@@ -6,6 +6,7 @@ import {
   AlertTriangle, ShieldAlert, Compass, Navigation, Wallet, X,
 } from "lucide-react";
 import { useTranslation } from "@/providers/translation-context";
+import { usePageMeta } from "@/lib/usePageMeta";
 import { generateItinerary, type ItineraryResult, type ItineraryDay, type ItineraryStop, type ItineraryMeal, type TripSpec, type TravelerProfile, type Objectives } from "@/lib/engine";
 import poisRaw from "@/data/pois.json";
 
@@ -1295,6 +1296,7 @@ function TripSummary({
 export function Itinerary() {
   const [, navigate]    = useLocation();
   const { t, language } = useTranslation();
+  usePageMeta("Your Itinerary", "Your AI-crafted day-by-day Saudi travel itinerary.");
   useItinStyles();
 
   const [result, setResult] = useState<ItineraryResult | null>(null);

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { useTranslation } from "@/providers/translation-context";
+import { usePageMeta } from "@/lib/usePageMeta";
 import {
   generateItinerary,
   type ItineraryResult,
@@ -298,6 +299,7 @@ function AgentLineRow({
 export function Generating() {
   const [, navigate]    = useLocation();
   const { t, language } = useTranslation();
+  usePageMeta("Crafting Your Itinerary", "Eight AI agents are building your personalised Saudi journey.");
   useGenStyles();
 
   const [tick, setTick]         = useState(0);

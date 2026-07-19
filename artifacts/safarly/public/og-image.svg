@@ -1,0 +1,120 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <!-- Night sky gradient background -->
+    <linearGradient id="bg" x1="0" y1="0" x2="1200" y2="630" gradientUnits="userSpaceOnUse">
+      <stop offset="0%"   stop-color="#0A0E16"/>
+      <stop offset="100%" stop-color="#0D1526"/>
+    </linearGradient>
+    <!-- Mint-to-indigo brand gradient -->
+    <linearGradient id="brand" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%"   stop-color="#00D8A4"/>
+      <stop offset="100%" stop-color="#5C6CFF"/>
+    </linearGradient>
+    <!-- Glow filter for logo -->
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="12" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <!-- Softer glow for text -->
+    <filter id="text-glow" x="-10%" y="-30%" width="120%" height="160%">
+      <feGaussianBlur stdDeviation="6" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bg)"/>
+
+  <!-- Dot grid texture -->
+  <pattern id="dots" x="0" y="0" width="24" height="24" patternUnits="userSpaceOnUse">
+    <circle cx="12" cy="12" r="1" fill="#232C3D" opacity="0.8"/>
+  </pattern>
+  <rect width="1200" height="630" fill="url(#dots)"/>
+
+  <!-- Geometric orbit rings (decorative) -->
+  <g opacity="0.06" stroke="#EDEFF3" fill="none" stroke-width="1">
+    <circle cx="600" cy="315" r="540"/>
+    <circle cx="600" cy="315" r="400"/>
+    <polygon points="600,60 940,490 260,490" stroke-width="0.8"/>
+    <polygon points="600,570 260,140 940,140" stroke-width="0.8"/>
+  </g>
+
+  <!-- Mint glow halo behind logo -->
+  <ellipse cx="600" cy="220" rx="120" ry="100" fill="#00D8A4" opacity="0.06"/>
+  <ellipse cx="600" cy="220" rx="80"  ry="68"  fill="#00D8A4" opacity="0.05"/>
+
+  <!-- Logo mark (scaled up from favicon.svg, centred at 600,220) -->
+  <g transform="translate(503, 123) scale(1.07)" filter="url(#glow)">
+    <defs>
+      <linearGradient id="logo-g" x1="0" y1="0" x2="180" y2="180" gradientUnits="userSpaceOnUse">
+        <stop stop-color="#00D8A4"/>
+        <stop offset="1" stop-color="#5C6CFF"/>
+      </linearGradient>
+    </defs>
+    <circle cx="90" cy="90" r="76" stroke="url(#logo-g)" stroke-width="9"/>
+    <path d="M 62 74 A 28 28 0 0 1 118 74" stroke="url(#logo-g)" stroke-width="8" stroke-linecap="round"/>
+    <line x1="90" y1="38" x2="90" y2="26" stroke="url(#logo-g)" stroke-width="7" stroke-linecap="round"/>
+    <line x1="68" y1="45" x2="62" y2="35" stroke="url(#logo-g)" stroke-width="6" stroke-linecap="round"/>
+    <line x1="112" y1="45" x2="118" y2="35" stroke="url(#logo-g)" stroke-width="6" stroke-linecap="round"/>
+    <line x1="52" y1="62" x2="44" y2="56" stroke="url(#logo-g)" stroke-width="5" stroke-linecap="round"/>
+    <line x1="128" y1="62" x2="136" y2="56" stroke="url(#logo-g)" stroke-width="5" stroke-linecap="round"/>
+    <path d="M 46 84 C 62 80 80 82 90 96 C 100 110 118 118 134 114" stroke="url(#logo-g)" stroke-width="9" stroke-linecap="round"/>
+    <path d="M 46 122 C 62 126 80 120 90 106 C 100 92 118 84 134 88" stroke="url(#logo-g)" stroke-width="7" stroke-linecap="round" opacity="0.55"/>
+  </g>
+
+  <!-- "Safarly" wordmark -->
+  <text
+    x="600" y="358"
+    text-anchor="middle"
+    font-family="Inter, system-ui, sans-serif"
+    font-size="72"
+    font-weight="800"
+    letter-spacing="-2"
+    fill="url(#brand)"
+    filter="url(#text-glow)"
+  >Safarly</text>
+
+  <!-- Tagline -->
+  <text
+    x="600" y="418"
+    text-anchor="middle"
+    font-family="Inter, system-ui, sans-serif"
+    font-size="28"
+    font-weight="500"
+    fill="#EDEFF3"
+    opacity="0.82"
+    letter-spacing="0"
+  >Your Saudi Journey, Intelligently Crafted</text>
+
+  <!-- Sub-tagline -->
+  <text
+    x="600" y="466"
+    text-anchor="middle"
+    font-family="Inter, system-ui, sans-serif"
+    font-size="18"
+    font-weight="400"
+    fill="#8A93A6"
+    letter-spacing="0.5"
+  >Eight AI agents · Plan · Guide · Translate · Enrich</text>
+
+  <!-- Bottom accent line -->
+  <rect x="480" y="510" width="240" height="2" rx="1" fill="url(#brand)" opacity="0.6"/>
+
+  <!-- Site name badge -->
+  <text
+    x="600" y="548"
+    text-anchor="middle"
+    font-family="Inter, system-ui, sans-serif"
+    font-size="14"
+    font-weight="600"
+    fill="#5C6CFF"
+    letter-spacing="2"
+    text-transform="uppercase"
+  >SAFARLY.COM</text>
+</svg>

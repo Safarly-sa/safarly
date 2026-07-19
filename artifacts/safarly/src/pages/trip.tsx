@@ -3,6 +3,7 @@ import { useLocation } from "wouter";
 import { motion } from "framer-motion";
 import { ArrowRight, Calendar, ChevronRight, ChevronLeft } from "lucide-react";
 import { useTranslation } from "@/providers/translation-context";
+import { usePageMeta } from "@/lib/usePageMeta";
 
 /* ── Style injection ───────────────────────────────────────────────── */
 function useTripStyles() {
@@ -339,6 +340,7 @@ function BudgetSlider({ value, onChange }: { value: number; onChange: (v: number
 export function Trip() {
   useTripStyles();
   const { t } = useTranslation();
+  usePageMeta("Choose Your Destination", "Select your Saudi city, dates, budget and mood.");
   const [, navigate] = useLocation();
 
   const [city, setCity] = useState<CityId | "">("");

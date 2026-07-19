@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useLocation } from "wouter";
 import { Volume2, VolumeX, X, CheckCircle2 } from "lucide-react";
 import { useTranslation } from "@/providers/translation-context";
+import { usePageMeta } from "@/lib/usePageMeta";
 import dishesRaw  from "@/data/dishes.json";
 import phrasesRaw from "@/data/phrases.json";
 
@@ -230,6 +231,7 @@ function ProfileEditor({ profile, onUpdate, t }: { profile: Profile; onUpdate: (
 /* ── Main Dashboard page ────────────────────────────────────────────── */
 export function Dashboard() {
   const { t, language } = useTranslation();
+  usePageMeta("My Journey", "Your trip overview, learned phrases, food list and travel stats.");
   const [, navigate]    = useLocation();
   useDashStyles();
 

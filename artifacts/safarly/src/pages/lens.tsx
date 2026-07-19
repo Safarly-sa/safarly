@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Camera, CheckCircle2, AlertTriangle, X, Plus, ScanLine, RotateCcw, ChevronRight } from "lucide-react";
 import { useTranslation } from "@/providers/translation-context";
+import { usePageMeta } from "@/lib/usePageMeta";
 import dishesRaw from "@/data/dishes.json";
 
 /* ── Types ──────────────────────────────────────────────────────────── */
@@ -342,6 +343,7 @@ type Phase = "upload" | "scanning" | "results";
 
 export function Lens() {
   const { t, language } = useTranslation();
+  usePageMeta("Live Lens", "Scan restaurant menus and spot allergens instantly with AI.");
   useLensStyles();
 
   const [phase,       setPhase]       = useState<Phase>("upload");

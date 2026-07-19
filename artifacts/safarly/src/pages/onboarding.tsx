@@ -3,6 +3,7 @@ import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { Check, ChevronLeft, ChevronRight, Search } from "lucide-react";
 import { useTranslation } from "@/providers/translation-context";
+import { usePageMeta } from "@/lib/usePageMeta";
 
 /* ── Style injection for custom inputs ──────────────────────────────── */
 function useFormStyles() {
@@ -283,6 +284,7 @@ function ProgressBar({ step, total }: { step: number; total: number }) {
 export function Onboarding() {
   useFormStyles();
   const { t } = useTranslation();
+  usePageMeta("Your Traveller Profile", "Tell us about your travel style, allergies and goals.");
   const [, navigate] = useLocation();
   const [step, setStep] = useState(0);
   const [dir, setDir] = useState(1);
