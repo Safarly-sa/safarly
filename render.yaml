@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: safarly-api
+    runtime: node
+    plan: free
+    buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm --filter @workspace/api-server run build
+    startCommand: pnpm --filter @workspace/api-server run start
+    healthCheckPath: /api/healthz
+    envVars:
+      - key: NODE_VERSION
+        value: 22
+      - key: NODE_ENV
+        value: production
+      - key: AGENTS_DEMO_MODE
+        value: "true"
+      - key: CORS_ORIGIN
+        value: https://safarly.pages.dev
+      - key: DATABASE_URL
+        sync: false
