@@ -8,14 +8,15 @@
  * On finish → saves safarly_profile, sets safarly_profile_complete=true, routes to /.
  * Export shared sub-components so /profile can import them.
  */
-import { useState, useRef, useEffect, useCallback } from "react";
-import { useLocation } from "wouter";
+import { useState, useEffect, useCallback } from "react";
+import { useLocation, useSearchParams } from "wouter";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
-import { Check, ChevronLeft, ChevronRight, Search } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight } from "lucide-react";
 import { useTranslation } from "@/providers/translation-context";
 import { usePageMeta } from "@/lib/usePageMeta";
-import { getAuth, markProfileComplete } from "@/lib/auth";
+import { getAuth, markProfileComplete, sanitizeReturnTo } from "@/lib/auth";
 import { ALLERGEN_TOKENS, ALLERGEN_LABEL_KEYS } from "@/lib/allergens";
+import { NationalityDropdown } from "@/components/NationalityDropdown";
 
 /* ── Style injection ────────────────────────────────────────────────── */
 function useFormStyles() {
@@ -50,20 +51,6 @@ function useFormStyles() {
   }, []);
 }
 
-/* ── Countries ──────────────────────────────────────────────────────── */
-export const COUNTRIES = [
-  "Afghanistan","Algeria","Argentina","Australia","Austria","Azerbaijan",
-  "Bangladesh","Belgium","Brazil","Canada","China","Czech Republic",
-  "Egypt","Ethiopia","France","Germany","Ghana","India","Indonesia",
-  "Iran","Iraq","Italy","Japan","Jordan","Kazakhstan","Kenya","Kuwait",
-  "Lebanon","Libya","Malaysia","Mexico","Morocco","Nepal","Netherlands",
-  "Nigeria","Norway","Oman","Pakistan","Philippines","Poland","Portugal",
-  "Qatar","Romania","Russia","Saudi Arabia","Singapore","South Africa",
-  "South Korea","Spain","Sri Lanka","Sudan","Sweden","Switzerland",
-  "Thailand","Tunisia","Turkey","UAE","Ukraine","United Kingdom",
-  "United States","Uzbekistan","Vietnam","Yemen",
-];
-
 /* ── Chip ───────────────────────────────────────────────────────────── */
 export function Chip({
   label, selected, onClick, icon,
@@ -93,113 +80,6 @@ export function Chip({
       {label}
       {selected && <Check size={14} style={{ color: "var(--sf-indigo)", flexShrink: 0 }} />}
     </button>
-  );
-}
-
-/* ── Searchable nationality dropdown ────────────────────────────────── */
-export function NationalityDropdown({
-  value, onChange, placeholder, noneLabel,
-}: { value: string; onChange: (v: string) => void; placeholder: string; noneLabel: string }) {
-  const [query, setQuery] = useState(value);
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  const filtered = query.length < 1
-    ? COUNTRIES
-    : COUNTRIES.filter((c) => c.toLowerCase().includes(query.toLowerCase()));
-
-  useEffect(() => {
-    function handler(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    }
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, []);
-
-  /* Keep query in sync when value changes externally (e.g. profile load) */
-  useEffect(() => { setQuery(value); }, [value]);
-
-  function pick(country: string) {
-    onChange(country);
-    setQuery(country);
-    setOpen(false);
-  }
-
-  return (
-    <div ref={ref} style={{ position: "relative", width: "100%" }}>
-      <div style={{
-        display: "flex", alignItems: "center", gap: "8px",
-        border: `1.5px solid ${open ? "var(--sf-indigo)" : "var(--sf-border)"}`,
-        borderRadius: "10px", padding: "0 12px",
-        background: "var(--sf-surface)",
-        transition: "border-color .2s",
-        minHeight: "48px",
-      }}>
-        <Search size={16} style={{ color: "var(--sf-text-muted)", flexShrink: 0 }} />
-        <input
-          type="text"
-          value={query}
-          onChange={(e) => { setQuery(e.target.value); setOpen(true); onChange(""); }}
-          onFocus={() => setOpen(true)}
-          placeholder={placeholder}
-          style={{
-            flex: 1, border: "none", outline: "none",
-            background: "transparent", color: "var(--sf-text)",
-            fontSize: "0.9375rem", minHeight: "44px",
-          }}
-          autoComplete="off"
-        />
-        {value && (
-          <button
-            type="button"
-            onClick={() => { onChange(""); setQuery(""); setOpen(false); }}
-            style={{ background: "none", border: "none", color: "var(--sf-text-muted)", cursor: "pointer", padding: "4px" }}
-          >×</button>
-        )}
-      </div>
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -4 }} transition={{ duration: 0.15 }}
-            style={{
-              position: "absolute", top: "calc(100% + 4px)", insetInlineStart: 0,
-              width: "100%", zIndex: 50,
-              background: "var(--sf-surface)",
-              border: "1.5px solid var(--sf-border)",
-              borderRadius: "10px",
-              boxShadow: "0 8px 24px rgba(0,0,0,0.18)",
-              overflow: "hidden",
-            }}
-          >
-            <div className="sf-nation-list">
-              {filtered.length === 0 ? (
-                <div style={{ padding: "12px 16px", color: "var(--sf-text-muted)", fontSize: "0.875rem" }}>
-                  {noneLabel}
-                </div>
-              ) : (
-                filtered.map((c) => (
-                  <button
-                    key={c} type="button" onClick={() => pick(c)}
-                    style={{
-                      width: "100%", textAlign: "start", padding: "11px 16px",
-                      border: "none", background: value === c ? "var(--sf-primary-soft)" : "transparent",
-                      color: value === c ? "var(--sf-text)" : "var(--sf-text-muted)",
-                      cursor: "pointer", fontSize: "0.9375rem",
-                      minHeight: "44px", display: "block", transition: "background .12s",
-                    }}
-                    onMouseEnter={e => (e.currentTarget.style.background = "var(--sf-surface-alt)")}
-                    onMouseLeave={e => (e.currentTarget.style.background = value === c ? "var(--sf-primary-soft)" : "transparent")}
-                  >
-                    {c}
-                  </button>
-                ))
-              )}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
   );
 }
 
@@ -235,6 +115,85 @@ export function Toggle({ checked, onChange, label }: { checked: boolean; onChang
         {label}
       </span>
     </label>
+  );
+}
+
+/* ── Accessibility free-text notes ──────────────────────────────────────
+   Shown/hidden under the accessibility Toggle. Uses a plain CSS max-height
+   transition (not framer-motion) so the existing global `prefers-reduced-motion`
+   rule in index.css — which zeroes out CSS transition durations — covers it
+   for free, no separate matchMedia check needed here. (A `grid-template-rows:
+   0fr/1fr` reveal was tried first, but as a flex item inside `.sf-profile-section`
+   its computed row size collapsed to 0 — a known grid/flex sizing interaction —
+   so max-height is used instead.) */
+export const ACCESSIBILITY_NOTES_MAX = 300;
+
+function useA11yNotesStyles() {
+  useEffect(() => {
+    const id = "sf-a11y-notes-styles";
+    if (document.getElementById(id)) return;
+    const s = document.createElement("style");
+    s.id = id;
+    s.textContent = `
+      .sf-a11y-reveal {
+        overflow: hidden;
+        transition: max-height .3s ease, opacity .3s ease;
+      }
+      .sf-a11y-notes {
+        width: 100%; box-sizing: border-box; padding: 12px 14px;
+        border-radius: 10px; border: 1.5px solid var(--sf-border);
+        background: var(--sf-surface-alt); color: var(--sf-text);
+        font-size: 0.9375rem; outline: none; font-family: inherit;
+        line-height: 1.5; resize: vertical; min-height: 84px;
+        transition: border-color .2s;
+      }
+      .sf-a11y-notes:focus { border-color: var(--sf-indigo); }
+    `;
+    document.head.appendChild(s);
+  }, []);
+}
+
+export function AccessibilityNotesField({
+  show, value, onChange, t,
+}: {
+  show: boolean; value: string; onChange: (v: string) => void; t: (k: string) => string;
+}) {
+  useA11yNotesStyles();
+  const fieldId = "accessibility-notes";
+  const hintId  = `${fieldId}-hint`;
+
+  return (
+    <div
+      className="sf-a11y-reveal"
+      style={{ maxHeight: show ? 600 : 0, opacity: show ? 1 : 0 }}
+      aria-hidden={!show}
+    >
+      <div style={{ paddingTop: 4 }}>
+        <label htmlFor={fieldId} style={{ display: "block", fontSize: "0.8125rem", fontWeight: 700, color: "var(--sf-text)", marginBottom: 6 }}>
+          {t("ob.accessibility.notes_label")}
+        </label>
+        <p id={hintId} style={{ fontSize: "0.75rem", color: "var(--sf-text-muted)", marginBottom: 8, lineHeight: 1.5 }}>
+          {t("ob.accessibility.notes_hint")}
+        </p>
+        <textarea
+          id={fieldId}
+          value={value}
+          onChange={e => onChange(e.target.value.slice(0, ACCESSIBILITY_NOTES_MAX))}
+          placeholder={t("ob.accessibility.notes_placeholder")}
+          maxLength={ACCESSIBILITY_NOTES_MAX}
+          aria-describedby={hintId}
+          dir="auto"
+          rows={3}
+          tabIndex={show ? 0 : -1}
+          className="sf-a11y-notes"
+        />
+        <div style={{ textAlign: "end", fontSize: "0.6875rem", color: "var(--sf-text-muted)", marginTop: 4 }}>
+          {t("ob.accessibility.notes_counter")
+            .replace("{n}", String(value.length))
+            .replace("{max}", String(ACCESSIBILITY_NOTES_MAX))}
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -285,10 +244,13 @@ export function ProfileSetup() {
   const { t } = useTranslation();
   usePageMeta("Set Up Your Profile", "Tell us about your travel style, diet and interests.");
   const [, navigate] = useLocation();
+  const [searchParams] = useSearchParams();
+  const returnTo = sanitizeReturnTo(searchParams.get("returnTo"));
 
   /* Redirect if profile already complete */
   useEffect(() => {
-    if (getAuth() && localStorage.getItem("safarly_profile_complete") === "true") navigate("/");
+    if (getAuth() && localStorage.getItem("safarly_profile_complete") === "true") navigate(returnTo ?? "/");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [navigate]);
 
   const [step, setStep] = useState(0);
@@ -303,11 +265,20 @@ export function ProfileSetup() {
   const [allergies, setAllergies] = useState<string[]>([]);
   /* Step 3 — Accessibility */
   const [accessibility, setAccessibility] = useState(false);
+  const [accessibilityNotes, setAccessibilityNotes] = useState("");
   /* Step 4 — Interests */
   const [interests, setInterests] = useState<string[]>([]);
 
   function toggleMulti(arr: string[], setArr: (v: string[]) => void, val: string) {
     setArr(arr.includes(val) ? arr.filter((x) => x !== val) : [...arr, val]);
+  }
+
+  function toggleAccessibility() {
+    setAccessibility(prev => {
+      const next = !prev;
+      if (!next) setAccessibilityNotes("");
+      return next;
+    });
   }
 
   function goNext() { setDir(1);  setStep((s) => Math.min(s + 1, 3)); }
@@ -319,15 +290,15 @@ export function ProfileSetup() {
       name: auth?.name ?? "",
       nationality, language, ageRange,
       dietary, allergies,
-      accessibility,
+      accessibility, accessibilityNotes,
       interests,
     };
     localStorage.setItem("safarly_profile", JSON.stringify(profile));
     markProfileComplete();
-    navigate("/");
+    navigate(returnTo ?? "/");
   }
 
-  const langs = ["العربية", "English", "اردو", "中文", "Русский", "Français"];
+  const langs = ["العربية", "English", "اردو", "中文", "Русский", "Français", "Türkçe", "Español", "Português"];
   const ages  = ["ob.age.18", "ob.age.25", "ob.age.35", "ob.age.45", "ob.age.55"];
   const diets = ["ob.diet.vegetarian", "ob.diet.vegan", "ob.diet.halal", "ob.diet.none"];
   // Tokens, not i18n keys — the stored value must match dish.common_allergens
@@ -400,8 +371,14 @@ export function ProfileSetup() {
       </p>
       <Toggle
         checked={accessibility}
-        onChange={() => setAccessibility(!accessibility)}
+        onChange={toggleAccessibility}
         label={t("ob.accessibility.label")}
+      />
+      <AccessibilityNotesField
+        show={accessibility}
+        value={accessibilityNotes}
+        onChange={setAccessibilityNotes}
+        t={t}
       />
     </div>,
 

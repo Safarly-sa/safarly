@@ -1,9 +1,10 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useLocation } from "wouter";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
-import { Check, ChevronLeft, ChevronRight, Search } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight } from "lucide-react";
 import { useTranslation } from "@/providers/translation-context";
 import { usePageMeta } from "@/lib/usePageMeta";
+import { NationalityDropdown } from "@/components/NationalityDropdown";
 
 /* ── Style injection for custom inputs ──────────────────────────────── */
 function useFormStyles() {
@@ -37,20 +38,6 @@ function useFormStyles() {
     document.head.appendChild(s);
   }, []);
 }
-
-/* ── Countries ──────────────────────────────────────────────────────── */
-const COUNTRIES = [
-  "Afghanistan","Algeria","Argentina","Australia","Austria","Azerbaijan",
-  "Bangladesh","Belgium","Brazil","Canada","China","Czech Republic",
-  "Egypt","Ethiopia","France","Germany","Ghana","India","Indonesia",
-  "Iran","Iraq","Italy","Japan","Jordan","Kazakhstan","Kenya","Kuwait",
-  "Lebanon","Libya","Malaysia","Mexico","Morocco","Nepal","Netherlands",
-  "Nigeria","Norway","Oman","Pakistan","Philippines","Poland","Portugal",
-  "Qatar","Romania","Russia","Saudi Arabia","Singapore","South Africa",
-  "South Korea","Spain","Sri Lanka","Sudan","Sweden","Switzerland",
-  "Thailand","Tunisia","Turkey","UAE","Ukraine","United Kingdom",
-  "United States","Uzbekistan","Vietnam","Yemen",
-];
 
 /* ── Chip ───────────────────────────────────────────────────────────── */
 function Chip({
@@ -86,115 +73,6 @@ function Chip({
         />
       )}
     </button>
-  );
-}
-
-/* ── Searchable nationality dropdown ────────────────────────────────── */
-function NationalityDropdown({
-  value, onChange, placeholder, noneLabel,
-}: { value: string; onChange: (v: string) => void; placeholder: string; noneLabel: string }) {
-  const [query, setQuery] = useState(value);
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  const filtered = query.length < 1
-    ? COUNTRIES
-    : COUNTRIES.filter((c) => c.toLowerCase().includes(query.toLowerCase()));
-
-  useEffect(() => {
-    function handler(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    }
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, []);
-
-  function pick(country: string) {
-    onChange(country);
-    setQuery(country);
-    setOpen(false);
-  }
-
-  return (
-    <div ref={ref} style={{ position: "relative", width: "100%" }}>
-      <div
-        style={{
-          display: "flex", alignItems: "center", gap: "8px",
-          border: `1.5px solid ${open ? "var(--sf-indigo)" : "var(--sf-border)"}`,
-          borderRadius: "10px", padding: "0 12px",
-          background: "var(--sf-surface)",
-          transition: "border-color .2s",
-          minHeight: "48px",
-        }}
-      >
-        <Search size={16} style={{ color: "var(--sf-text-muted)", flexShrink: 0 }} />
-        <input
-          type="text"
-          value={query}
-          onChange={(e) => { setQuery(e.target.value); setOpen(true); onChange(""); }}
-          onFocus={() => setOpen(true)}
-          placeholder={placeholder}
-          style={{
-            flex: 1, border: "none", outline: "none",
-            background: "transparent", color: "var(--sf-text)",
-            fontSize: "0.9375rem", minHeight: "44px",
-          }}
-          autoComplete="off"
-        />
-        {value && (
-          <button
-            type="button"
-            onClick={() => { onChange(""); setQuery(""); setOpen(false); }}
-            style={{ background: "none", border: "none", color: "var(--sf-text-muted)", cursor: "pointer", padding: "4px" }}
-          >×</button>
-        )}
-      </div>
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            initial={{ opacity: 0, y: -4 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -4 }}
-            transition={{ duration: 0.15 }}
-            style={{
-              position: "absolute", top: "calc(100% + 4px)", insetInlineStart: 0,
-              width: "100%", zIndex: 50,
-              background: "var(--sf-surface)",
-              border: "1.5px solid var(--sf-border)",
-              borderRadius: "10px",
-              boxShadow: "0 8px 24px rgba(0,0,0,0.18)",
-              overflow: "hidden",
-            }}
-          >
-            <div className="sf-nation-list">
-              {filtered.length === 0 ? (
-                <div style={{ padding: "12px 16px", color: "var(--sf-text-muted)", fontSize: "0.875rem" }}>
-                  {noneLabel}
-                </div>
-              ) : (
-                filtered.map((c) => (
-                  <button
-                    key={c} type="button" onClick={() => pick(c)}
-                    style={{
-                      width: "100%", textAlign: "start", padding: "11px 16px",
-                      border: "none", background: value === c ? "var(--sf-primary-soft)" : "transparent",
-                      color: value === c ? "var(--sf-text)" : "var(--sf-text-muted)",
-                      cursor: "pointer", fontSize: "0.9375rem",
-                      minHeight: "44px", display: "block",
-                      transition: "background .12s",
-                    }}
-                    onMouseEnter={e => (e.currentTarget.style.background = "var(--sf-surface-alt)")}
-                    onMouseLeave={e => (e.currentTarget.style.background = value === c ? "var(--sf-primary-soft)" : "transparent")}
-                  >
-                    {c}
-                  </button>
-                ))
-              )}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
   );
 }
 
@@ -326,7 +204,7 @@ export function Onboarding() {
     navigate("/trip");
   }
 
-  const langs = ["العربية", "English", "اردو", "中文", "Русский", "Français"];
+  const langs = ["العربية", "English", "اردو", "中文", "Русский", "Français", "Türkçe", "Español", "Português"];
   const ages = ["ob.age.18", "ob.age.25", "ob.age.35", "ob.age.45", "ob.age.55"];
   const diets = ["ob.diet.vegetarian", "ob.diet.vegan", "ob.diet.halal", "ob.diet.none"];
   const allergyList = ["ob.allergy.nuts", "ob.allergy.dairy", "ob.allergy.gluten", "ob.allergy.sesame", "ob.allergy.eggs", "ob.allergy.shellfish"];

@@ -3,20 +3,24 @@
  * Shows all profile fields in one scrollable page.
  * Saves to safarly_profile on button click.
  */
-import { useState, useEffect } from "react";
-import { useLocation } from "wouter";
-import { CheckCircle2, ArrowLeft, LogOut } from "lucide-react";
+import { useState, useEffect, useMemo } from "react";
+import { useLocation, Link } from "wouter";
+import { CheckCircle2, ArrowLeft, ArrowRight, LogOut, X } from "lucide-react";
 import { useTranslation } from "@/providers/translation-context";
 import { usePageMeta } from "@/lib/usePageMeta";
 import { getAuth, setAuth, signOut } from "@/lib/auth";
 import { ALLERGEN_KEY_TO_TOKEN, normaliseAllergens } from "@/lib/allergens";
+import { normaliseNationality } from "@/lib/nationalities";
 import { SignOutDialog } from "@/components/SignOutDialog";
+import { NationalityDropdown } from "@/components/NationalityDropdown";
 import {
   Chip,
-  NationalityDropdown,
   SectionLabel,
   Toggle,
+  AccessibilityNotesField,
 } from "./profile-setup";
+import phrasesRaw from "@/data/phrases.json";
+import dishesRaw from "@/data/dishes.json";
 
 /* ── Style injection ────────────────────────────────────────────────── */
 function useProfileStyles() {
@@ -66,10 +70,52 @@ function useProfileStyles() {
         from { opacity: 0; transform: translateY(-4px); }
         to   { opacity: 1; transform: none; }
       }
+      .sf-phrase-row {
+        display: flex; align-items: center; gap: 10px;
+        padding: 12px 0; border-bottom: 1px solid var(--sf-border);
+      }
+      .sf-phrase-row:last-child { border-bottom: none; }
+      .sf-fav-row {
+        display: flex; align-items: center; gap: 10px;
+        padding: 12px 0; border-bottom: 1px solid var(--sf-border);
+      }
+      .sf-fav-row:last-child { border-bottom: none; }
+      .sf-profile-group-title {
+        font-size: 0.75rem; font-weight: 700; color: var(--sf-indigo);
+        margin: 4px 0 -6px;
+      }
+      .sf-profile-empty-link {
+        display: inline-flex; align-items: center; gap: 6px;
+        margin-top: 14px; padding: 9px 16px; border-radius: 999px;
+        border: 1px solid var(--sf-indigo); color: var(--sf-indigo);
+        background: color-mix(in srgb, var(--sf-indigo) 8%, var(--sf-surface));
+        font-weight: 700; font-size: 0.8125rem; text-decoration: none;
+        transition: background .15s;
+      }
+      .sf-profile-empty-link:hover { background: color-mix(in srgb, var(--sf-indigo) 16%, var(--sf-surface)); }
     `;
     document.head.appendChild(s);
   }, []);
 }
+
+/* ── Learned phrases / food list data ─────────────────────────────────
+   Both `safarly_learned` and `safarly_favorites` are account-scoped keys
+   (see ACCOUNT_KEYS in lib/auth.ts) — they were never trip-scoped, so they
+   already persist across trips and clear on sign-out with no migration
+   needed. */
+interface Phrase { id: string; dialect: string; situation: string; arabic: string; transliteration: string; english: string; }
+interface Dish { id: string; name: string; name_ar: string; price_sar: number; description: string; common_allergens: string[]; meal_type: string; }
+
+const ALL_PHRASES = phrasesRaw as Phrase[];
+const ALL_DISHES  = dishesRaw  as Dish[];
+const PHRASES_MAP = Object.fromEntries(ALL_PHRASES.map(p => [p.id, p]));
+const DISHES_MAP  = Object.fromEntries(ALL_DISHES.map(d => [d.id, d]));
+
+const DIALECT_ORDER = ["najdi", "hijazi", "janubi", "shamali", "sharqi"] as const;
+const DIALECT_NAME_KEY: Record<string, string> = {
+  najdi: "dialect.najdi_name", hijazi: "dialect.hijazi_name", janubi: "dialect.janubi_name",
+  shamali: "dialect.shamali_name", sharqi: "dialect.sharqi_name",
+};
 
 /* ── Helpers ────────────────────────────────────────────────────────── */
 /* ── Sign-out confirmation ──────────────────────────────────────────── */
@@ -90,6 +136,7 @@ interface ProfileData {
   dietary: string[];
   allergies: string[];
   accessibility: boolean;
+  accessibilityNotes: string;
   interests: string[];
 }
 
@@ -99,11 +146,13 @@ function loadProfile(): ProfileData {
     if (raw) {
       const parsed = JSON.parse(raw);
       // Normalised on read so a profile saved by the old onboarding wizard
-      // (which stored "ob.allergy.*" keys) is repaired the next time it's saved.
+      // (which stored "ob.allergy.*" keys, and a full country name like
+      // "Lebanon" instead of an ISO code) is repaired the next time it's saved.
       return {
         ...emptyProfile(),
         ...parsed,
         allergies: normaliseAllergens(parsed?.allergies),
+        nationality: normaliseNationality(parsed?.nationality),
       };
     }
   } catch { /* */ }
@@ -114,7 +163,7 @@ function loadProfile(): ProfileData {
 function emptyProfile(): ProfileData {
   return {
     name: "", nationality: "", language: "", ageRange: "",
-    dietary: [], allergies: [], accessibility: false, interests: [],
+    dietary: [], allergies: [], accessibility: false, accessibilityNotes: "", interests: [],
   };
 }
 
@@ -129,10 +178,38 @@ export function Profile() {
   const [saved, setSaved] = useState(false);
   const [confirmSignOut, setConfirmSignOut] = useState(false);
 
+  const [learnedIds, setLearnedIds] = useState<string[]>([]);
+  const [favorites, setFavorites] = useState<string[]>([]);
+
   /* Redirect to login if not authenticated */
   useEffect(() => {
     if (!getAuth()) navigate("/login");
   }, [navigate]);
+
+  useEffect(() => {
+    try { setLearnedIds(JSON.parse(localStorage.getItem("safarly_learned") ?? "[]")); } catch { /* */ }
+    try { setFavorites(JSON.parse(localStorage.getItem("safarly_favorites") ?? "[]")); } catch { /* */ }
+  }, []);
+
+  const learnedByDialect = useMemo(() => (
+    DIALECT_ORDER
+      .map(d => ({
+        dialect: d,
+        phrases: learnedIds.map(id => PHRASES_MAP[id]).filter((p): p is Phrase => !!p && p.dialect === d),
+      }))
+      .filter(g => g.phrases.length > 0)
+  ), [learnedIds]);
+
+  const favDishes = useMemo(
+    () => favorites.map(id => DISHES_MAP[id]).filter(Boolean) as Dish[],
+    [favorites]
+  );
+
+  function removeFav(id: string) {
+    const next = favorites.filter(f => f !== id);
+    setFavorites(next);
+    localStorage.setItem("safarly_favorites", JSON.stringify(next));
+  }
 
   function handleSignOut() {
     signOut();
@@ -144,6 +221,14 @@ export function Profile() {
     setData((prev) => ({ ...prev, ...p }));
   }
 
+  function toggleAccessibility() {
+    setData((prev) => ({
+      ...prev,
+      accessibility: !prev.accessibility,
+      accessibilityNotes: prev.accessibility ? "" : prev.accessibilityNotes,
+    }));
+  }
+
   function handleSave() {
     localStorage.setItem("safarly_profile", JSON.stringify(data));
     /* Keep name in sync with auth */
@@ -153,7 +238,7 @@ export function Profile() {
     setTimeout(() => setSaved(false), 2000);
   }
 
-  const langs = ["العربية", "English", "اردو", "中文", "Русский", "Français"];
+  const langs = ["العربية", "English", "اردو", "中文", "Русский", "Français", "Türkçe", "Español", "Português"];
   const ages  = ["ob.age.18", "ob.age.25", "ob.age.35", "ob.age.45", "ob.age.55"];
   const diets = ["ob.diet.vegetarian", "ob.diet.vegan", "ob.diet.halal", "ob.diet.none"];
   const allergyList = [
@@ -307,8 +392,14 @@ export function Profile() {
           <h2 id="section-access" className="sf-profile-section-title">Accessibility</h2>
           <Toggle
             checked={data.accessibility}
-            onChange={() => patch({ accessibility: !data.accessibility })}
+            onChange={toggleAccessibility}
             label={t("ob.accessibility.label")}
+          />
+          <AccessibilityNotesField
+            show={data.accessibility}
+            value={data.accessibilityNotes}
+            onChange={v => patch({ accessibilityNotes: v })}
+            t={t}
           />
         </section>
 
@@ -352,6 +443,65 @@ export function Profile() {
             </span>
           )}
         </div>
+
+        {/* ── Learned Phrases ── */}
+        <section className="sf-profile-section" aria-labelledby="section-phrases">
+          <h2 id="section-phrases" className="sf-profile-section-title">{t("dash.phrases.title")}</h2>
+          {learnedByDialect.length === 0 ? (
+            <div style={{ textAlign: "center", padding: "6px 4px 4px" }}>
+              <p style={{ color: "var(--sf-text-muted)", fontSize: "0.9375rem", lineHeight: 1.6 }}>
+                {t("dash.phrases.empty")}
+              </p>
+              <Link href="/dialect" className="sf-profile-empty-link">
+                {t("nav.dialect")} <ArrowRight size={14} aria-hidden />
+              </Link>
+            </div>
+          ) : (
+            learnedByDialect.map(({ dialect, phrases }) => (
+              <div key={dialect}>
+                <p className="sf-profile-group-title">{t(DIALECT_NAME_KEY[dialect])}</p>
+                {phrases.map(p => (
+                  <div key={p.id} className="sf-phrase-row">
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: "1.0625rem", fontWeight: 700, color: "var(--sf-text)", direction: "rtl", textAlign: "end", lineHeight: 1.3 }}>{p.arabic}</div>
+                      <div style={{ fontSize: "0.8125rem", color: "var(--sf-text-muted)", marginTop: 2 }}>{p.transliteration} · {p.english}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ))
+          )}
+        </section>
+
+        {/* ── Food List ── */}
+        <section className="sf-profile-section" aria-labelledby="section-food-list">
+          <h2 id="section-food-list" className="sf-profile-section-title">{t("dash.food.title")}</h2>
+          {favDishes.length === 0 ? (
+            <div style={{ textAlign: "center", padding: "6px 4px 4px" }}>
+              <p style={{ color: "var(--sf-text-muted)", fontSize: "0.9375rem", lineHeight: 1.6 }}>
+                {t("dash.food.empty")}
+              </p>
+              <Link href="/lens" className="sf-profile-empty-link">
+                {t("nav.lens")} <ArrowRight size={14} aria-hidden />
+              </Link>
+            </div>
+          ) : (
+            favDishes.map(d => (
+              <div key={d.id} className="sf-fav-row">
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
+                    <span style={{ fontSize: "1rem", fontWeight: 700, color: "var(--sf-text)", direction: "rtl" }}>{d.name_ar}</span>
+                    <span style={{ fontSize: "0.8125rem", color: "var(--sf-text-muted)" }}>{d.name}</span>
+                  </div>
+                  <div style={{ fontSize: "0.75rem", color: "var(--sf-text-muted)", marginTop: 2 }}>SAR {d.price_sar}</div>
+                </div>
+                <button onClick={() => removeFav(d.id)} style={{ flexShrink: 0, width: 36, height: 36, borderRadius: "50%", border: "1px solid var(--sf-border)", background: "var(--sf-surface-alt)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }} aria-label={t("dash.food.remove")}>
+                  <X size={14} style={{ color: "var(--sf-text-muted)" }} aria-hidden />
+                </button>
+              </div>
+            ))
+          )}
+        </section>
 
         {/* ── Sign out ── */}
         <section style={{ marginTop: 34, paddingTop: 22, borderTop: "1px solid var(--sf-border)" }}>

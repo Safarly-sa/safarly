@@ -4,33 +4,29 @@
  * Tab 2 · Trips     — past / completed trips list
  * Tab 3 · Ongoing   — current confirmed trip: full timeline + spend breakdown
  */
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useLocation, Link } from "wouter";
 import {
-  Volume2, VolumeX, X, UserCircle, ArrowRight,
+  X, UserCircle, ArrowRight,
   CheckCircle2, MapPin, ExternalLink, Camera, Gem,
 } from "lucide-react";
 import { useTranslation } from "@/providers/translation-context";
+import type { Language } from "@/providers/translation-context";
 import { usePageMeta } from "@/lib/usePageMeta";
 import { getAuth, setAuth } from "@/lib/auth";
 import { poiName, poiCulture } from "@/lib/poi-i18n";
+import { dishName, mealVenue, mealArea } from "@/lib/dish-i18n";
+import { localeTag } from "@/lib/locale-format";
+import { normaliseNationality } from "@/lib/nationalities";
+import { NationalityDropdown } from "@/components/NationalityDropdown";
 import {
-  Chip, NationalityDropdown, SectionLabel, Toggle,
+  Chip, SectionLabel, Toggle, AccessibilityNotesField,
 } from "./profile-setup";
-import dishesRaw  from "@/data/dishes.json";
-import phrasesRaw from "@/data/phrases.json";
 import type { ItineraryResult, ItineraryDay, ItineraryStop, ItineraryMeal, TripSpec, Objectives } from "@/lib/engine";
 
 /* ── Types ──────────────────────────────────────────────────────────── */
-interface Dish    { id: string; name: string; name_ar: string; price_sar: number; description: string; common_allergens: string[]; meal_type: string; }
-interface Phrase  { id: string; dialect: string; situation: string; arabic: string; transliteration: string; english: string; }
-interface ProfileData { name: string; nationality: string; language: string; ageRange: string; dietary: string[]; allergies: string[]; accessibility: boolean; interests: string[]; }
+interface ProfileData { name: string; nationality: string; language: string; ageRange: string; dietary: string[]; allergies: string[]; accessibility: boolean; accessibilityNotes: string; interests: string[]; }
 interface ConfirmedTrip { trip: TripSpec; itinerary: ItineraryResult; confirmedAt: string; }
-
-const ALL_DISHES  = dishesRaw  as Dish[];
-const ALL_PHRASES = phrasesRaw as Phrase[];
-const DISHES_MAP  = Object.fromEntries(ALL_DISHES.map(d => [d.id, d]));
-const PHRASES_MAP = Object.fromEntries(ALL_PHRASES.map(p => [p.id, p]));
 
 const CITY_NAMES_EN: Record<string, string> = { riyadh: "Riyadh", jeddah: "Jeddah", alula: "AlUla", al_khobar: "Al Khobar", abha: "Abha", taif: "Taif", madinah: "Madinah" };
 const CITY_NAMES_AR: Record<string, string> = { riyadh: "الرياض", jeddah: "جدة", alula: "العُلا", al_khobar: "الخبر", abha: "أبها", taif: "الطائف", madinah: "المدينة المنورة" };
@@ -105,16 +101,6 @@ function useDashStyles() {
         background: var(--sf-surface-alt); border-radius: 10px;
         padding: 14px; text-align: center; flex: 1;
       }
-      .sf-phrase-row {
-        display: flex; align-items: center; gap: 10px;
-        padding: 12px 0; border-bottom: 1px solid var(--sf-border);
-      }
-      .sf-phrase-row:last-child { border-bottom: none; }
-      .sf-fav-row {
-        display: flex; align-items: center; gap: 10px;
-        padding: 12px 0; border-bottom: 1px solid var(--sf-border);
-      }
-      .sf-fav-row:last-child { border-bottom: none; }
       /* Stop card in ongoing timeline */
       .sf-dash-stop {
         display: flex; gap: 12px; align-items: flex-start;
@@ -185,13 +171,18 @@ function toggleArr<T>(arr: T[], val: T): T[] {
 }
 
 function emptyProfile(): ProfileData {
-  return { name: "", nationality: "", language: "", ageRange: "", dietary: [], allergies: [], accessibility: false, interests: [] };
+  return { name: "", nationality: "", language: "", ageRange: "", dietary: [], allergies: [], accessibility: false, accessibilityNotes: "", interests: [] };
 }
 
 function loadProfile(): ProfileData {
   try {
     const raw = localStorage.getItem("safarly_profile");
-    if (raw) return { ...emptyProfile(), ...JSON.parse(raw) };
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      // A profile saved before the nationality field switched from a full
+      // country name (e.g. "Lebanon") to an ISO code is repaired on read.
+      return { ...emptyProfile(), ...parsed, nationality: normaliseNationality(parsed?.nationality) };
+    }
   } catch { /* */ }
   const auth = getAuth();
   return { ...emptyProfile(), name: auth?.name ?? "" };
@@ -206,6 +197,14 @@ function ProfileTab({ t }: { t: (k: string) => string }) {
 
   function patch(p: Partial<ProfileData>) { setData(prev => ({ ...prev, ...p })); }
 
+  function toggleAccessibility() {
+    setData(prev => ({
+      ...prev,
+      accessibility: !prev.accessibility,
+      accessibilityNotes: prev.accessibility ? "" : prev.accessibilityNotes,
+    }));
+  }
+
   function handleSave() {
     localStorage.setItem("safarly_profile", JSON.stringify(data));
     const auth = getAuth();
@@ -214,7 +213,7 @@ function ProfileTab({ t }: { t: (k: string) => string }) {
     setTimeout(() => setSaved(false), 2000);
   }
 
-  const langs       = ["العربية", "English", "اردو", "中文", "Русский", "Français"];
+  const langs       = ["العربية", "English", "اردو", "中文", "Русский", "Français", "Türkçe", "Español", "Português"];
   const ages        = ["ob.age.18", "ob.age.25", "ob.age.35", "ob.age.45", "ob.age.55"];
   const diets       = ["ob.diet.vegetarian", "ob.diet.vegan", "ob.diet.halal", "ob.diet.none"];
   const allergyList = ["ob.allergy.nuts", "ob.allergy.dairy", "ob.allergy.gluten", "ob.allergy.sesame", "ob.allergy.eggs", "ob.allergy.shellfish"];
@@ -297,8 +296,14 @@ function ProfileTab({ t }: { t: (k: string) => string }) {
       {/* Accessibility */}
       <section className="sf-profile-section" aria-labelledby="sp-access">
         <h2 id="sp-access" className="sf-profile-section-title">Accessibility</h2>
-        <Toggle checked={data.accessibility} onChange={() => patch({ accessibility: !data.accessibility })}
+        <Toggle checked={data.accessibility} onChange={toggleAccessibility}
           label={t("ob.accessibility.label")} />
+        <AccessibilityNotesField
+          show={data.accessibility}
+          value={data.accessibilityNotes}
+          onChange={v => patch({ accessibilityNotes: v })}
+          t={t}
+        />
       </section>
 
       {/* Interests */}
@@ -357,22 +362,18 @@ function nightsBetween(a: string, b: string) {
   return Math.round((new Date(b + "T00:00:00").getTime() - new Date(a + "T00:00:00").getTime()) / 86400000);
 }
 
-function PastTripCard({ confirmed, language, learnedIds, favorites, t }: {
-  confirmed: ConfirmedTrip; language: string;
-  learnedIds: string[]; favorites: string[];
+function PastTripCard({ confirmed, language, t }: {
+  confirmed: ConfirmedTrip; language: Language;
   t: (k: string) => string;
 }) {
   const [open, setOpen] = useState(false);
   const { trip, itinerary } = confirmed;
-  const locale = language === "ar" ? "ar-SA" : "en-GB";
+  const locale = localeTag(language);
 
   const totalStops = itinerary.days.reduce((s, d) => s + d.stops.length, 0);
   const gemCount   = Math.round((itinerary.hiddenGemShare ?? 0) * totalStops);
   const nights     = trip.dateStart && trip.dateEnd ? nightsBetween(trip.dateStart, trip.dateEnd) : 0;
   const cn         = cityName(trip, itinerary, language);
-
-  const learnedPhrases = useMemo(() => learnedIds.map(id => PHRASES_MAP[id]).filter(Boolean) as Phrase[], [learnedIds]);
-  const favDishes      = useMemo(() => favorites.map(id => DISHES_MAP[id]).filter(Boolean)   as Dish[],   [favorites]);
 
   return (
     <div className="sf-trip-card">
@@ -428,54 +429,14 @@ function PastTripCard({ confirmed, language, learnedIds, favorites, t }: {
               </div>
             ))}
           </div>
-
-          {/* Phrases */}
-          <p style={{ fontSize: "0.6875rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: "var(--sf-text-muted)", marginBottom: 10 }}>
-            {t("dash.trips.phrases")} ({learnedPhrases.length})
-          </p>
-          {learnedPhrases.length === 0 ? (
-            <p style={{ fontSize: "0.8125rem", color: "var(--sf-text-muted)", marginBottom: 16 }}>{t("dash.phrases.empty")}</p>
-          ) : (
-            <div style={{ marginBottom: 16 }}>
-              {learnedPhrases.map(p => (
-                <div key={p.id} className="sf-phrase-row">
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontWeight: 700, color: "var(--sf-text)", direction: "rtl", textAlign: "end", lineHeight: 1.3 }}>{p.arabic}</div>
-                    <div style={{ fontSize: "0.8125rem", color: "var(--sf-text-muted)", marginTop: 2 }}>{p.transliteration} · {p.english}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Food */}
-          <p style={{ fontSize: "0.6875rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: "var(--sf-text-muted)", marginBottom: 10 }}>
-            {t("dash.trips.food")} ({favDishes.length})
-          </p>
-          {favDishes.length === 0 ? (
-            <p style={{ fontSize: "0.8125rem", color: "var(--sf-text-muted)" }}>{t("dash.food.empty")}</p>
-          ) : (
-            favDishes.map(d => (
-              <div key={d.id} className="sf-fav-row">
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
-                    <span style={{ fontWeight: 700, color: "var(--sf-text)", direction: "rtl" }}>{d.name_ar}</span>
-                    <span style={{ fontSize: "0.8125rem", color: "var(--sf-text-muted)" }}>{d.name}</span>
-                  </div>
-                  <div style={{ fontSize: "0.75rem", color: "var(--sf-text-muted)", marginTop: 2 }}>SAR {d.price_sar}</div>
-                </div>
-              </div>
-            ))
-          )}
         </div>
       )}
     </div>
   );
 }
 
-function TripsTab({ pastTrips, language, learnedIds, favorites, t }: {
-  pastTrips: ConfirmedTrip[]; language: string;
-  learnedIds: string[]; favorites: string[];
+function TripsTab({ pastTrips, language, t }: {
+  pastTrips: ConfirmedTrip[]; language: Language;
   t: (k: string) => string;
 }) {
   const [, navigate] = useLocation();
@@ -503,8 +464,7 @@ function TripsTab({ pastTrips, language, learnedIds, favorites, t }: {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
       {[...pastTrips].reverse().map((ct, i) => (
-        <PastTripCard key={ct.confirmedAt ?? i} confirmed={ct} language={language}
-          learnedIds={learnedIds} favorites={favorites} t={t} />
+        <PastTripCard key={ct.confirmedAt ?? i} confirmed={ct} language={language} t={t} />
       ))}
     </div>
   );
@@ -639,9 +599,12 @@ function DashStopCard({ stop, onPhotoClick }: { stop: ItineraryStop; onPhotoClic
 
 /* ── Ongoing: meal row ──────────────────────────────────────────────── */
 function DashMealRow({ meal, language }: { meal: ItineraryMeal; language: string }) {
+  const { t } = useTranslation();
   const d = meal.dish;
-  const name = (language === "ar" && (d as unknown as { name_ar?: string }).name_ar) ? (d as unknown as { name_ar: string }).name_ar : d.name;
-  const type = meal.type === "lunch" ? "🥗 Lunch" : "🍽️ Dinner";
+  const name = dishName(t, d);
+  const type = meal.type === "lunch" ? t("itin.lunch") : t("itin.dinner");
+  const venueText = mealVenue(meal, language);
+  const areaText  = mealArea(meal, language);
   return (
     <div style={{ display: "flex", gap: 12, alignItems: "flex-start", padding: "12px 0", borderBottom: "1px solid var(--sf-border)" }}>
       <div style={{ width: 8, height: 8, borderRadius: "50%", background: "color-mix(in srgb, var(--sf-warning) 80%, transparent)", marginTop: 6, flexShrink: 0 }} />
@@ -650,7 +613,21 @@ function DashMealRow({ meal, language }: { meal: ItineraryMeal; language: string
           {meal.estimatedTime} · {type}
         </div>
         <div style={{ fontWeight: 700, color: "var(--sf-text)", fontSize: "0.9375rem", lineHeight: 1.3 }}>{name}</div>
-        <div style={{ fontSize: "0.75rem", color: "var(--sf-text-muted)", marginTop: 2 }}>SAR {(d as unknown as { price_sar: number }).price_sar}</div>
+        {venueText && areaText ? (
+          <div style={{ fontSize: "0.75rem", color: "var(--sf-text-muted)", marginTop: 2 }}>{venueText} · {areaText}</div>
+        ) : (
+          <div style={{ fontSize: "0.75rem", color: "var(--sf-text-muted)", marginTop: 2, fontStyle: "italic" }}>
+            {t("itin.meal.venue_pending")}
+          </div>
+        )}
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 4, flexWrap: "wrap" }}>
+          <span style={{ fontSize: "0.75rem", color: "var(--sf-text-muted)" }}>SAR {d.price_sar}</span>
+          {meal.mapUrl && (
+            <a href={meal.mapUrl} target="_blank" rel="noopener noreferrer" className="sf-dash-maps-link">
+              <MapPin size={11} aria-hidden />{t("itin.maps")}<ExternalLink size={10} aria-hidden style={{ opacity: 0.7 }} />
+            </a>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -779,42 +756,13 @@ function DashDayTimeline({ day, language, onPhotoClick }: {
 }
 
 /* ── Ongoing Trip tab ───────────────────────────────────────────────── */
-function OngoingTripTab({ confirmed, language, learnedIds, favorites, t }: {
-  confirmed: ConfirmedTrip | null; language: string;
-  learnedIds: string[]; favorites: string[];
+function OngoingTripTab({ confirmed, language, t }: {
+  confirmed: ConfirmedTrip | null; language: Language;
   t: (k: string) => string;
 }) {
   const [, navigate]    = useLocation();
   const [activeDay, setActiveDay] = useState(0);
   const [modalPoi, setModalPoi]   = useState<ModalPoi | null>(null);
-
-  const learnedPhrases = useMemo(() => learnedIds.map(id => PHRASES_MAP[id]).filter(Boolean) as Phrase[], [learnedIds]);
-  const favDishes      = useMemo(() => favorites.map(id => DISHES_MAP[id]).filter(Boolean)   as Dish[],   [favorites]);
-
-  const [hasAudio, setHasAudio] = useState(false);
-  useEffect(() => {
-    function check() { setHasAudio(window.speechSynthesis?.getVoices?.().some(v => v.lang.startsWith("ar")) ?? false); }
-    check(); window.speechSynthesis?.addEventListener?.("voiceschanged", check);
-    return () => window.speechSynthesis?.removeEventListener?.("voiceschanged", check);
-  }, []);
-
-  function replayPhrase(arabic: string) {
-    try {
-      const u = new SpeechSynthesisUtterance(arabic);
-      u.lang = "ar-SA"; u.rate = 0.8;
-      const arVoice = window.speechSynthesis.getVoices().find(v => v.lang.startsWith("ar"));
-      if (arVoice) u.voice = arVoice;
-      window.speechSynthesis.speak(u);
-    } catch { /* */ }
-  }
-
-  const [removedFavs, setRemovedFavs] = useState<string[]>([]);
-  function removeFav(id: string) {
-    const next = favorites.filter(f => f !== id && !removedFavs.includes(f));
-    setRemovedFavs(r => [...r, id]);
-    localStorage.setItem("safarly_favorites", JSON.stringify(next));
-  }
-  const visibleDishes = favDishes.filter(d => !removedFavs.includes(d.id));
 
   if (!confirmed) {
     return (
@@ -837,7 +785,7 @@ function OngoingTripTab({ confirmed, language, learnedIds, favorites, t }: {
   }
 
   const { trip, itinerary } = confirmed;
-  const locale = language === "ar" ? "ar-SA" : "en-GB";
+  const locale = localeTag(language);
   const cn     = cityName(trip, itinerary, language);
   const currentDay = itinerary.days[activeDay] ?? itinerary.days[0];
 
@@ -917,55 +865,6 @@ function OngoingTripTab({ confirmed, language, learnedIds, favorites, t }: {
           )}
         </div>
 
-        {/* Phrases learned */}
-        <div className="sf-dash-card">
-          <CardTitle>{t("dash.phrases.title")}</CardTitle>
-          {learnedPhrases.length === 0 ? (
-            <p style={{ color: "var(--sf-text-muted)", fontSize: "0.9375rem", lineHeight: 1.6 }}>{t("dash.phrases.empty")}</p>
-          ) : (
-            learnedPhrases.map(p => (
-              <div key={p.id} className="sf-phrase-row">
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: "1.0625rem", fontWeight: 700, color: "var(--sf-text)", direction: "rtl", textAlign: "end", lineHeight: 1.3 }}>{p.arabic}</div>
-                  <div style={{ fontSize: "0.8125rem", color: "var(--sf-text-muted)", marginTop: 2 }}>{p.transliteration} · {p.english}</div>
-                </div>
-                <button
-                  onClick={() => replayPhrase(p.arabic)} disabled={!hasAudio}
-                  title={!hasAudio ? t("dialect.no_audio") : t("dash.phrases.tap_play")}
-                  style={{ flexShrink: 0, width: 40, height: 40, borderRadius: "50%", border: "1px solid var(--sf-border)", background: "var(--sf-surface-alt)", cursor: hasAudio ? "pointer" : "not-allowed", display: "flex", alignItems: "center", justifyContent: "center" }}
-                >
-                  {hasAudio
-                    ? <Volume2 size={16} style={{ color: "var(--sf-accent)" }} aria-hidden />
-                    : <VolumeX size={16} style={{ color: "var(--sf-text-muted)" }} aria-hidden />}
-                </button>
-              </div>
-            ))
-          )}
-        </div>
-
-        {/* Food list */}
-        <div className="sf-dash-card">
-          <CardTitle>{t("dash.food.title")}</CardTitle>
-          {visibleDishes.length === 0 ? (
-            <p style={{ color: "var(--sf-text-muted)", fontSize: "0.9375rem", lineHeight: 1.6 }}>{t("dash.food.empty")}</p>
-          ) : (
-            visibleDishes.map(d => (
-              <div key={d.id} className="sf-fav-row">
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
-                    <span style={{ fontSize: "1rem", fontWeight: 700, color: "var(--sf-text)", direction: "rtl" }}>{d.name_ar}</span>
-                    <span style={{ fontSize: "0.8125rem", color: "var(--sf-text-muted)" }}>{d.name}</span>
-                  </div>
-                  <div style={{ fontSize: "0.75rem", color: "var(--sf-text-muted)", marginTop: 2 }}>SAR {d.price_sar}</div>
-                </div>
-                <button onClick={() => removeFav(d.id)} style={{ flexShrink: 0, width: 36, height: 36, borderRadius: "50%", border: "1px solid var(--sf-border)", background: "var(--sf-surface-alt)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }} aria-label={t("dash.food.remove")}>
-                  <X size={14} style={{ color: "var(--sf-text-muted)" }} aria-hidden />
-                </button>
-              </div>
-            ))
-          )}
-        </div>
-
       </div>
 
       {/* Photo modal */}
@@ -989,23 +888,19 @@ export function Dashboard() {
   const [profile,      setProfile]      = useState<ProfileData | null>(null);
   const [ongoingTrip,  setOngoingTrip]  = useState<ConfirmedTrip | null>(null);
   const [pastTrips,    setPastTrips]    = useState<ConfirmedTrip[]>([]);
-  const [learnedIds,   setLearned]      = useState<string[]>([]);
-  const [favorites,    setFavorites]    = useState<string[]>([]);
   const [tab,          setTab]          = useState<TabKey>("ongoing");
 
   useEffect(() => {
     try { setProfile(JSON.parse(localStorage.getItem("safarly_profile") ?? "null")); } catch { /* */ }
     try { setOngoingTrip(JSON.parse(localStorage.getItem("safarly_ongoing_trip") ?? "null")); } catch { /* */ }
     try { setPastTrips(JSON.parse(localStorage.getItem("safarly_past_trips") ?? "[]")); } catch { /* */ }
-    try { setLearned(JSON.parse(localStorage.getItem("safarly_learned") ?? "[]")); } catch { /* */ }
-    try { setFavorites(JSON.parse(localStorage.getItem("safarly_favorites") ?? "[]")); } catch { /* */ }
   }, []);
 
   const auth = getAuth();
   const cn = ongoingTrip ? cityName(ongoingTrip.trip, ongoingTrip.itinerary, language) : "";
 
   /* If truly nothing at all — no auth, no data */
-  const hasAnyData = !!(auth || profile || ongoingTrip || pastTrips.length || learnedIds.length || favorites.length);
+  const hasAnyData = !!(auth || profile || ongoingTrip || pastTrips.length);
   if (!hasAnyData) {
     return (
       <div style={{ paddingTop: 68, paddingBottom: 88, background: "var(--sf-bg)", minHeight: "100dvh", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -1058,10 +953,10 @@ export function Dashboard() {
           <ProfileTab t={t} />
         )}
         {tab === "trips" && (
-          <TripsTab pastTrips={pastTrips} language={language} learnedIds={learnedIds} favorites={favorites} t={t} />
+          <TripsTab pastTrips={pastTrips} language={language} t={t} />
         )}
         {tab === "ongoing" && (
-          <OngoingTripTab confirmed={ongoingTrip} language={language} learnedIds={learnedIds} favorites={favorites} t={t} />
+          <OngoingTripTab confirmed={ongoingTrip} language={language} t={t} />
         )}
       </div>
     </div>
