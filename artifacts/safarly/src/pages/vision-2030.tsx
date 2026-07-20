@@ -1,27 +1,98 @@
+import { useEffect } from "react";
 import { Link } from "wouter";
 import { useTranslation } from "@/providers/translation-context";
 import { useTheme } from "@/providers/ThemeProvider";
 import { usePageMeta } from "@/lib/usePageMeta";
-import { ArrowRight } from "lucide-react";
+import {
+  ArrowRight, Cpu, Bot, TrendingUp, Coins, Building2,
+  Leaf, Landmark, Sparkles, Store, Briefcase,
+} from "lucide-react";
 import vision2030Light from "@assets/vision2030-light.png";
 import vision2030Dark from "@assets/vision2030-dark.png";
 
+/**
+ * Accent rhythm sampled from the official Vision 2030 emblem's mosaic
+ * pattern (teal, sky blue, lime, deep navy) — the pillars cycle through it
+ * instead of Safarly's usual two-tone accent/indigo pair, so this page reads
+ * as "the emblem's colors extended into the UI" rather than a generic card
+ * grid that happens to mention Vision 2030.
+ */
+const MOSAIC = ["#2FB8C6", "#4A90D9", "#8DC63F", "#1B3A5C"] as const;
+
 const PILLARS = [
-  { icon: "💻", key: "digital" },
-  { icon: "🤖", key: "ai" },
-  { icon: "📈", key: "tourism" },
-  { icon: "💰", key: "economy" },
-  { icon: "🏙️", key: "smartcities" },
-  { icon: "🌱", key: "sustainability" },
-  { icon: "🕌", key: "culture" },
-  { icon: "⭐", key: "experience" },
-  { icon: "🏪", key: "local" },
-  { icon: "💼", key: "employment" },
+  { Icon: Cpu,       key: "digital" },
+  { Icon: Bot,       key: "ai" },
+  { Icon: TrendingUp,key: "tourism" },
+  { Icon: Coins,     key: "economy" },
+  { Icon: Building2, key: "smartcities" },
+  { Icon: Leaf,      key: "sustainability" },
+  { Icon: Landmark,  key: "culture" },
+  { Icon: Sparkles,  key: "experience" },
+  { Icon: Store,     key: "local" },
+  { Icon: Briefcase, key: "employment" },
 ];
+
+/* ── Style injection ────────────────────────────────────────────────── */
+function useVisionStyles() {
+  useEffect(() => {
+    const id = "sf-vision2030-styles";
+    if (document.getElementById(id)) return;
+    const s = document.createElement("style");
+    s.id = id;
+    s.textContent = `
+      @keyframes sf-v30-glow {
+        0%, 100% { opacity: 0.55; transform: scale(1); }
+        50%      { opacity: 0.85; transform: scale(1.04); }
+      }
+      .sf-v30-emblem-glow {
+        position: absolute; inset: -18%;
+        border-radius: 50%;
+        background: conic-gradient(from 0deg,
+          ${MOSAIC[0]}33, ${MOSAIC[1]}33, ${MOSAIC[2]}33, ${MOSAIC[3]}33, ${MOSAIC[0]}33);
+        filter: blur(36px);
+        animation: sf-v30-glow 6s ease-in-out infinite;
+        pointer-events: none;
+        z-index: 0;
+      }
+      .sf-v30-pillar {
+        background: var(--sf-surface);
+        border: 1px solid var(--sf-border);
+        border-radius: 14px;
+        padding: 20px 18px;
+        transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+      }
+      .sf-v30-pillar:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 28px rgba(0,0,0,0.16);
+      }
+      .sf-v30-node {
+        position: relative;
+      }
+      .sf-v30-node::before {
+        content: "";
+        position: absolute;
+        inset-inline-start: 15px;
+        top: 40px;
+        bottom: -28px;
+        width: 2px;
+        background: var(--sf-border);
+      }
+      .sf-v30-node:last-child::before { display: none; }
+      .sf-v30-dot {
+        width: 32px; height: 32px; border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        font-family: monospace; font-weight: 800; font-size: 0.8125rem;
+        flex-shrink: 0; position: relative; z-index: 1;
+      }
+    `;
+    document.head.appendChild(s);
+  }, []);
+}
 
 export function Vision2030() {
   const { t } = useTranslation();
   const { theme } = useTheme();
+  useVisionStyles();
   usePageMeta(
     "2030 Vision",
     "How Safarly's AI travel planning aligns with Saudi Vision 2030 — the problem it solves, who feels it most, and how every agent ties back to the Kingdom's plan.",
@@ -34,7 +105,7 @@ export function Vision2030() {
   ];
 
   return (
-    <div style={{ paddingTop: 68, paddingBottom: 88, background: "var(--sf-bg)", minHeight: "100dvh" }}>
+    <div style={{ paddingTop: 68, paddingBottom: 88, background: "var(--sf-bg)", minHeight: "100dvh", overflowX: "hidden" }}>
 
       {/* ── Hero ──────────────────────────────────────────────────────── */}
       <section style={{
@@ -54,16 +125,19 @@ export function Vision2030() {
           fontWeight: 700,
           letterSpacing: "0.08em",
           textTransform: "uppercase",
-          marginBottom: 24,
+          marginBottom: 28,
         }}>
           {t("vision2030.badge")}
         </span>
 
-        <img
-          src={theme === "dark" ? vision2030Dark : vision2030Light}
-          alt="Saudi Vision 2030"
-          style={{ height: "88px", width: "auto", objectFit: "contain", margin: "0 auto 28px" }}
-        />
+        <div style={{ position: "relative", width: "fit-content", margin: "0 auto 32px" }}>
+          <div className="sf-v30-emblem-glow" aria-hidden />
+          <img
+            src={theme === "dark" ? vision2030Dark : vision2030Light}
+            alt="Saudi Vision 2030 — Kingdom of Saudi Arabia official emblem"
+            style={{ position: "relative", zIndex: 1, height: "clamp(120px, 18vw, 176px)", width: "auto", objectFit: "contain" }}
+          />
+        </div>
 
         <h1 style={{
           fontSize: "clamp(2rem, 6vw, 3.5rem)",
@@ -89,53 +163,41 @@ export function Vision2030() {
       {/* ── Divider ───────────────────────────────────────────────────── */}
       <div style={{ height: 1, background: "var(--sf-border)", maxWidth: 900, margin: "0 auto 64px" }} />
 
-      {/* ── Problem / Who / Solution ─────────────────────────────────── */}
-      <section style={{ maxWidth: 960, margin: "0 auto", padding: "0 20px 72px" }}>
-        <div style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
-          gap: 20,
-        }}>
+      {/* ── Problem / Who / Solution — connected narrative timeline ────── */}
+      <section style={{ maxWidth: 720, margin: "0 auto", padding: "0 20px 72px" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 40 }}>
           {sections.map((s, i) => (
-            <div
-              key={s.titleKey}
-              style={{
-                background: "var(--sf-surface)",
-                border: "1px solid var(--sf-border)",
-                borderRadius: 16,
-                padding: "24px 22px",
-              }}
-            >
-              <div style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                marginBottom: 10,
-              }}>
-                <span style={{
-                  fontSize: "0.75rem",
-                  fontWeight: 700,
-                  color: "var(--sf-text-accent)",
-                  fontFamily: "monospace",
-                }}>
-                  0{i + 1}
-                </span>
+            <div key={s.titleKey} className="sf-v30-node" style={{ display: "flex", gap: 20 }}>
+              <div
+                className="sf-v30-dot"
+                style={{
+                  background: `color-mix(in srgb, ${MOSAIC[i]} 16%, var(--sf-surface))`,
+                  border: `1px solid color-mix(in srgb, ${MOSAIC[i]} 45%, transparent)`,
+                  color: MOSAIC[i],
+                }}
+                aria-hidden
+              >
+                0{i + 1}
+              </div>
+              <div style={{ paddingTop: 2 }}>
                 <span style={{
                   fontSize: "0.6875rem",
                   fontWeight: 700,
                   color: "var(--sf-text-muted)",
                   textTransform: "uppercase",
                   letterSpacing: "0.06em",
+                  display: "block",
+                  marginBottom: 8,
                 }}>
                   {t(s.eyebrowKey)}
                 </span>
+                <h2 style={{ fontSize: "1.1875rem", fontWeight: 800, color: "var(--sf-text)", marginBottom: 10, letterSpacing: "-0.01em" }}>
+                  {t(s.titleKey)}
+                </h2>
+                <p style={{ fontSize: "0.9375rem", color: "var(--sf-text-muted)", lineHeight: 1.75 }}>
+                  {t(s.bodyKey)}
+                </p>
               </div>
-              <h2 style={{ fontSize: "1.0625rem", fontWeight: 800, color: "var(--sf-text)", marginBottom: 10 }}>
-                {t(s.titleKey)}
-              </h2>
-              <p style={{ fontSize: "0.875rem", color: "var(--sf-text-muted)", lineHeight: 1.7 }}>
-                {t(s.bodyKey)}
-              </p>
             </div>
           ))}
         </div>
@@ -164,25 +226,28 @@ export function Vision2030() {
           gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
           gap: 16,
         }}>
-          {PILLARS.map(p => (
-            <div
-              key={p.key}
-              style={{
-                background: "var(--sf-surface)",
-                border: "1px solid var(--sf-border)",
-                borderRadius: 14,
-                padding: "20px 18px",
-              }}
-            >
-              <div style={{ fontSize: "1.75rem", marginBottom: 10, lineHeight: 1 }}>{p.icon}</div>
-              <div style={{ fontSize: "0.9375rem", fontWeight: 700, color: "var(--sf-text)", marginBottom: 6 }}>
-                {t(`vision2030.pillar.${p.key}.title`)}
+          {PILLARS.map((p, i) => {
+            const color = MOSAIC[i % MOSAIC.length];
+            return (
+              <div key={p.key} className="sf-v30-pillar">
+                <div style={{
+                  width: 40, height: 40, borderRadius: 10,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  background: `color-mix(in srgb, ${color} 14%, var(--sf-surface))`,
+                  border: `1px solid color-mix(in srgb, ${color} 32%, transparent)`,
+                  marginBottom: 14,
+                }}>
+                  <p.Icon size={19} aria-hidden style={{ color }} />
+                </div>
+                <div style={{ fontSize: "0.9375rem", fontWeight: 700, color: "var(--sf-text)", marginBottom: 6 }}>
+                  {t(`vision2030.pillar.${p.key}.title`)}
+                </div>
+                <div style={{ fontSize: "0.8125rem", color: "var(--sf-text-muted)", lineHeight: 1.55 }}>
+                  {t(`vision2030.pillar.${p.key}.desc`)}
+                </div>
               </div>
-              <div style={{ fontSize: "0.8125rem", color: "var(--sf-text-muted)", lineHeight: 1.55 }}>
-                {t(`vision2030.pillar.${p.key}.desc`)}
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </section>
 
@@ -190,7 +255,13 @@ export function Vision2030() {
       <div style={{ height: 1, background: "var(--sf-border)", maxWidth: 900, margin: "0 auto 64px" }} />
 
       {/* ── Final CTA ─────────────────────────────────────────────────── */}
-      <section style={{ textAlign: "center", padding: "0 20px 32px" }}>
+      <section style={{ maxWidth: 640, margin: "0 auto", textAlign: "center", padding: "0 20px 32px" }}>
+        <img
+          src={theme === "dark" ? vision2030Dark : vision2030Light}
+          alt=""
+          aria-hidden
+          style={{ height: 36, width: "auto", objectFit: "contain", opacity: 0.7, margin: "0 auto 20px" }}
+        />
         <h2 style={{
           fontSize: "clamp(1.5rem, 4vw, 2.25rem)",
           fontWeight: 800,
@@ -212,10 +283,13 @@ export function Vision2030() {
             fontWeight: 700, fontSize: "1rem",
             textDecoration: "none",
             boxShadow: "0 0 24px rgba(0,216,164,0.35)",
+            transition: "opacity 0.2s ease",
           }}
+          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.opacity = "0.88"; }}
+          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.opacity = "1"; }}
         >
           {t("cta.start")}
-          <ArrowRight size={18} />
+          <ArrowRight size={18} className="rtl:hidden" aria-hidden />
         </Link>
       </section>
 
