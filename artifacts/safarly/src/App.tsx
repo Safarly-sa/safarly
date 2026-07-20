@@ -22,6 +22,7 @@ import { Lens }      from '@/pages/lens';
 import { Dialect }   from '@/pages/dialect';
 import { Dashboard } from '@/pages/dashboard';
 import { About }     from '@/pages/about';
+import { Vision2030 } from '@/pages/vision-2030';
 import { StubPage }  from '@/pages/stub';
 import NotFound from '@/pages/not-found';
 
@@ -91,6 +92,7 @@ function Router() {
           <Route path="/itinerary" component={Itinerary} />
           
           <Route path="/about"     component={About} />
+          <Route path="/vision-2030" component={Vision2030} />
           <Route path="/lens"      component={Lens} />
           <Route path="/dialect"   component={Dialect} />
           <Route path="/dashboard" component={Dashboard} />

@@ -1,0 +1,81 @@
+[
+  { "dish_id": "kabsa_chicken", "city": "riyadh", "venue": "Traditional Najdi restaurant", "venue_ar": "مطعم نجدي تقليدي", "area": "Al-Bujairi, Diriyah", "area_ar": "البجيري، الدرعية" },
+  { "dish_id": "kabsa_chicken", "city": "jeddah", "venue": "Saudi home-style restaurant", "venue_ar": "مطعم سعودي بطراز منزلي", "area": "Al-Balad, Jeddah", "area_ar": "البلد، جدة" },
+  { "dish_id": "kabsa_chicken", "city": "alula", "venue": "Heritage-building restaurant", "venue_ar": "مطعم في مبنى تراثي", "area": "AlUla Old Town", "area_ar": "البلدة القديمة بالعلا" },
+
+  { "dish_id": "kabsa_lamb", "city": "riyadh", "venue": "Festive Najdi restaurant", "venue_ar": "مطعم نجدي احتفالي", "area": "Al-Olaya", "area_ar": "العليا" },
+  { "dish_id": "kabsa_lamb", "city": "jeddah", "venue": "Traditional grill restaurant", "venue_ar": "مطعم مشاوي تقليدي", "area": "Al-Hamra District", "area_ar": "حي الحمراء" },
+  { "dish_id": "kabsa_lamb", "city": "alula", "venue": "Oasis farm-to-table restaurant", "venue_ar": "مطعم من المزرعة إلى المائدة بالواحة", "area": "AlUla Oasis", "area_ar": "واحة العلا" },
+
+  { "dish_id": "jareesh", "city": "riyadh", "venue": "Najdi home-style kitchen", "venue_ar": "مطبخ نجدي منزلي", "area": "Deera (Al-Dirah) Souq", "area_ar": "سوق الديرة" },
+  { "dish_id": "jareesh", "city": "jeddah", "venue": "Traditional Saudi restaurant", "venue_ar": "مطعم سعودي تقليدي", "area": "Al-Salamah", "area_ar": "السلامة" },
+  { "dish_id": "jareesh", "city": "alula", "venue": "Heritage-building restaurant", "venue_ar": "مطعم في مبنى تراثي", "area": "AlUla Old Town", "area_ar": "البلدة القديمة بالعلا" },
+
+  { "dish_id": "saleeg", "city": "riyadh", "venue": "Hejazi-style restaurant", "venue_ar": "مطعم بطراز حجازي", "area": "Al-Olaya", "area_ar": "العليا" },
+  { "dish_id": "saleeg", "city": "jeddah", "venue": "Historic Hejazi restaurant", "venue_ar": "مطعم حجازي عريق", "area": "Al-Balad, Jeddah", "area_ar": "البلد، جدة" },
+  { "dish_id": "saleeg", "city": "alula", "venue": "Guesthouse dining room", "venue_ar": "مطعم بيت ضيافة", "area": "AlUla Old Town", "area_ar": "البلدة القديمة بالعلا" },
+
+  { "dish_id": "maraq", "city": "riyadh", "venue": "Traditional Saudi restaurant", "venue_ar": "مطعم سعودي تقليدي", "area": "Al-Murabba", "area_ar": "المربع" },
+  { "dish_id": "maraq", "city": "jeddah", "venue": "Traditional Saudi restaurant", "venue_ar": "مطعم سعودي تقليدي", "area": "Al-Hamra District", "area_ar": "حي الحمراء" },
+  { "dish_id": "maraq", "city": "alula", "venue": "Desert camp dining", "venue_ar": "مطعم مخيم صحراوي", "area": "near Ashar Valley", "area_ar": "بالقرب من وادي عشار" },
+
+  { "dish_id": "machboos_rubyan", "city": "riyadh", "venue": "Gulf seafood restaurant", "venue_ar": "مطعم مأكولات بحرية خليجي", "area": "Tahlia Street", "area_ar": "شارع التحلية" },
+  { "dish_id": "machboos_rubyan", "city": "jeddah", "venue": "Red Sea seafood restaurant", "venue_ar": "مطعم مأكولات بحرية على البحر الأحمر", "area": "Jeddah Corniche", "area_ar": "كورنيش جدة" },
+  { "dish_id": "machboos_rubyan", "city": "alula", "venue": "Resort seafood restaurant", "venue_ar": "مطعم مأكولات بحرية بمنتجع", "area": "AlUla Oasis", "area_ar": "واحة العلا" },
+
+  { "dish_id": "sayadiya", "city": "riyadh", "venue": "Levantine seafood restaurant", "venue_ar": "مطعم مأكولات بحرية شامي", "area": "Al-Olaya", "area_ar": "العليا" },
+  { "dish_id": "sayadiya", "city": "jeddah", "venue": "Waterfront fish restaurant", "venue_ar": "مطعم أسماك على الواجهة البحرية", "area": "Jeddah Corniche", "area_ar": "كورنيش جدة" },
+  { "dish_id": "sayadiya", "city": "alula", "venue": "Resort seafood restaurant", "venue_ar": "مطعم مأكولات بحرية بمنتجع", "area": "AlUla Old Town", "area_ar": "البلدة القديمة بالعلا" },
+
+  { "dish_id": "thareed", "city": "riyadh", "venue": "Traditional Saudi restaurant", "venue_ar": "مطعم سعودي تقليدي", "area": "Al-Bujairi, Diriyah", "area_ar": "البجيري، الدرعية" },
+  { "dish_id": "thareed", "city": "jeddah", "venue": "Historic Hejazi restaurant", "venue_ar": "مطعم حجازي عريق", "area": "Al-Balad, Jeddah", "area_ar": "البلد، جدة" },
+  { "dish_id": "thareed", "city": "alula", "venue": "Heritage-building restaurant", "venue_ar": "مطعم في مبنى تراثي", "area": "AlUla Old Town", "area_ar": "البلدة القديمة بالعلا" },
+
+  { "dish_id": "harees", "city": "riyadh", "venue": "Traditional Saudi restaurant", "venue_ar": "مطعم سعودي تقليدي", "area": "Deera (Al-Dirah) Souq", "area_ar": "سوق الديرة" },
+  { "dish_id": "harees", "city": "jeddah", "venue": "Historic Hejazi restaurant", "venue_ar": "مطعم حجازي عريق", "area": "Al-Balad, Jeddah", "area_ar": "البلد، جدة" },
+  { "dish_id": "harees", "city": "alula", "venue": "Guesthouse dining room", "venue_ar": "مطعم بيت ضيافة", "area": "AlUla Old Town", "area_ar": "البلدة القديمة بالعلا" },
+
+  { "dish_id": "samboosa_lunch", "city": "riyadh", "venue": "Street-food stall", "venue_ar": "بسطة طعام شعبي", "area": "Deera (Al-Dirah) Souq", "area_ar": "سوق الديرة" },
+  { "dish_id": "samboosa_lunch", "city": "jeddah", "venue": "Street-food stall", "venue_ar": "بسطة طعام شعبي", "area": "Al-Balad, Jeddah", "area_ar": "البلد، جدة" },
+  { "dish_id": "samboosa_lunch", "city": "alula", "venue": "Market food stall", "venue_ar": "بسطة في السوق", "area": "AlUla Old Town", "area_ar": "البلدة القديمة بالعلا" },
+
+  { "dish_id": "mandi_lamb", "city": "riyadh", "venue": "Yemeni mandi restaurant", "venue_ar": "مطعم مندي يمني", "area": "Al-Olaya", "area_ar": "العليا" },
+  { "dish_id": "mandi_lamb", "city": "jeddah", "venue": "Hadrami mandi house", "venue_ar": "بيت مندي حضرمي", "area": "Al-Hamra District", "area_ar": "حي الحمراء" },
+  { "dish_id": "mandi_lamb", "city": "alula", "venue": "Desert camp dining", "venue_ar": "مطعم مخيم صحراوي", "area": "near Ashar Valley", "area_ar": "بالقرب من وادي عشار" },
+
+  { "dish_id": "madfoon", "city": "riyadh", "venue": "Najdi pit-roast restaurant", "venue_ar": "مطعم مدفون نجدي", "area": "Al-Bujairi, Diriyah", "area_ar": "البجيري، الدرعية" },
+  { "dish_id": "madfoon", "city": "jeddah", "venue": "Najdi-style restaurant", "venue_ar": "مطعم بطراز نجدي", "area": "Al-Salamah", "area_ar": "السلامة" },
+  { "dish_id": "madfoon", "city": "alula", "venue": "Desert camp dining", "venue_ar": "مطعم مخيم صحراوي", "area": "near Ashar Valley", "area_ar": "بالقرب من وادي عشار" },
+
+  { "dish_id": "ouzi", "city": "riyadh", "venue": "Levantine-Gulf grill house", "venue_ar": "بيت مشاوي شامي خليجي", "area": "Tahlia Street", "area_ar": "شارع التحلية" },
+  { "dish_id": "ouzi", "city": "jeddah", "venue": "Levantine-Gulf grill house", "venue_ar": "بيت مشاوي شامي خليجي", "area": "Al-Hamra District", "area_ar": "حي الحمراء" },
+  { "dish_id": "ouzi", "city": "alula", "venue": "Resort dining room", "venue_ar": "قاعة طعام بمنتجع", "area": "AlUla Oasis", "area_ar": "واحة العلا" },
+
+  { "dish_id": "mathbi_chicken", "city": "riyadh", "venue": "Stone-grill restaurant", "venue_ar": "مطعم مضبي على الحجر", "area": "Al-Murabba", "area_ar": "المربع" },
+  { "dish_id": "mathbi_chicken", "city": "jeddah", "venue": "Stone-grill restaurant", "venue_ar": "مطعم مضبي على الحجر", "area": "Al-Salamah", "area_ar": "السلامة" },
+  { "dish_id": "mathbi_chicken", "city": "alula", "venue": "Desert camp dining", "venue_ar": "مطعم مخيم صحراوي", "area": "near Ashar Valley", "area_ar": "بالقرب من وادي عشار" },
+
+  { "dish_id": "mutabbaq", "city": "riyadh", "venue": "Street-food stall", "venue_ar": "بسطة طعام شعبي", "area": "Deera (Al-Dirah) Souq", "area_ar": "سوق الديرة" },
+  { "dish_id": "mutabbaq", "city": "jeddah", "venue": "Historic Mutabbaq stall", "venue_ar": "بسطة مطبق تراثية", "area": "Al-Balad, Jeddah", "area_ar": "البلد، جدة" },
+  { "dish_id": "mutabbaq", "city": "alula", "venue": "Market food stall", "venue_ar": "بسطة في السوق", "area": "AlUla Old Town", "area_ar": "البلدة القديمة بالعلا" },
+
+  { "dish_id": "lahm_basal", "city": "riyadh", "venue": "Najdi home-style kitchen", "venue_ar": "مطبخ نجدي منزلي", "area": "Al-Murabba", "area_ar": "المربع" },
+  { "dish_id": "lahm_basal", "city": "jeddah", "venue": "Traditional Saudi restaurant", "venue_ar": "مطعم سعودي تقليدي", "area": "Al-Hamra District", "area_ar": "حي الحمراء" },
+  { "dish_id": "lahm_basal", "city": "alula", "venue": "Guesthouse dining room", "venue_ar": "مطعم بيت ضيافة", "area": "AlUla Old Town", "area_ar": "البلدة القديمة بالعلا" },
+
+  { "dish_id": "kabsa_dinner", "city": "riyadh", "venue": "Festive Najdi restaurant", "venue_ar": "مطعم نجدي احتفالي", "area": "Al-Bujairi, Diriyah", "area_ar": "البجيري، الدرعية" },
+  { "dish_id": "kabsa_dinner", "city": "jeddah", "venue": "Saudi home-style restaurant", "venue_ar": "مطعم سعودي بطراز منزلي", "area": "Al-Balad, Jeddah", "area_ar": "البلد، جدة" },
+  { "dish_id": "kabsa_dinner", "city": "alula", "venue": "Resort dining room", "venue_ar": "قاعة طعام بمنتجع", "area": "AlUla Oasis", "area_ar": "واحة العلا" },
+
+  { "dish_id": "fish_mandi", "city": "riyadh", "venue": "Red Sea seafood restaurant", "venue_ar": "مطعم مأكولات بحرية على البحر الأحمر", "area": "Tahlia Street", "area_ar": "شارع التحلية" },
+  { "dish_id": "fish_mandi", "city": "jeddah", "venue": "Coastal mandi house", "venue_ar": "بيت مندي ساحلي", "area": "Jeddah Corniche", "area_ar": "كورنيش جدة" },
+  { "dish_id": "fish_mandi", "city": "alula", "venue": "Resort seafood restaurant", "venue_ar": "مطعم مأكولات بحرية بمنتجع", "area": "AlUla Oasis", "area_ar": "واحة العلا" },
+
+  { "dish_id": "shish_tawook", "city": "riyadh", "venue": "Grill house", "venue_ar": "بيت مشاوي", "area": "Tahlia Street", "area_ar": "شارع التحلية" },
+  { "dish_id": "shish_tawook", "city": "jeddah", "venue": "Grill house", "venue_ar": "بيت مشاوي", "area": "Al-Salamah", "area_ar": "السلامة" },
+  { "dish_id": "shish_tawook", "city": "alula", "venue": "Grill house", "venue_ar": "بيت مشاوي", "area": "AlUla Old Town", "area_ar": "البلدة القديمة بالعلا" },
+
+  { "dish_id": "kunafa", "city": "riyadh", "venue": "Dessert café", "venue_ar": "مقهى حلويات", "area": "Tahlia Street", "area_ar": "شارع التحلية" },
+  { "dish_id": "kunafa", "city": "jeddah", "venue": "Historic dessert shop", "venue_ar": "محل حلويات عريق", "area": "Al-Balad, Jeddah", "area_ar": "البلد، جدة" },
+  { "dish_id": "kunafa", "city": "alula", "venue": "Dessert café", "venue_ar": "مقهى حلويات", "area": "AlUla Old Town", "area_ar": "البلدة القديمة بالعلا" }
+]

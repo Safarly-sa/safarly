@@ -116,6 +116,7 @@ const ALLERGEN_KEYS: Record<string, string> = ALLERGEN_LABEL_KEYS;
 const LANGUAGE_NAMES: Record<Language, string> = {
   en: "English", ar: "Arabic", de: "German", fr: "French",
   it: "Italian", ru: "Russian", ur: "Urdu", zh: "Chinese",
+  tr: "Turkish", es: "Spanish", pt: "Portuguese",
 };
 
 const ARABIC_RE = /[؀-ۿ]/;

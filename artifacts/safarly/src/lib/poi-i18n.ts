@@ -14,7 +14,7 @@
 
 type Translate = (key: string) => string;
 
-function resolve(t: Translate, key: string, fallback: string): string {
+export function resolve(t: Translate, key: string, fallback: string): string {
   const value = t(key);
   return value === key ? fallback : value;
 }

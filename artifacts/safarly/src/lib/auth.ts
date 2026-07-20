@@ -38,6 +38,18 @@ export function getStartPath(): string {
   return getAuth() && isProfileComplete() ? "/trip" : "/login";
 }
 
+/**
+ * Validates a `returnTo` value taken from a URL query string before it is
+ * handed to `navigate()`. Only same-app, path-only targets are honored —
+ * anything absolute ("https://evil.com/x") or protocol-relative ("//evil.com")
+ * is rejected, since an attacker-controlled login link could otherwise send a
+ * signed-in user's session onward to another origin.
+ */
+export function sanitizeReturnTo(path: string | null | undefined): string | null {
+  if (!path || !path.startsWith("/") || path.startsWith("//")) return null;
+  return path;
+}
+
 /* ── Sign out ────────────────────────────────────────────────────────── */
 
 /**

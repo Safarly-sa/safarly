@@ -7,13 +7,16 @@ import fr from "../locales/fr.json";
 import ur from "../locales/ur.json";
 import zh from "../locales/zh.json";
 import ru from "../locales/ru.json";
+import tr from "../locales/tr.json";
+import es from "../locales/es.json";
+import pt from "../locales/pt.json";
 import { I18nContext, type Direction, type Language } from "./translation-context";
 
 type Translations = Record<string, string>;
 
-const LOCALES: Record<Language, Translations> = { en, ar, de, it, fr, ur, zh, ru };
+const LOCALES: Record<Language, Translations> = { en, ar, de, it, fr, ur, zh, ru, tr, es, pt };
 const RTL_LANGS = new Set<Language>(["ar", "ur"]);
-const SUPPORTED_LANGS = new Set<Language>(["en", "ar", "de", "it", "fr", "ur", "zh", "ru"]);
+const SUPPORTED_LANGS = new Set<Language>(["en", "ar", "de", "it", "fr", "ur", "zh", "ru", "tr", "es", "pt"]);
 
 function detectLocale(): Language {
   const stored = localStorage.getItem("safarly-lang");

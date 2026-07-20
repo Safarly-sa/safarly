@@ -19,6 +19,9 @@ const LANGS: { code: Language; label: string; flag: string }[] = [
   { code: "ur", label: "اردو",      flag: "🇵🇰" },
   { code: "zh", label: "中文",      flag: "🇨🇳" },
   { code: "ru", label: "Русский",   flag: "🇷🇺" },
+  { code: "tr", label: "Türkçe",    flag: "🇹🇷" },
+  { code: "es", label: "Español",   flag: "🇪🇸" },
+  { code: "pt", label: "Português", flag: "🇵🇹" },
 ];
 
 export function Navbar() {
@@ -54,10 +57,11 @@ export function Navbar() {
   const currentLang = LANGS.find(l => l.code === language) ?? LANGS[0];
 
   const navLinks = [
-    { href: "/",         label: t("nav.plan")      },
-    { href: "/lens",     label: t("nav.lens")      },
-    { href: "/dialect",  label: t("nav.dialect")   },
-    { href: "/dashboard",label: t("nav.dashboard") },
+    { href: "/",            label: t("nav.plan")       },
+    { href: "/lens",        label: t("nav.lens")       },
+    { href: "/dialect",     label: t("nav.dialect")    },
+    { href: "/dashboard",   label: t("nav.dashboard")  },
+    { href: "/vision-2030", label: t("nav.vision2030") },
   ];
 
   const controlBtn: React.CSSProperties = {

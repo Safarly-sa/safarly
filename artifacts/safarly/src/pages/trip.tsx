@@ -3,12 +3,17 @@
  * Order: Travel Context → Destination → Dates (calendar) → Budget → Mood → Goals (multi)
  * Saves as safarly_trip and navigates to /generating.
  */
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useLocation } from "wouter";
 import { motion } from "framer-motion";
-import { ArrowRight, ChevronLeft, ChevronRight, Sparkles, X } from "lucide-react";
+import { ArrowRight, Calendar, Check, ChevronLeft, ChevronRight, Sparkles, X } from "lucide-react";
 import { useTranslation } from "@/providers/translation-context";
 import { usePageMeta } from "@/lib/usePageMeta";
+import { localeTag } from "@/lib/locale-format";
+import {
+  currencyForNationality, convertFromSAR, formatCurrencyAmount,
+  getCurrencyDisplayPref, setCurrencyDisplayPref,
+} from "@/lib/currency";
 
 /* ──────────────────────────────────────────────────────────────────────
    Style injection
@@ -30,6 +35,14 @@ function useTripStyles() {
       /* Calendar day button hover */
       .sf-cal-day:hover:not(:disabled) { background: var(--sf-surface-alt); }
       .sf-cal-day:disabled { cursor:not-allowed; }
+
+      /* Date tabs */
+      .sf-date-tab { flex:1; display:flex; align-items:center; justify-content:center; gap:6px; min-height:44px; padding:0 12px; border-radius:10px; border:1.5px solid var(--sf-border); background:var(--sf-surface); color:var(--sf-text-muted); font-weight:700; font-size:0.875rem; cursor:pointer; transition:all .18s; }
+      .sf-date-tab.active { border-color:var(--sf-indigo); background:var(--sf-primary-soft); color:var(--sf-text); }
+      .sf-date-input { width:100%; box-sizing:border-box; min-height:48px; padding:0 14px 0 40px; border-radius:10px; border:1.5px solid var(--sf-border); background:var(--sf-surface); color:var(--sf-text); font-size:0.9375rem; outline:none; font-family:inherit; transition:border-color .2s; }
+      html[dir="rtl"] .sf-date-input { padding:0 40px 0 14px; }
+      .sf-date-input:focus { border-color:var(--sf-indigo); }
+      .sf-date-input.has-error { border-color:#EF4444; }
 
       /* Travel context card */
       .sf-ctx-card { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; padding:14px 10px; border-radius:12px; cursor:pointer; border:1.5px solid var(--sf-border); background:var(--sf-surface); transition:border-color .18s, background .18s; min-height:88px; }
@@ -56,22 +69,25 @@ function useTripStyles() {
 /* ──────────────────────────────────────────────────────────────────────
    Section header
    ────────────────────────────────────────────────────────────────────── */
-function Section({ title, hint, children }: { title: string; hint?: string; children: React.ReactNode }) {
+function Section({ title, hint, action, children }: { title: string; hint?: string; action?: React.ReactNode; children: React.ReactNode }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-      <div>
-        <p style={{
-          fontSize: "0.75rem", fontWeight: 700,
-          textTransform: "uppercase", letterSpacing: "0.08em",
-          color: "var(--sf-text-muted)",
-        }}>
-          {title}
-        </p>
-        {hint && (
-          <p style={{ fontSize: "0.8125rem", color: "var(--sf-text-muted)", marginTop: "4px", fontWeight: 400 }}>
-            {hint}
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
+        <div>
+          <p style={{
+            fontSize: "0.75rem", fontWeight: 700,
+            textTransform: "uppercase", letterSpacing: "0.08em",
+            color: "var(--sf-text-muted)",
+          }}>
+            {title}
           </p>
-        )}
+          {hint && (
+            <p style={{ fontSize: "0.8125rem", color: "var(--sf-text-muted)", marginTop: "4px", fontWeight: 400 }}>
+              {hint}
+            </p>
+          )}
+        </div>
+        {action}
       </div>
       {children}
     </div>
@@ -247,58 +263,88 @@ function AiCityCard({ selected, onClick, t }: { selected: boolean; onClick: () =
 }
 
 /* ──────────────────────────────────────────────────────────────────────
-   Calendar date-range picker
+   Date parsing helpers — locale-aware typed input, ISO storage
    ────────────────────────────────────────────────────────────────────── */
-interface CalendarProps {
-  startDate: string;
-  endDate: string;
-  onChange: (start: string, end: string) => void;
-  isRTL: boolean;
+function parseISO(s: string): Date { return new Date(s + "T00:00:00"); }
+function fmtISO(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+function isValidYMD(y: number, m: number, d: number): boolean {
+  if (!Number.isInteger(y) || !Number.isInteger(m) || !Number.isInteger(d)) return false;
+  if (m < 1 || m > 12 || d < 1) return false;
+  const dt = new Date(y, m - 1, d);
+  return dt.getFullYear() === y && dt.getMonth() === m - 1 && dt.getDate() === d;
 }
 
-function CalendarPicker({ startDate, endDate, onChange, isRTL }: CalendarProps) {
-  const todayDate = new Date();
-  todayDate.setHours(0, 0, 0, 0);
+/** Day/month/year order for the locale's numeric date format, read out of Intl
+    rather than hardcoded — so typed input can be parsed the way the user expects. */
+function localeDateOrder(locale: string): ("d" | "m" | "y")[] {
+  try {
+    const parts = new Intl.DateTimeFormat(locale).formatToParts(new Date(2030, 0, 2));
+    const order = parts
+      .filter(p => p.type === "day" || p.type === "month" || p.type === "year")
+      .map(p => (p.type === "day" ? "d" : p.type === "month" ? "m" : "y") as "d" | "m" | "y");
+    return order.length === 3 ? order : ["d", "m", "y"];
+  } catch {
+    return ["d", "m", "y"];
+  }
+}
 
-  const [viewYear, setViewYear]   = useState(todayDate.getFullYear());
-  const [viewMonth, setViewMonth] = useState(todayDate.getMonth());
-  const [hover, setHover]         = useState("");
+/** Parses typed input in the locale's common numeric formats (and always
+    accepts ISO yyyy-mm-dd, since that's what re-population uses). Returns an
+    ISO date string, or null if the text isn't a recognisable date — callers
+    must never feed a null result into calendar state. */
+function parseTypedDate(raw: string, order: ("d" | "m" | "y")[]): string | null {
+  const trimmed = raw.trim();
+  if (!trimmed) return null;
 
-  // When a pre-filled startDate arrives (Edit Trip flow), jump the calendar to that month
+  const iso = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(trimmed);
+  if (iso) {
+    const y = Number(iso[1]), m = Number(iso[2]), d = Number(iso[3]);
+    return isValidYMD(y, m, d) ? fmtISO(new Date(y, m - 1, d)) : null;
+  }
+
+  const parts = trimmed.split(/[/\-.\s]+/).filter(Boolean);
+  if (parts.length !== 3 || parts.some(p => !/^\d{1,4}$/.test(p))) return null;
+
+  let day: number | null = null, month: number | null = null, year: number | null = null;
+  const yearIdx = parts.findIndex(p => p.length === 4);
+
+  if (yearIdx !== -1) {
+    year = Number(parts[yearIdx]);
+    const rest = parts.filter((_, i) => i !== yearIdx).map(Number);
+    const restOrder = order.filter(o => o !== "y");
+    if (restOrder[0] === "d") { [day, month] = rest; } else { [month, day] = rest; }
+  } else {
+    const nums = parts.map(Number);
+    order.forEach((o, i) => {
+      if (o === "d") day = nums[i];
+      else if (o === "m") month = nums[i];
+      else year = nums[i] < 100 ? 2000 + nums[i] : nums[i];
+    });
+  }
+
+  if (day == null || month == null || year == null) return null;
+  return isValidYMD(year, month, day) ? fmtISO(new Date(year, month - 1, day)) : null;
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   Mini calendar — single-date picker, used inside each date tab
+   ────────────────────────────────────────────────────────────────────── */
+function MiniCalendar({ value, min, onSelect, isRTL, locale }: {
+  value: string; min: string; onSelect: (iso: string) => void; isRTL: boolean; locale: string;
+}) {
+  const anchor = value ? parseISO(value) : parseISO(min);
+  const [viewYear, setViewYear]   = useState(anchor.getFullYear());
+  const [viewMonth, setViewMonth] = useState(anchor.getMonth());
+
+  // Jump the visible month when the selected value changes externally
+  // (typed input commits, or switching tabs to a date that's already set).
   useEffect(() => {
-    if (!startDate) return;
-    const d = new Date(startDate + "T00:00:00");
+    const d = value ? parseISO(value) : parseISO(min);
     setViewYear(d.getFullYear());
     setViewMonth(d.getMonth());
-  }, [startDate]);
-
-  function parseD(s: string) { return new Date(s + "T00:00:00"); }
-  function fmtD(d: Date) { return d.toISOString().split("T")[0]; }
-  function isPast(s: string) { return parseD(s) < todayDate; }
-
-  function handleDay(ds: string) {
-    if (isPast(ds)) return;
-    if (!startDate || (startDate && endDate)) {
-      onChange(ds, "");
-    } else {
-      const d = parseD(ds), s = parseD(startDate);
-      if (d < s)       { onChange(ds, ""); }
-      else if (d.getTime() === s.getTime()) { onChange("", ""); }
-      else              { onChange(startDate, ds); }
-    }
-  }
-
-  function isStart(ds: string)  { return ds === startDate; }
-  function isEnd(ds: string)    { return ds === endDate; }
-  function inRange(ds: string)  {
-    if (!startDate) return false;
-    const d = parseD(ds);
-    const s = parseD(startDate);
-    const eStr = endDate || hover;
-    if (!eStr) return false;
-    const e = parseD(eStr);
-    return d > s && d < e;
-  }
+  }, [value, min]);
 
   const prevMonth = useCallback(() => {
     if (viewMonth === 0) { setViewMonth(11); setViewYear(y => y - 1); }
@@ -310,8 +356,7 @@ function CalendarPicker({ startDate, endDate, onChange, isRTL }: CalendarProps) 
     else setViewMonth(m => m + 1);
   }, [viewMonth]);
 
-  // Build grid
-  const firstWeekday = new Date(viewYear, viewMonth, 1).getDay(); // 0=Sun
+  const firstWeekday = new Date(viewYear, viewMonth, 1).getDay();
   const daysInMonth  = new Date(viewYear, viewMonth + 1, 0).getDate();
   const cells: (number | null)[] = [
     ...Array(firstWeekday).fill(null),
@@ -319,17 +364,15 @@ function CalendarPicker({ startDate, endDate, onChange, isRTL }: CalendarProps) 
   ];
   while (cells.length % 7 !== 0) cells.push(null);
 
-  const monthLabel = new Date(viewYear, viewMonth, 1).toLocaleDateString("en-US", { month: "long", year: "numeric" });
-  const weekDayLabels = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
+  const monthLabel = new Date(viewYear, viewMonth, 1).toLocaleDateString(locale, { month: "long", year: "numeric" });
+  // Jan 4 1970 was a Sunday — used as a locale-agnostic anchor to read short
+  // weekday names out of Intl rather than hardcoding English abbreviations.
+  const weekDayLabels = useMemo(() => {
+    const fmt = new Intl.DateTimeFormat(locale, { weekday: "short" });
+    return Array.from({ length: 7 }, (_, i) => fmt.format(new Date(1970, 0, 4 + i)));
+  }, [locale]);
 
-  const nights = startDate && endDate
-    ? Math.round((parseD(endDate).getTime() - parseD(startDate).getTime()) / 86400000)
-    : 0;
-
-  function fmtDisplay(ds: string) {
-    return parseD(ds).toLocaleDateString("en-GB", { day: "numeric", month: "short" });
-  }
-
+  const todayISO = fmtISO(new Date());
   const PrevIcon = isRTL ? ChevronRight : ChevronLeft;
   const NextIcon = isRTL ? ChevronLeft  : ChevronRight;
 
@@ -338,7 +381,6 @@ function CalendarPicker({ startDate, endDate, onChange, isRTL }: CalendarProps) 
       background: "var(--sf-surface)", borderRadius: "14px",
       border: "1.5px solid var(--sf-border)", overflow: "hidden",
     }}>
-      {/* Month navigation */}
       <div style={{
         display: "flex", alignItems: "center", justifyContent: "space-between",
         padding: "14px 16px", borderBottom: "1px solid var(--sf-border)",
@@ -363,56 +405,41 @@ function CalendarPicker({ startDate, endDate, onChange, isRTL }: CalendarProps) 
       </div>
 
       <div style={{ padding: "12px 12px 16px" }}>
-        {/* Weekday labels */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 2, marginBottom: 4 }}>
           {weekDayLabels.map(d => (
             <div key={d} style={{ textAlign: "center", fontSize: "0.6875rem", color: "var(--sf-text-muted)", fontWeight: 700, padding: "4px 0" }}>{d}</div>
           ))}
         </div>
 
-        {/* Day grid */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 2 }}>
           {cells.map((day, i) => {
             if (!day) return <div key={i} />;
             const m = String(viewMonth + 1).padStart(2, "0");
             const d = String(day).padStart(2, "0");
             const ds = `${viewYear}-${m}-${d}`;
-            const past = isPast(ds);
-            const isS  = isStart(ds);
-            const isE  = isEnd(ds);
-            const inR  = inRange(ds);
-            const isToday = ds === fmtD(todayDate);
-
-            const cellBg = (isS || isE)
-              ? "var(--sf-indigo)"
-              : inR ? "color-mix(in srgb, var(--sf-indigo) 16%, var(--sf-surface))"
-              : "transparent";
-            const cellColor = (isS || isE)
-              ? "white"
-              : past ? "var(--sf-border)"
-              : "var(--sf-text)";
+            const disabled = ds < min;
+            const selected = ds === value;
+            const isToday  = ds === todayISO;
 
             return (
               <button
                 key={ds} type="button"
                 className="sf-cal-day"
-                disabled={past}
-                onClick={() => handleDay(ds)}
-                onMouseEnter={() => startDate && !endDate && setHover(ds)}
-                onMouseLeave={() => setHover("")}
+                disabled={disabled}
+                onClick={() => onSelect(ds)}
                 style={{
                   minHeight: 38, borderRadius: 8, border: "none",
-                  background: cellBg, color: cellColor,
-                  fontWeight: (isS || isE) ? 700 : isToday ? 700 : 400,
+                  background: selected ? "var(--sf-indigo)" : "transparent",
+                  color: selected ? "white" : disabled ? "var(--sf-border)" : "var(--sf-text)",
+                  fontWeight: selected || isToday ? 700 : 400,
                   fontSize: "0.875rem",
-                  outline: isToday && !isS && !isE ? "2px solid var(--sf-border)" : "none",
+                  outline: isToday && !selected ? "2px solid var(--sf-border)" : "none",
                   outlineOffset: -2,
                   transition: "background .12s",
-                  cursor: past ? "not-allowed" : "pointer",
-                  position: "relative",
+                  cursor: disabled ? "not-allowed" : "pointer",
                 }}
-                aria-label={`${day} ${monthLabel}${isS ? ", start date" : isE ? ", end date" : ""}`}
-                aria-pressed={isS || isE}
+                aria-label={`${day} ${monthLabel}`}
+                aria-pressed={selected}
               >
                 {day}
               </button>
@@ -420,24 +447,164 @@ function CalendarPicker({ startDate, endDate, onChange, isRTL }: CalendarProps) 
           })}
         </div>
       </div>
+    </div>
+  );
+}
 
-      {/* Range summary bar */}
+/* ──────────────────────────────────────────────────────────────────────
+   Date tabs — arrival / departure, each with typed input + calendar
+   ────────────────────────────────────────────────────────────────────── */
+interface DateTabsProps {
+  startDate: string;
+  endDate: string;
+  onChange: (start: string, end: string) => void;
+  isRTL: boolean;
+  locale: string;
+  t: (k: string) => string;
+}
+
+type DateTab = "arrival" | "departure";
+
+function DateTabsPicker({ startDate, endDate, onChange, isRTL, locale, t }: DateTabsProps) {
+  const todayISO = fmtISO(new Date());
+  const order = useMemo(() => localeDateOrder(locale), [locale]);
+  // Dec 25 2030 — unambiguous day/month, used only to render a "how to type
+  // this" example in the locale's own numeric format.
+  const exampleText = useMemo(() => new Date(2030, 11, 25).toLocaleDateString(locale), [locale]);
+
+  const [activeTab, setActiveTab] = useState<DateTab>("arrival");
+  const [arrivalInput, setArrivalInput]     = useState(startDate ? parseISO(startDate).toLocaleDateString(locale) : "");
+  const [departureInput, setDepartureInput] = useState(endDate ? parseISO(endDate).toLocaleDateString(locale) : "");
+  const [arrivalError, setArrivalError]     = useState("");
+  const [departureError, setDepartureError] = useState("");
+
+  // Re-sync the text fields when the stored date changes from outside typing
+  // (calendar picks, the other tab clearing a now-invalid range, Edit Trip prefill).
+  useEffect(() => {
+    setArrivalInput(startDate ? parseISO(startDate).toLocaleDateString(locale) : "");
+  }, [startDate, locale]);
+  useEffect(() => {
+    setDepartureInput(endDate ? parseISO(endDate).toLocaleDateString(locale) : "");
+  }, [endDate, locale]);
+
+  function commitArrival(iso: string | null, raw: string) {
+    if (raw.trim() === "") { setArrivalError(""); onChange("", endDate); return; }
+    if (!iso) { setArrivalError(t("trip.dates.error.invalid")); return; }
+    if (iso < todayISO) { setArrivalError(t("trip.dates.error.past")); return; }
+    setArrivalError("");
+    const nextEnd = endDate && endDate <= iso ? "" : endDate;
+    onChange(iso, nextEnd);
+    setActiveTab("departure");
+  }
+
+  function commitDeparture(iso: string | null, raw: string) {
+    if (raw.trim() === "") { setDepartureError(""); onChange(startDate, ""); return; }
+    if (!iso) { setDepartureError(t("trip.dates.error.invalid")); return; }
+    if (startDate && iso <= startDate) { setDepartureError(t("trip.dates.error.order")); return; }
+    if (!startDate && iso < todayISO) { setDepartureError(t("trip.dates.error.past")); return; }
+    setDepartureError("");
+    onChange(startDate, iso);
+  }
+
+  function handleClear() {
+    onChange("", "");
+    setArrivalError(""); setDepartureError("");
+  }
+
+  const nights = startDate && endDate
+    ? Math.round((parseISO(endDate).getTime() - parseISO(startDate).getTime()) / 86400000)
+    : 0;
+  function fmtDisplay(ds: string) {
+    return parseISO(ds).toLocaleDateString(locale, { day: "numeric", month: "short" });
+  }
+
+  const isArrival   = activeTab === "arrival";
+  const activeValue = isArrival ? arrivalInput : departureInput;
+  const activeError = isArrival ? arrivalError : departureError;
+  const departureMin = startDate
+    ? fmtISO(new Date(parseISO(startDate).getTime() + 86400000))
+    : todayISO;
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      {/* Tabs */}
+      <div role="tablist" style={{ display: "flex", gap: 8 }}>
+        <button
+          type="button" role="tab" aria-selected={isArrival}
+          className={`sf-date-tab${isArrival ? " active" : ""}`}
+          onClick={() => setActiveTab("arrival")}
+        >
+          {startDate && <Check size={14} aria-hidden />}
+          {t("trip.dates.tab.arrival")}
+        </button>
+        <button
+          type="button" role="tab" aria-selected={!isArrival}
+          className={`sf-date-tab${!isArrival ? " active" : ""}`}
+          onClick={() => setActiveTab("departure")}
+        >
+          {endDate && <Check size={14} aria-hidden />}
+          {t("trip.dates.tab.departure")}
+        </button>
+      </div>
+
+      {/* Typed input for the active tab */}
+      <div>
+        <div style={{ position: "relative" }}>
+          <Calendar size={15} aria-hidden style={{
+            position: "absolute", top: "50%", transform: "translateY(-50%)",
+            insetInlineStart: 14, color: "var(--sf-text-muted)", pointerEvents: "none",
+          }} />
+          <input
+            type="text" inputMode="numeric" autoComplete="off"
+            className={`sf-date-input${activeError ? " has-error" : ""}`}
+            value={activeValue}
+            placeholder={t("trip.dates.format_hint").replace("{example}", exampleText)}
+            aria-label={isArrival ? t("trip.dates.tab.arrival") : t("trip.dates.tab.departure")}
+            aria-invalid={!!activeError}
+            onChange={e => {
+              const v = e.target.value;
+              const iso = parseTypedDate(v, order);
+              if (isArrival) { setArrivalInput(v); commitArrival(iso, v); }
+              else            { setDepartureInput(v); commitDeparture(iso, v); }
+            }}
+          />
+        </div>
+        <p style={{ fontSize: "0.75rem", color: "var(--sf-text-muted)", marginTop: 6 }}>
+          {t("trip.dates.format_hint").replace("{example}", exampleText)}
+        </p>
+        {activeError && (
+          <p role="alert" style={{ fontSize: "0.8125rem", color: "#EF4444", fontWeight: 600, marginTop: 4 }}>
+            {activeError}
+          </p>
+        )}
+      </div>
+
+      {/* Calendar for the active tab */}
+      <MiniCalendar
+        key={activeTab}
+        value={isArrival ? startDate : endDate}
+        min={isArrival ? todayISO : departureMin}
+        onSelect={ds => isArrival ? commitArrival(ds, ds) : commitDeparture(ds, ds)}
+        isRTL={isRTL}
+        locale={locale}
+      />
+
+      {/* Summary bar */}
       <div style={{
-        padding: "10px 16px",
-        borderTop: "1px solid var(--sf-border)",
-        background: "var(--sf-bg)",
+        padding: "10px 16px", borderRadius: 12,
+        border: "1px solid var(--sf-border)", background: "var(--sf-surface)",
         display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8,
         minHeight: 48,
       }}>
         {!startDate && (
           <span style={{ fontSize: "0.8125rem", color: "var(--sf-text-muted)" }}>
-            Tap a date to set your arrival
+            {t("trip.dates.select_start")}
           </span>
         )}
         {startDate && !endDate && (
           <span style={{ fontSize: "0.8125rem", color: "var(--sf-text-muted)" }}>
             <span style={{ color: "var(--sf-indigo)", fontWeight: 700 }}>{fmtDisplay(startDate)}</span>
-            {" "}→ tap your departure date
+            {" "}→ {t("trip.dates.select_end")}
           </span>
         )}
         {startDate && endDate && (
@@ -446,15 +613,15 @@ function CalendarPicker({ startDate, endDate, onChange, isRTL }: CalendarProps) 
             {" → "}
             <span style={{ color: "var(--sf-indigo)", fontWeight: 700 }}>{fmtDisplay(endDate)}</span>
             <span style={{ color: "var(--sf-text-muted)", marginInlineStart: 8 }}>
-              · {nights} {nights === 1 ? "night" : "nights"}
+              · {t(nights === 1 ? "trip.dates.nights" : "trip.dates.nights_plural").replace("{n}", String(nights))}
             </span>
           </span>
         )}
         {(startDate || endDate) && (
           <button
             type="button"
-            onClick={() => { onChange("", ""); setHover(""); }}
-            aria-label="Clear dates"
+            onClick={handleClear}
+            aria-label={t("trip.dates.clear")}
             style={{
               background: "none", border: "none", cursor: "pointer",
               color: "var(--sf-text-muted)", padding: 4, borderRadius: 4, display: "flex",
@@ -471,23 +638,71 @@ function CalendarPicker({ startDate, endDate, onChange, isRTL }: CalendarProps) 
 /* ──────────────────────────────────────────────────────────────────────
    Budget slider
    ────────────────────────────────────────────────────────────────────── */
-function BudgetSlider({ value, onChange }: { value: number; onChange: (v: number) => void }) {
+function BudgetSlider({ value, onChange, displayCurrency, locale, t }: {
+  value: number; onChange: (v: number) => void;
+  displayCurrency: string; locale: string; t: (k: string) => string;
+}) {
+  // The slider itself always operates in SAR — only these labels convert.
   const min = 500, max = 10000;
   const pct = ((value - min) / (max - min)) * 100;
+
+  function label(amountSAR: number): string {
+    if (displayCurrency === "SAR") return `SAR ${amountSAR.toLocaleString(locale)}`;
+    return formatCurrencyAmount(convertFromSAR(amountSAR, displayCurrency), displayCurrency, locale);
+  }
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <span style={{ color: "var(--sf-text-muted)", fontSize: "0.8125rem" }}>SAR {min.toLocaleString()}</span>
+        <span style={{ color: "var(--sf-text-muted)", fontSize: "0.8125rem" }}><bdi>{label(min)}</bdi></span>
         <div style={{ padding: "4px 14px", borderRadius: "20px", background: "var(--sf-primary-soft)", border: "1.5px solid var(--sf-indigo)", fontWeight: 700, fontSize: "1rem", color: "var(--sf-text)" }}>
-          SAR {value.toLocaleString()}
+          <bdi>{label(value)}</bdi>
         </div>
-        <span style={{ color: "var(--sf-text-muted)", fontSize: "0.8125rem" }}>SAR {max.toLocaleString()}</span>
+        <span style={{ color: "var(--sf-text-muted)", fontSize: "0.8125rem" }}><bdi>{label(max)}</bdi></span>
       </div>
       <div style={{ position: "relative", paddingBlock: 10 }}>
         <div style={{ position: "absolute", top: "50%", transform: "translateY(-50%)", insetInlineStart: 0, width: "100%", height: 4, borderRadius: 4, background: "var(--sf-surface-alt)", pointerEvents: "none" }} />
         <div style={{ position: "absolute", top: "50%", transform: "translateY(-50%)", insetInlineStart: 0, width: `${pct}%`, height: 4, borderRadius: 4, background: "var(--sf-accent)", pointerEvents: "none", transition: "width .1s" }} />
         <input type="range" min={min} max={max} step={100} value={value} onChange={e => onChange(Number(e.target.value))} className="sf-range-input" style={{ position: "relative", zIndex: 1 }} />
       </div>
+      {displayCurrency !== "SAR" && (
+        <p style={{ fontSize: "0.6875rem", color: "var(--sf-text-muted)", textAlign: "center" }}>
+          {t("trip.budget.approx")}
+        </p>
+      )}
+    </div>
+  );
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   Currency toggle — SAR vs. the user's home currency, display-only
+   ────────────────────────────────────────────────────────────────────── */
+function CurrencyToggle({ options, active, onChange, groupLabel }: {
+  options: string[]; active: string; onChange: (code: string) => void; groupLabel: string;
+}) {
+  return (
+    <div
+      role="tablist" aria-label={groupLabel}
+      style={{
+        display: "inline-flex", flexShrink: 0, gap: 2, padding: 2,
+        borderRadius: 999, border: "1px solid var(--sf-border)", background: "var(--sf-surface)",
+      }}
+    >
+      {options.map(code => (
+        <button
+          key={code} type="button" role="tab" aria-selected={active === code}
+          onClick={() => onChange(code)}
+          style={{
+            minHeight: 28, padding: "4px 12px", borderRadius: 999, border: "none",
+            fontSize: "0.75rem", fontWeight: 700, cursor: "pointer",
+            background: active === code ? "var(--sf-indigo)" : "transparent",
+            color: active === code ? "#fff" : "var(--sf-text-muted)",
+            transition: "all .15s",
+          }}
+        >
+          {code}
+        </button>
+      ))}
     </div>
   );
 }
@@ -567,6 +782,27 @@ export function Trip() {
   const [budget, setBudget]               = useState(3000);
   const [moods, setMoods]                 = useState<string[]>([]);
   const [goals, setGoals]                 = useState<string[]>([]);
+
+  /* Home currency, derived from the profile's nationality — display only,
+     never touches the SAR values stored in trip/budget state. */
+  const [userCurrency, setUserCurrency] = useState<string | null>(null);
+  useEffect(() => {
+    try {
+      const profile = JSON.parse(localStorage.getItem("safarly_profile") ?? "null") as { nationality?: string } | null;
+      setUserCurrency(currencyForNationality(profile?.nationality));
+    } catch { /* no profile yet */ }
+  }, []);
+  const showCurrencyToggle = !!userCurrency && userCurrency !== "SAR";
+
+  const [displayCurrency, setDisplayCurrency] = useState("SAR");
+  useEffect(() => {
+    setDisplayCurrency(showCurrencyToggle && getCurrencyDisplayPref() === "home" ? userCurrency! : "SAR");
+  }, [showCurrencyToggle, userCurrency]);
+
+  function handleCurrencyToggle(code: string) {
+    setDisplayCurrency(code);
+    setCurrencyDisplayPref(code === "SAR" ? "sar" : "home");
+  }
 
   /* Prefill from saved trip on mount (Edit Trip flow) */
   useEffect(() => {
@@ -705,17 +941,32 @@ export function Trip() {
 
           {/* ── 3. Dates ── */}
           <Section title={t("trip.dates.label")}>
-            <CalendarPicker
+            <DateTabsPicker
               startDate={dateStart}
               endDate={dateEnd}
               onChange={(s, e) => { setDateStart(s); setDateEnd(e); }}
               isRTL={isRTL}
+              locale={localeTag(language)}
+              t={t}
             />
           </Section>
 
           {/* ── 4. Budget ── */}
-          <Section title={t("trip.budget.label")}>
-            <BudgetSlider value={budget} onChange={setBudget} />
+          <Section
+            title={t("trip.budget.label")}
+            action={showCurrencyToggle && (
+              <CurrencyToggle
+                options={["SAR", userCurrency!]}
+                active={displayCurrency}
+                onChange={handleCurrencyToggle}
+                groupLabel={t("trip.budget.currency_toggle_label")}
+              />
+            )}
+          >
+            <BudgetSlider
+              value={budget} onChange={setBudget}
+              displayCurrency={displayCurrency} locale={localeTag(language)} t={t}
+            />
           </Section>
 
           {/* ── 5. Mood ── */}

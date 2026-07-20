@@ -55,8 +55,9 @@ Routes are declared in `artifacts/safarly/src/App.tsx`.
 
 - **Auth is localStorage-only** — no backend auth. Deliberate, this is a prototype.
   See `docs/notes/safarly-auth.md`.
-- **Maps use an OpenStreetMap iframe**, not Leaflet/Mapbox — no API key, no
-  dependency, zoom driven by bbox URL params. See `docs/notes/itinerary-map.md`.
+- **Maps use Leaflet + raster OSM tiles** (no API key) to draw the active
+  day's numbered stop route on the itinerary page. See
+  `docs/notes/itinerary-map.md`.
 - **Cities without their own POI data fall back to a backing city's dataset** via
   `CITY_POI_MAP`, while still displaying their real name. See
   `docs/notes/safarly-engine-cities.md`.

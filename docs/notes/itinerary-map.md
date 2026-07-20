@@ -1,22 +1,48 @@
 ---
 name: Itinerary destination map
-description: OpenStreetMap embed with zoom controls on the itinerary page
+description: Leaflet + OSM raster tiles rendering the active day's route on the itinerary page
 ---
 
 # Itinerary Destination Map
 
 ## Rule
-The map is an OSM iframe rendered by `DestinationMap` component in `itinerary.tsx`. Zoom is React state (default 13, range 10–17). Zoom in/out buttons update state → iframe `key` changes → browser re-fetches the new bbox URL.
+The map is a Leaflet map (plain `leaflet`, no `react-leaflet`) rendered by the
+`DestinationMap` component in `itinerary.tsx`. It shows the **currently
+selected day's** stops as numbered markers (visit order) connected by a
+polyline, auto-fit to the day's bounds. Switching day tabs re-draws the
+markers/route without tearing down the underlying `L.Map` instance — only the
+`useEffect` keyed on a `stopsKey` (derived from each stop's id + lat/lng) reruns.
 
-## URL formula
-`https://www.openstreetmap.org/export/embed.html?bbox={lng-d},{lat-d},{lng+d},{lat+d}&layer=mapnik&marker={lat},{lng}`
+## Data
+Marker positions come straight from each stop's `poi.lat`/`poi.lng` (already
+present on every POI in `src/data/pois.json` — audited when this was built,
+no missing coordinates). No new data was needed.
 
-Delta `d` lookup: `ZOOM_DELTAS = [0.35, 0.18, 0.09, 0.045, 0.022, 0.011, 0.006, 0.003]` indexed by `zoom - 10`.
+## Tiles & controls
+- Raster tiles: `https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png` — free, no
+  API key. `tileerror`/`load` events flip a `tilesOk` flag that shows a small
+  non-blocking banner ("map tiles failed to load…") without hiding markers, so
+  the feature degrades gracefully offline.
+- Leaflet's built-in zoom control is disabled (`zoomControl: false`); the
+  existing custom zoom in/out buttons (logical CSS properties, RTL-safe) drive
+  `map.zoomIn()`/`zoomOut()` instead, keeping the same UI as before.
+- `scrollWheelZoom` starts disabled and is enabled only on mouse-enter of the
+  map (disabled again on mouse-leave), so casually scrolling the page past the
+  map doesn't get hijacked into a map zoom. Touch drag/pinch use Leaflet's
+  normal defaults.
 
-## City coordinates
-`CITY_COORDS` maps lowercase city keys (riyadh, jeddah, madinah, makkah, abha, alula, taif, khobar, dammam, neom, ai) to `[lat, lng]`. Falls back to Riyadh if unrecognised.
+## Google Maps link
+`dayRouteMapsUrl()` builds a `google.com/maps/dir/?api=1&origin=…&destination=…
+&waypoints=…` URL from the day's stops in order (falls back to a plain
+`maps/search` pin link for a single-stop day). This is a *reproduction* of the
+day's stop order, not turn-by-turn routing — Leaflet only draws a straight-line
+polyline between stops, it does not fabricate roads.
 
-## Placement
-Rendered below the `sf-itin-layout` grid, inside the `max-w-1100` container, before the POI photo modal and fixed wrench button.
-
-**Why:** No Leaflet/Mapbox dependency needed; OSM embed is free, requires no API key, and supports bbox-based zoom control via URL parameter.
+## Why this replaced the OSM-iframe embed
+The previous version (single marker, bbox-driven zoom via an
+`openstreetmap.org/export/embed.html` iframe) could only ever show one point —
+an iframe embed has no API to add multiple markers or a route line, so it
+could not satisfy the numbered-multi-stop-route requirement. Leaflet is the
+lightest no-API-key library that can draw markers + a polyline + fit bounds on
+top of the same free OSM tiles, hence the switch. `leaflet` + `@types/leaflet`
+were added to `artifacts/safarly/package.json`.

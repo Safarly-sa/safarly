@@ -1,6 +1,6 @@
 import { createContext, useContext } from "react";
 
-export type Language = "en" | "ar" | "de" | "it" | "fr" | "ur" | "zh" | "ru";
+export type Language = "en" | "ar" | "de" | "it" | "fr" | "ur" | "zh" | "ru" | "tr" | "es" | "pt";
 
 export type Direction = "ltr" | "rtl";
 

@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 import {
   CheckCircle2, ExternalLink, MapPin, Utensils,
   Wrench, RotateCcw, ArrowLeft, Moon, Gem,
@@ -8,7 +10,9 @@ import {
 } from "lucide-react";
 import { useTranslation } from "@/providers/translation-context";
 import { usePageMeta } from "@/lib/usePageMeta";
-import { poiName, poiCulture } from "@/lib/poi-i18n";
+import { poiName, poiCulture, resolve } from "@/lib/poi-i18n";
+import { dishName, dishDesc, mealVenue, mealArea } from "@/lib/dish-i18n";
+import { localeTag } from "@/lib/locale-format";
 import { generateItinerary, type ItineraryResult, type ItineraryDay, type ItineraryStop, type ItineraryMeal, type TripSpec, type TravelerProfile, type Objectives } from "@/lib/engine";
 import poisRaw from "@/data/pois.json";
 
@@ -23,7 +27,7 @@ interface RawPoi {
 }
 const ALL_POIS = poisRaw as RawPoi[];
 
-/* ── City coordinates for embedded map ─────────────────────────────── */
+/* ── City fallback coordinates (used only when a day has no stops) ──── */
 const CITY_COORDS: Record<string, [number, number]> = {
   riyadh:  [24.6877, 46.7219],
   jeddah:  [21.4858, 39.1925],
@@ -38,48 +42,182 @@ const CITY_COORDS: Record<string, [number, number]> = {
   ai:      [24.6877, 46.7219],
 };
 
-const ZOOM_DELTAS = [0.35, 0.18, 0.09, 0.045, 0.022, 0.011, 0.006, 0.003];
+const MAP_MIN_ZOOM = 3;
+const MAP_MAX_ZOOM = 18;
+// Same hex in both themes (see index.css --sf-indigo) — Leaflet's canvas/SVG
+// renderer can't resolve CSS custom properties, so it needs a literal value.
+const MAP_ROUTE_COLOR = "#5C6CFF";
 
-function osmSrc(lat: number, lng: number, zoom: number): string {
-  const d = ZOOM_DELTAS[Math.max(0, zoom - 10)] ?? 0.35;
-  return `https://www.openstreetmap.org/export/embed.html?bbox=${lng - d},${lat - d},${lng + d},${lat + d}&layer=mapnik&marker=${lat},${lng}`;
+interface MapStop { id: string; lat: number; lng: number; name: string }
+
+/** Google Maps directions URL that reproduces the day's stops, in visit order. */
+function dayRouteMapsUrl(stops: MapStop[]): string {
+  if (stops.length === 0) return "";
+  if (stops.length === 1) {
+    return `https://www.google.com/maps/search/?api=1&query=${stops[0].lat},${stops[0].lng}`;
+  }
+  const origin = stops[0];
+  const destination = stops[stops.length - 1];
+  const waypoints = stops.slice(1, -1);
+  const params = new URLSearchParams({
+    api: "1",
+    origin: `${origin.lat},${origin.lng}`,
+    destination: `${destination.lat},${destination.lng}`,
+    travelmode: "walking",
+  });
+  if (waypoints.length > 0) {
+    params.set("waypoints", waypoints.map(w => `${w.lat},${w.lng}`).join("|"));
+  }
+  return `https://www.google.com/maps/dir/?${params.toString()}`;
 }
 
-function DestinationMap({ city }: { city: string }) {
-  const [zoom, setZoom] = useState(13);
-  const coords = CITY_COORDS[city] ?? CITY_COORDS["riyadh"];
-  const [lat, lng] = coords;
-  const src = osmSrc(lat, lng, zoom);
+/**
+ * Per-day route map: one numbered marker per stop (in visit order) connected
+ * by a route line, auto-fit to the day's bounds. Plain Leaflet (no
+ * react-leaflet) + raster OSM tiles — no API key. Re-draws markers/route
+ * whenever `day` changes (switching day tabs, or a cascade re-plan swapping a
+ * stop), without tearing down and re-creating the underlying map instance.
+ */
+function DestinationMap({ day, city }: { day: ItineraryDay | undefined; city: string }) {
+  const { t, language, dir } = useTranslation();
+  const containerRef  = useRef<HTMLDivElement>(null);
+  const mapRef        = useRef<L.Map | null>(null);
+  const routeLayerRef = useRef<L.FeatureGroup | null>(null);
+  const [zoom, setZoom]       = useState(13);
+  const [tilesOk, setTilesOk] = useState(true);
+
+  const fallbackCenter = CITY_COORDS[city] ?? CITY_COORDS["riyadh"];
+  const stops: MapStop[] = (day?.stops ?? []).map(s => ({
+    id: s.poi.id, lat: s.poi.lat, lng: s.poi.lng, name: poiName(t, s.poi),
+  }));
+  const stopsKey = stops.map(s => `${s.id}:${s.lat}:${s.lng}`).join("|");
+
+  /* Create the map once; tear down on unmount. */
+  useEffect(() => {
+    if (!containerRef.current || mapRef.current) return;
+    const map = L.map(containerRef.current, {
+      center: fallbackCenter,
+      zoom: 13,
+      minZoom: MAP_MIN_ZOOM,
+      maxZoom: MAP_MAX_ZOOM,
+      zoomControl: false,
+      attributionControl: false,
+      // Enabled only on hover/focus below — otherwise scrolling the page past
+      // the map gets hijacked into a map zoom, a classic embedded-map trap.
+      scrollWheelZoom: false,
+    });
+
+    let tileErrors = 0;
+    const tiles = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      subdomains: "abc",
+      maxZoom: 19,
+    });
+    tiles.on("tileerror", () => { tileErrors += 1; if (tileErrors >= 4) setTilesOk(false); });
+    tiles.on("load", () => setTilesOk(true));
+    tiles.addTo(map);
+
+    routeLayerRef.current = L.featureGroup().addTo(map);
+    map.on("zoomend", () => setZoom(map.getZoom()));
+
+    const enableScroll  = () => map.scrollWheelZoom.enable();
+    const disableScroll = () => map.scrollWheelZoom.disable();
+    map.getContainer().addEventListener("mouseenter", enableScroll);
+    map.getContainer().addEventListener("mouseleave", disableScroll);
+
+    mapRef.current = map;
+    return () => {
+      map.getContainer().removeEventListener("mouseenter", enableScroll);
+      map.getContainer().removeEventListener("mouseleave", disableScroll);
+      map.remove();
+      mapRef.current = null;
+    };
+    // Init/teardown only — redraws are handled by the effect below.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  /* Redraw numbered markers + route line for the active day, and fit bounds. */
+  useEffect(() => {
+    const map = mapRef.current;
+    const layer = routeLayerRef.current;
+    if (!map || !layer) return;
+    layer.clearLayers();
+
+    if (stops.length === 0) {
+      map.setView(fallbackCenter, 13);
+      setZoom(map.getZoom());
+      return;
+    }
+
+    const latlngs = stops.map(s => L.latLng(s.lat, s.lng));
+
+    if (latlngs.length > 1) {
+      L.polyline(latlngs, {
+        color: MAP_ROUTE_COLOR, weight: 3, opacity: 0.85, dashArray: "1 8", lineCap: "round",
+      }).addTo(layer);
+    }
+
+    stops.forEach((s, i) => {
+      const icon = L.divIcon({
+        className: "sf-map-pin",
+        html: String(i + 1),
+        iconSize: [26, 26],
+        iconAnchor: [13, 13],
+        popupAnchor: [0, -13],
+      });
+      const popupEl = document.createElement("div");
+      popupEl.className = "sf-map-popup";
+      popupEl.dir = dir;
+      popupEl.textContent = `${i + 1}. ${s.name}`;
+      L.marker([s.lat, s.lng], { icon, alt: `${i + 1}. ${s.name}`, keyboard: true })
+        .bindPopup(popupEl)
+        .addTo(layer);
+    });
+
+    if (latlngs.length === 1) {
+      map.setView(latlngs[0], 15);
+    } else {
+      map.fitBounds(layer.getBounds(), { padding: [36, 36], maxZoom: 16 });
+    }
+    setZoom(map.getZoom());
+    // `stopsKey` (not the freshly-mapped `stops` array) keeps this from
+    // redrawing every render; `language` is added so switching the UI
+    // language relabels already-drawn popups even without a day-tab click.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stopsKey, language]);
+
+  const mapsUrl  = dayRouteMapsUrl(stops);
+  const dayLabel = day ? t("itin.day").replace("{n}", String(day.dayNumber)) : "";
 
   return (
     <div style={{ marginTop: 32, marginBottom: 8 }}>
       <div style={{
         display: "flex", alignItems: "center", justifyContent: "space-between",
-        marginBottom: 12,
+        marginBottom: 12, flexWrap: "wrap", gap: 8,
       }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
           <MapPin size={15} style={{ color: "var(--sf-text-accent)" }} aria-hidden />
           <span style={{ fontSize: "0.875rem", fontWeight: 700, color: "var(--sf-text)" }}>
-            Destination Map
+            {t("itin.map.title")}
           </span>
           <span style={{ fontSize: "0.75rem", color: "var(--sf-text-muted)", textTransform: "capitalize" }}>
-            — {city}
+            — {city} · {dayLabel}
           </span>
         </div>
-        {/* Zoom controls */}
+        {/* Zoom controls (Leaflet's own zoomControl is disabled so this pair,
+            already logical-property-based for RTL, is the only one shown) */}
         <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
           <button
-            onClick={() => setZoom(z => Math.min(17, z + 1))}
-            disabled={zoom >= 17}
-            aria-label="Zoom in"
+            onClick={() => mapRef.current?.zoomIn()}
+            disabled={zoom >= MAP_MAX_ZOOM}
+            aria-label={t("itin.map.zoom_in")}
             style={{
               display: "flex", alignItems: "center", justifyContent: "center",
               width: 34, height: 34, borderRadius: 8,
               border: "1px solid var(--sf-border)", background: "var(--sf-surface)",
-              color: "var(--sf-text-muted)", cursor: zoom >= 17 ? "not-allowed" : "pointer",
-              opacity: zoom >= 17 ? 0.4 : 1, transition: "border-color 0.15s, color 0.15s",
+              color: "var(--sf-text-muted)", cursor: zoom >= MAP_MAX_ZOOM ? "not-allowed" : "pointer",
+              opacity: zoom >= MAP_MAX_ZOOM ? 0.4 : 1, transition: "border-color 0.15s, color 0.15s",
             }}
-            onMouseEnter={e => { if (zoom < 17) { (e.currentTarget as HTMLElement).style.borderColor = "var(--sf-indigo)"; (e.currentTarget as HTMLElement).style.color = "var(--sf-indigo)"; } }}
+            onMouseEnter={e => { if (zoom < MAP_MAX_ZOOM) { (e.currentTarget as HTMLElement).style.borderColor = "var(--sf-indigo)"; (e.currentTarget as HTMLElement).style.color = "var(--sf-indigo)"; } }}
             onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = "var(--sf-border)"; (e.currentTarget as HTMLElement).style.color = "var(--sf-text-muted)"; }}
           >
             <ZoomIn size={16} aria-hidden />
@@ -88,38 +226,50 @@ function DestinationMap({ city }: { city: string }) {
             {zoom}
           </span>
           <button
-            onClick={() => setZoom(z => Math.max(10, z - 1))}
-            disabled={zoom <= 10}
-            aria-label="Zoom out"
+            onClick={() => mapRef.current?.zoomOut()}
+            disabled={zoom <= MAP_MIN_ZOOM}
+            aria-label={t("itin.map.zoom_out")}
             style={{
               display: "flex", alignItems: "center", justifyContent: "center",
               width: 34, height: 34, borderRadius: 8,
               border: "1px solid var(--sf-border)", background: "var(--sf-surface)",
-              color: "var(--sf-text-muted)", cursor: zoom <= 10 ? "not-allowed" : "pointer",
-              opacity: zoom <= 10 ? 0.4 : 1, transition: "border-color 0.15s, color 0.15s",
+              color: "var(--sf-text-muted)", cursor: zoom <= MAP_MIN_ZOOM ? "not-allowed" : "pointer",
+              opacity: zoom <= MAP_MIN_ZOOM ? 0.4 : 1, transition: "border-color 0.15s, color 0.15s",
             }}
-            onMouseEnter={e => { if (zoom > 10) { (e.currentTarget as HTMLElement).style.borderColor = "var(--sf-indigo)"; (e.currentTarget as HTMLElement).style.color = "var(--sf-indigo)"; } }}
+            onMouseEnter={e => { if (zoom > MAP_MIN_ZOOM) { (e.currentTarget as HTMLElement).style.borderColor = "var(--sf-indigo)"; (e.currentTarget as HTMLElement).style.color = "var(--sf-indigo)"; } }}
             onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = "var(--sf-border)"; (e.currentTarget as HTMLElement).style.color = "var(--sf-text-muted)"; }}
           >
             <ZoomOut size={16} aria-hidden />
           </button>
         </div>
       </div>
-      <div style={{ borderRadius: 14, overflow: "hidden", border: "1px solid var(--sf-border)", height: 320 }}>
-        <iframe
-          key={src}
-          src={src}
-          title={`Map of ${city}`}
-          width="100%"
-          height="100%"
-          style={{ border: "none", display: "block" }}
-          loading="lazy"
-          referrerPolicy="no-referrer"
+      <div style={{ position: "relative", borderRadius: 14, overflow: "hidden", border: "1px solid var(--sf-border)", height: 320 }}>
+        <div
+          ref={containerRef}
+          role="region"
+          aria-label={t("itin.map.title")}
+          style={{ width: "100%", height: "100%", background: "var(--sf-surface-alt)" }}
         />
+        {!tilesOk && (
+          <div className="sf-map-tile-error" role="status">
+            {t("itin.map.tile_error")}
+          </div>
+        )}
       </div>
-      <p style={{ fontSize: "0.6875rem", color: "var(--sf-text-muted)", marginTop: 6, textAlign: "end" }}>
-        © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer" style={{ color: "inherit" }}>OpenStreetMap</a> contributors
-      </p>
+      <div style={{
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        marginTop: 6, flexWrap: "wrap", gap: 8,
+      }}>
+        <p style={{ fontSize: "0.6875rem", color: "var(--sf-text-muted)" }}>
+          © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer" style={{ color: "inherit" }}>OpenStreetMap</a> contributors
+        </p>
+        {mapsUrl && (
+          <a href={mapsUrl} target="_blank" rel="noopener noreferrer" className="sf-maps-link">
+            <MapPin size={12} aria-hidden />
+            {t("itin.map.open_route")}
+          </a>
+        )}
+      </div>
     </div>
   );
 }
@@ -368,6 +518,46 @@ function useItinStyles() {
         .sf-itin-sidebar {
           width: 320px;
         }
+      }
+
+      /* Day route map (Leaflet) */
+      .leaflet-div-icon.sf-map-pin {
+        background: ${MAP_ROUTE_COLOR};
+        border: 2px solid #fff;
+        border-radius: 50%;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.35);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #fff;
+        font-size: 12px;
+        font-weight: 700;
+        font-family: var(--app-font-sans, sans-serif);
+      }
+      .leaflet-popup-content-wrapper {
+        background: var(--sf-surface);
+        color: var(--sf-text);
+        border-radius: 10px;
+      }
+      .leaflet-popup-tip { background: var(--sf-surface); }
+      .sf-map-popup { font-size: 0.8125rem; font-weight: 600; }
+      html[dir="rtl"] .leaflet-popup-content { direction: rtl; text-align: right; }
+      .sf-map-tile-error {
+        position: absolute;
+        top: 8px;
+        left: 50%;
+        transform: translateX(-50%);
+        max-width: calc(100% - 24px);
+        background: var(--sf-surface);
+        color: var(--sf-text-muted);
+        border: 1px solid var(--sf-border);
+        border-radius: 8px;
+        padding: 6px 12px;
+        font-size: 0.75rem;
+        text-align: center;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        z-index: 1000;
+        pointer-events: none;
       }
     `;
     document.head.appendChild(s);
@@ -681,7 +871,7 @@ function StopCard({
                 }}
               >
                 <Camera size={12} aria-hidden />
-                Photos
+                {t("itin.photos.button")}
               </button>
             )}
             {poi.map_url && (
@@ -704,18 +894,18 @@ function StopCard({
 }
 
 function MealCard({
-  meal, t, language,
+  meal, t, language, onPhotoClick,
 }: {
   meal: ItineraryMeal;
   t: (k: string) => string;
   language: string;
+  onPhotoClick?: () => void;
 }) {
   const { dish } = meal;
   const mealLabel = meal.type === "lunch" ? t("itin.lunch") : t("itin.dinner");
-  // Prefer locale-specific dish name, then Arabic name for AR, else English
-  const translatedDishName = t("dish." + dish.id + ".name");
-  const dishDisplayName = translatedDishName
-    || (language === "ar" && dish.name_ar ? dish.name_ar : dish.name);
+  const dishDisplayName = dishName(t, dish);
+  const venueText = mealVenue(meal, language);
+  const areaText  = mealArea(meal, language);
 
   return (
     <div style={{ display: "flex", gap: "12px", alignItems: "flex-start", paddingBlock: "6px" }}>
@@ -789,17 +979,82 @@ function MealCard({
           lineHeight:  1.55,
           marginBottom: "6px",
         }}>
-          {t("dish." + dish.id + ".desc") || dish.description}
+          {dishDesc(t, dish)}
         </p>
 
-        {/* Price */}
-        <span style={{
-          fontSize:    "0.8125rem",
-          fontWeight:  700,
-          color:       "var(--sf-text)",
-        }}>
-          {t("itin.summary.sar")} {dish.price_sar}
-        </span>
+        {/* Venue + area — every meal must be actionable, not just a dish name */}
+        {venueText && areaText ? (
+          <p style={{
+            display:      "flex",
+            alignItems:   "center",
+            gap:          "6px",
+            fontSize:     "0.8125rem",
+            color:        "var(--sf-text-muted)",
+            lineHeight:   1.5,
+            marginBottom: "6px",
+          }}>
+            <MapPin size={12} aria-hidden style={{ flexShrink: 0, opacity: 0.7 }} />
+            <span>{venueText} · {areaText}</span>
+          </p>
+        ) : (
+          <p style={{
+            fontSize:     "0.8125rem",
+            color:        "var(--sf-text-muted)",
+            fontStyle:    "italic",
+            marginBottom: "6px",
+          }}>
+            {t("itin.meal.venue_pending")}
+          </p>
+        )}
+
+        {/* Price + action row */}
+        <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+          <span style={{
+            fontSize:    "0.8125rem",
+            fontWeight:  700,
+            color:       "var(--sf-text)",
+          }}>
+            {t("itin.summary.sar")} {dish.price_sar}
+          </span>
+          {meal.mapUrl && (
+            <a
+              href={meal.mapUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="sf-maps-link"
+            >
+              <MapPin size={12} aria-hidden />
+              {t("itin.maps")}
+              <ExternalLink size={11} aria-hidden style={{ opacity: 0.7 }} />
+            </a>
+          )}
+          {onPhotoClick && (
+            <button
+              type="button"
+              onClick={onPhotoClick}
+              style={{
+                display: "inline-flex", alignItems: "center", gap: 5,
+                padding: "5px 11px", borderRadius: 8,
+                border: "1.5px solid var(--sf-border)",
+                background: "var(--sf-surface-alt)",
+                color: "var(--sf-text-muted)", cursor: "pointer",
+                fontSize: "0.8125rem", fontWeight: 600,
+                transition: "border-color .15s, color .15s",
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.borderColor = "var(--sf-indigo)";
+                e.currentTarget.style.color = "var(--sf-text)";
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.borderColor = "var(--sf-border)";
+                e.currentTarget.style.color = "var(--sf-text-muted)";
+              }}
+            >
+              <Camera size={12} aria-hidden />
+              {t("itin.photos.button")}
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -1138,7 +1393,7 @@ function ReplanToast({
 function DayTimeline({
   day, t, language,
   cascadePhase, closedPoiId, closedPoiName, replacementPoiId,
-  onPhotoClick,
+  onPhotoClick, onMealPhotoClick,
 }: {
   day: ItineraryDay;
   t: (k: string) => string;
@@ -1148,6 +1403,7 @@ function DayTimeline({
   closedPoiName?: string;
   replacementPoiId?: string | null;
   onPhotoClick?: (poi: RawPoi) => void;
+  onMealPhotoClick?: (meal: ItineraryMeal) => void;
 }) {
   // Build interleaved items: prayer markers + stops + meals in time order
   type Item =
@@ -1211,7 +1467,10 @@ function DayTimeline({
           );
         }
         return (
-          <MealCard key={`meal-${idx}`} meal={item.meal} t={t} language={language} />
+          <MealCard
+            key={`meal-${idx}`} meal={item.meal} t={t} language={language}
+            onPhotoClick={onMealPhotoClick ? () => onMealPhotoClick(item.meal) : undefined}
+          />
         );
       })}
     </div>
@@ -1501,29 +1760,69 @@ function TripSummary({
   );
 }
 
-/* ── POI Photo Modal ────────────────────────────────────────────────── */
-function poiCategoryGradient(category: string, slot: number): string {
-  const sets: Record<string, string[]> = {
-    heritage: ["135deg,#92400E,#C17900", "90deg,#B45309,#D97706", "45deg,#78350F,#A16207"],
-    museum:   ["135deg,#0F766E,#14B8A6", "90deg,#0D9488,#2DD4BF", "45deg,#134E4A,#0F766E"],
-    nature:   ["135deg,#14532D,#16A34A", "90deg,#166534,#4ADE80", "45deg,#052E16,#166534"],
-    culture:  ["135deg,#3730A3,#6D28D9", "90deg,#4338CA,#7C3AED", "45deg,#312E81,#5B21B6"],
-    food:     ["135deg,#991B1B,#C2410C", "90deg,#B91C1C,#EA580C", "45deg,#7F1D1D,#9A3412"],
-    shopping: ["135deg,#065F46,#059669", "90deg,#047857,#10B981", "45deg,#064E3B,#047857"],
-  };
-  const slots = sets[category] ?? ["135deg,#334155,#475569", "90deg,#475569,#64748B", "45deg,#1E293B,#334155"];
-  return `linear-gradient(${slots[slot % 3]})`;
-}
+/* ── Photo modal ────────────────────────────────────────────────────────
+   Neither src/data/pois.json nor docs/research-data/ carries any image
+   field for POIs or dishes, and the app has no backend/image API — so
+   there is no real photo to fetch or embed. Embedding a third-party image
+   search result would also fail: engines that serve the actual photos
+   (Google/Bing Images) send X-Frame-Options/CSP headers that block iframe
+   embedding, so there's no reliable way to show the pictures *inside* the
+   app without a backend to proxy them.
 
+   The pragmatic no-backend fix: this used to render three gradient tiles
+   captioned "Photo 1 of 3" that never corresponded to any real image of
+   the place — replaced here with a link that opens a real image search for
+   the subject's proper name in a new tab, the same pattern already used
+   for the "Open in Maps" link below it. */
 const CATEGORY_ICONS: Record<string, string> = {
   heritage: "🏛️", museum: "🏺", nature: "🌿", culture: "🕌",
   food: "🍽️", shopping: "🛍️", park: "🌳", beach: "🏖️",
 };
 
-function PoiPhotoModal({ poi, onClose }: { poi: RawPoi; onClose: () => void }) {
+function imageSearchUrl(query: string): string {
+  return `https://www.google.com/search?tbm=isch&q=${encodeURIComponent(query)}`;
+}
+
+interface PhotoSubject {
+  title: string;
+  icon: string;
+  category?: string;
+  searchUrl: string;
+  mapUrl?: string;
+}
+
+function poiPhotoSubject(t: (k: string) => string, poi: RawPoi): PhotoSubject {
+  const title = poiName(t, poi);
+  const cityLabel = resolve(t, `trip.city.${poi.city}.title`, poi.city);
+  return {
+    title,
+    icon: CATEGORY_ICONS[poi.category] ?? "📍",
+    category: poi.category,
+    searchUrl: imageSearchUrl(`${title}, ${cityLabel}, Saudi Arabia`),
+    mapUrl: poi.map_url,
+  };
+}
+
+function dishPhotoSubject(t: (k: string) => string, meal: ItineraryMeal, language: string): PhotoSubject {
+  const title = dishName(t, meal.dish);
+  const venue = mealVenue(meal, language);
+  const area  = mealArea(meal, language);
+  const query = [title, venue, area, "Saudi Arabian food"].filter(Boolean).join(", ");
+  return {
+    title,
+    icon: "🍽️",
+    searchUrl: imageSearchUrl(query),
+  };
+}
+
+function PhotoModal({ subject, onClose }: { subject: PhotoSubject; onClose: () => void }) {
   const { t } = useTranslation();
-  const icon = CATEGORY_ICONS[poi.category] ?? "📍";
-  const displayName = poiName(t, poi);
+  const dialogLabel = resolve(t, "itin.photos.dialog_label", "Photos of {name}").replace("{name}", subject.title);
+  const viewLabel   = resolve(t, "itin.photos.view_button",  "View photos").replace("{name}", subject.title);
+  const viewAria    = resolve(t, "itin.photos.view_aria",    "View photos of {name} (opens in a new tab)").replace("{name}", subject.title);
+  const hint        = resolve(t, "itin.photos.hint",         "Opens an image search in a new tab");
+  const closeLabel  = resolve(t, "itin.photos.close",        "Close photos");
+  const hasSubject  = subject.title.trim().length > 0;
 
   useEffect(() => {
     const prev = document.body.style.overflow;
@@ -1538,7 +1837,7 @@ function PoiPhotoModal({ poi, onClose }: { poi: RawPoi; onClose: () => void }) {
 
   return (
     <div
-      role="dialog" aria-modal="true" aria-label={`Photos of ${displayName}`}
+      role="dialog" aria-modal="true" aria-label={dialogLabel}
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}
       style={{
         position: "fixed", inset: 0, zIndex: 9100,
@@ -1565,19 +1864,12 @@ function PoiPhotoModal({ poi, onClose }: { poi: RawPoi; onClose: () => void }) {
         }}>
           <div>
             <p style={{ fontWeight: 800, fontSize: "1.0625rem", color: "var(--sf-text)", lineHeight: 1.25, marginBottom: 5 }}>
-              {displayName}
+              {subject.title}
             </p>
-            <span style={{
-              display: "inline-block", fontSize: "0.6875rem", fontWeight: 700,
-              textTransform: "uppercase", letterSpacing: "0.07em",
-              padding: "2px 8px", borderRadius: 20,
-              background: "var(--sf-surface-alt)", color: "var(--sf-text-muted)",
-            }}>
-              {poi.category}
-            </span>
+            {subject.category && <CategoryChip category={subject.category} t={t} />}
           </div>
           <button
-            type="button" onClick={onClose} aria-label="Close photos"
+            type="button" onClick={onClose} aria-label={closeLabel}
             style={{
               width: 32, height: 32, borderRadius: 8,
               border: "1px solid var(--sf-border)",
@@ -1590,51 +1882,59 @@ function PoiPhotoModal({ poi, onClose }: { poi: RawPoi; onClose: () => void }) {
           </button>
         </div>
 
-        {/* Photo tiles */}
-        <div style={{ padding: "14px 16px", display: "flex", flexDirection: "column", gap: 10 }}>
-          {[0, 1, 2].map(slot => (
-            <div
-              key={slot}
+        {/* Photo action */}
+        <div style={{ padding: "16px", display: "flex", flexDirection: "column", gap: 10 }}>
+          {hasSubject ? (
+            <a
+              href={subject.searchUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={viewAria}
               style={{
-                borderRadius: 10, overflow: "hidden", aspectRatio: "16/9",
-                background: poiCategoryGradient(poi.category, slot),
+                borderRadius: 10, aspectRatio: "16/9",
+                background: "var(--sf-surface-alt)",
+                border: "1.5px solid var(--sf-border)",
                 display: "flex", flexDirection: "column",
                 alignItems: "center", justifyContent: "center", gap: 10,
+                textDecoration: "none", transition: "border-color .15s",
               }}
+              onMouseEnter={e => (e.currentTarget.style.borderColor = "var(--sf-indigo)")}
+              onMouseLeave={e => (e.currentTarget.style.borderColor = "var(--sf-border)")}
             >
-              <span style={{ fontSize: "2.25rem", opacity: 0.88 }}>{icon}</span>
-              <div style={{ textAlign: "center", padding: "0 16px" }}>
-                <p style={{ fontSize: "0.8125rem", fontWeight: 700, color: "rgba(255,255,255,0.95)", lineHeight: 1.3, marginBottom: 2 }}>
-                  {displayName}
-                </p>
-                <p style={{ fontSize: "0.6875rem", color: "rgba(255,255,255,0.6)" }}>
-                  Photo {slot + 1} of 3
-                </p>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Footer — maps link */}
-        <div style={{
-          padding: "10px 16px 16px",
-          borderTop: "1px solid var(--sf-border)", flexShrink: 0,
-        }}>
-          {poi.map_url ? (
-            <a
-              href={poi.map_url} target="_blank" rel="noopener noreferrer"
-              className="sf-maps-link"
-            >
-              <MapPin size={12} aria-hidden />
-              Open in Google Maps
-              <ExternalLink size={11} aria-hidden style={{ opacity: 0.7 }} />
+              <span style={{ fontSize: "2.25rem", opacity: 0.88 }} aria-hidden>{subject.icon}</span>
+              <span style={{
+                display: "inline-flex", alignItems: "center", gap: 6,
+                fontSize: "0.9375rem", fontWeight: 700, color: "var(--sf-text)",
+              }}>
+                <Camera size={14} aria-hidden />
+                {viewLabel}
+                <ExternalLink size={12} aria-hidden style={{ opacity: 0.7 }} />
+              </span>
+              <span style={{ fontSize: "0.75rem", color: "var(--sf-text-muted)" }}>{hint}</span>
             </a>
           ) : (
-            <p style={{ fontSize: "0.8125rem", color: "var(--sf-text-muted)" }}>
-              No maps link available for this place.
+            <p style={{ fontSize: "0.8125rem", color: "var(--sf-text-muted)", textAlign: "center", padding: "24px 0" }}>
+              {resolve(t, "itin.photos.none", "No photos available yet")}
             </p>
           )}
         </div>
+
+        {/* Footer — maps link */}
+        {subject.mapUrl && (
+          <div style={{
+            padding: "10px 16px 16px",
+            borderTop: "1px solid var(--sf-border)", flexShrink: 0,
+          }}>
+            <a
+              href={subject.mapUrl} target="_blank" rel="noopener noreferrer"
+              className="sf-maps-link"
+            >
+              <MapPin size={12} aria-hidden />
+              {t("itin.maps")}
+              <ExternalLink size={11} aria-hidden style={{ opacity: 0.7 }} />
+            </a>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -1650,7 +1950,7 @@ export function Itinerary() {
   const [result, setResult] = useState<ItineraryResult | null>(null);
   const [trip,   setTrip]   = useState<TripSpec | null>(null);
   const [activeDay, setActiveDay] = useState(0);
-  const [modalPoi, setModalPoi] = useState<RawPoi | null>(null);
+  const [photoSubject, setPhotoSubject] = useState<PhotoSubject | null>(null);
 
   /* ── Cascade state ──────────────────────────────────────────────── */
   const [cascade, setCascade] = useState<CascadeInfo>({
@@ -1988,7 +2288,7 @@ export function Itinerary() {
               }}>
                 <span style={{ fontSize: "0.875rem", color: "var(--sf-text-muted)", fontWeight: 600 }}>
                   {new Date(currentDay.date + "T00:00:00").toLocaleDateString(
-                    language === "ar" ? "ar-SA" : "en-GB",
+                    localeTag(language),
                     { weekday: "long", day: "numeric", month: "long" }
                   )}
                 </span>
@@ -2019,20 +2319,21 @@ export function Itinerary() {
                 closedPoiId={cascade.closedPoiId || null}
                 closedPoiName={cascade.closedPoiName}
                 replacementPoiId={cascade.replacementPoiId || null}
-                onPhotoClick={setModalPoi}
+                onPhotoClick={(poi) => setPhotoSubject(poiPhotoSubject(t, poi))}
+                onMealPhotoClick={(meal) => setPhotoSubject(dishPhotoSubject(t, meal, language))}
               />
             )}
           </div>
         </div>
 
         {/* ── Destination map ──────────────────────────────────────────── */}
-        <DestinationMap city={trip.city} />
+        <DestinationMap day={currentDay} city={result.resolvedCity || trip.city} />
 
       </div>
 
-      {/* ── POI photo modal ──────────────────────────────────────────── */}
-      {modalPoi && (
-        <PoiPhotoModal poi={modalPoi} onClose={() => setModalPoi(null)} />
+      {/* ── Photo modal ─────────────────────────────────────────────── */}
+      {photoSubject && (
+        <PhotoModal subject={photoSubject} onClose={() => setPhotoSubject(null)} />
       )}
 
       {/* ── Fixed wrench ghost button ────────────────────────────────── */}

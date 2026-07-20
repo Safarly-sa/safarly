@@ -3,12 +3,15 @@
  * Lazy-imported by home.tsx so they don't block initial paint.
  */
 import { useTranslation } from "@/providers/translation-context";
+import { useTheme } from "@/providers/ThemeProvider";
 import { motion } from "framer-motion";
 import {
-  MapPin, MessageCircle, Camera, Languages, Compass, ArrowRight, Globe, BookOpen,
+  MapPin, MessageCircle, Camera, Languages, Compass, ArrowRight, BookOpen,
 } from "lucide-react";
 import { Link } from "wouter";
 import { DestinationGallery } from "@/components/DestinationGallery";
+import vision2030Light from "@assets/vision2030-light.png";
+import vision2030Dark from "@assets/vision2030-dark.png";
 
 function FadeUp({
   children, delay = 0, className = "",
@@ -58,6 +61,7 @@ const AGENT_CHIPS = [
 
 export function HomeBelowFold() {
   const { t } = useTranslation();
+  const { theme } = useTheme();
 
   return (
     <>
@@ -189,10 +193,22 @@ export function HomeBelowFold() {
         />
         <FadeUp>
           <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row items-center justify-center gap-4 relative z-10 text-center">
-            <Globe className="w-6 h-6 text-muted-foreground shrink-0" />
+            <img
+              src={theme === "dark" ? vision2030Dark : vision2030Light}
+              alt="Saudi Vision 2030"
+              className="h-10 w-auto shrink-0"
+            />
             <p className="text-sm md:text-base font-medium text-foreground max-w-2xl">
               {t("vision.text")}
             </p>
+            <Link
+              href="/vision-2030"
+              className="text-sm font-semibold shrink-0 inline-flex items-center gap-1 text-[var(--sf-text-accent)] hover:opacity-80 transition-opacity"
+              data-testid="link-vision2030-learn-more"
+            >
+              {t("vision2030.learn_more")}
+              <ArrowRight className="w-3.5 h-3.5" aria-hidden />
+            </Link>
           </div>
         </FadeUp>
       </section>

@@ -5,18 +5,22 @@
  * Login   → /home (/) if profile complete, else /profile-setup
  */
 import { useState, useEffect } from "react";
-import { useLocation } from "wouter";
+import { useLocation, useSearchParams } from "wouter";
 import { AnimatePresence, motion } from "framer-motion";
 import { Mail, User, ArrowRight, Lock, Eye, EyeOff, Check, X } from "lucide-react";
 import { usePageMeta } from "@/lib/usePageMeta";
-import { getAuth, setAuth, isProfileComplete } from "@/lib/auth";
+import { useTranslation } from "@/providers/translation-context";
+import { getAuth, setAuth, isProfileComplete, sanitizeReturnTo } from "@/lib/auth";
 import { isValidEmail, assessPassword } from "@/lib/validation";
 import { signUp, logIn } from "@/lib/auth-api";
 import safarlyLogo from "@assets/safarly-lockup-light_1784459757614.png";
 
 export function Login() {
   usePageMeta("Sign In — Safarly", "Log in or create your Safarly account.");
+  const { t } = useTranslation();
   const [, navigate] = useLocation();
+  const [searchParams] = useSearchParams();
+  const returnTo = sanitizeReturnTo(searchParams.get("returnTo"));
   const [mode, setMode] = useState<"signup" | "login">("signup");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -31,7 +35,8 @@ export function Login() {
 
   /* Redirect if already authenticated + profile complete */
   useEffect(() => {
-    if (getAuth() && isProfileComplete()) navigate("/");
+    if (getAuth() && isProfileComplete()) navigate(returnTo ?? "/");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [navigate]);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -63,7 +68,12 @@ export function Login() {
       /* The server owns the account; localStorage keeps only the display copy
          the rest of the app already reads synchronously. */
       setAuth({ name: result.user.name, email: result.user.email });
-      navigate(mode === "signup" || !isProfileComplete() ? "/profile-setup" : "/");
+      const returnToQuery = returnTo ? `?returnTo=${encodeURIComponent(returnTo)}` : "";
+      navigate(
+        mode === "signup" || !isProfileComplete()
+          ? `/profile-setup${returnToQuery}`
+          : returnTo ?? "/"
+      );
     } finally {
       setSubmitting(false);
     }
@@ -104,6 +114,23 @@ export function Login() {
             Your Saudi Journey, Intelligently Crafted
           </p>
         </div>
+
+        {/* Redirect notice — only shown when login was reached via a gated link */}
+        {returnTo && (
+          <p style={{
+            textAlign: "center",
+            marginBottom: "20px",
+            padding: "10px 14px",
+            borderRadius: "10px",
+            background: "var(--sf-primary-soft)",
+            border: "1px solid var(--sf-indigo)",
+            color: "var(--sf-text)",
+            fontSize: "0.8125rem",
+            fontWeight: 600,
+          }}>
+            {t("login.returnto.trip_crafting")}
+          </p>
+        )}
 
         {/* Mode toggle */}
         <div style={{

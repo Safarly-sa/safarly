@@ -5,6 +5,7 @@
 
 import poisData from "../data/pois.json";
 import dishesData from "../data/dishes.json";
+import mealVenuesData from "../data/meal-venues.json";
 
 /* ── Domain Types ───────────────────────────────────────────────────── */
 
@@ -16,6 +17,7 @@ export interface TravelerProfile {
   allergies: string[];
   travelType: string;   // "solo_woman" | "solo_man" | "couple" | "family" | "friends"
   accessibility: boolean;
+  accessibilityNotes?: string;  // free-text specifics, e.g. "wheelchair access"; only set when accessibility is true
   interests: string[];  // "history" | "food" | "adventure" | "shopping" | "arts" | "nature" | "photography"
 }
 
@@ -69,6 +71,15 @@ interface Dish {
   description: string;
 }
 
+interface MealVenue {
+  dish_id: string;
+  city: string;
+  venue: string;
+  venue_ar: string;
+  area: string;
+  area_ar: string;
+}
+
 export interface ItineraryStop {
   slot: "morning" | "midday" | "afternoon" | "evening";
   startTime: string;
@@ -81,6 +92,17 @@ export interface ItineraryMeal {
   type: "lunch" | "dinner";
   dish: Dish;
   estimatedTime: string;
+  /**
+   * Venue/area are absent (not empty strings) only when `meal-venues.json` has
+   * no entry for this dish+city — the UI must render an explicit "coming soon"
+   * line rather than silently dropping the restaurant recommendation.
+   */
+  venue?: string;
+  venueAr?: string;
+  area?: string;
+  areaAr?: string;
+  /** Google Maps search query built from venue + area + city — same pattern as POI.map_url. */
+  mapUrl?: string;
 }
 
 /**
@@ -270,6 +292,46 @@ function dist(a: POI, b: POI): number {
   return Math.sqrt((a.lat - b.lat) ** 2 + (a.lng - b.lng) ** 2);
 }
 
+/* ── Meal venue resolution ─────────────────────────────────────────────
+ * dishes.json is shared across every city, so the venue/area a diner is
+ * pointed to has to be resolved per (dish, poiCity) — see meal-venues.json,
+ * audited to cover every dish for every dataset city. Real, named businesses
+ * aren't available for every dish, so entries fall back to a descriptive
+ * venue type grounded in a real neighbourhood (e.g. "Al-Balad, Jeddah")
+ * rather than inventing a restaurant that doesn't exist.
+ */
+const MEAL_VENUE_MAP: Record<string, MealVenue> = {};
+for (const v of mealVenuesData as MealVenue[]) {
+  MEAL_VENUE_MAP[`${v.dish_id}|${v.city}`] = v;
+}
+
+function resolveMealVenue(dishId: string, poiCity: string): MealVenue | null {
+  return MEAL_VENUE_MAP[`${dishId}|${poiCity}`] ?? null;
+}
+
+/** Same query-string pattern as every POI's map_url — venue + area + city stand in for coordinates we don't have. */
+function buildMealMapUrl(venue: string, area: string, cityName: string): string {
+  const query = `${venue}, ${area}, ${cityName}, Saudi Arabia`;
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+}
+
+function buildMeal(
+  type: "lunch" | "dinner",
+  dish: Dish | null,
+  poiCity: string,
+  cityName: string,
+  estimatedTime: string,
+): ItineraryMeal | null {
+  if (!dish) return null;
+  const mv = resolveMealVenue(dish.id, poiCity);
+  return {
+    type, dish, estimatedTime,
+    venue: mv?.venue, venueAr: mv?.venue_ar,
+    area: mv?.area, areaAr: mv?.area_ar,
+    mapUrl: mv ? buildMealMapUrl(mv.venue, mv.area, cityName) : undefined,
+  };
+}
+
 /* ── Objective Computation ──────────────────────────────────────────── */
 
 function computeObjectives(profile: TravelerProfile, trip: TripSpec): Objectives {
@@ -375,6 +437,8 @@ function buildDays(
   objectives: Objectives,
   trip: TripSpec,
   profile: TravelerProfile,
+  poiCity: string,
+  cityName: string,
 ): ItineraryDay[] {
   const startDate = new Date(trip.dateStart + "T00:00:00");
   const endDate   = new Date(trip.dateEnd   + "T00:00:00");
@@ -383,7 +447,9 @@ function buildDays(
   ) + 1);
 
   const needsFamily     = profile.travelType === "family";
-  const needsAccessible = !!profile.accessibility;
+  // A written note is a real signal on its own — treat it as equivalent to the
+  // toggle so a note volunteered without the box being (re-)checked still counts.
+  const needsAccessible = !!profile.accessibility || !!profile.accessibilityNotes?.trim();
 
   // Sorted dishes by food_weight (best first)
   const lunchDishes  = safeDishes.filter(d => d.meal_type === "lunch")
@@ -474,10 +540,10 @@ function buildDays(
 
     // Meals
     const meals: ItineraryMeal[] = [];
-    const lunch  = pickDish(lunchDishes);
-    const dinner = pickDish(dinnerDishes);
-    if (lunch)  meals.push({ type: "lunch",  dish: lunch,  estimatedTime: "12:15" });
-    if (dinner) meals.push({ type: "dinner", dish: dinner, estimatedTime: "19:30" });
+    const lunch      = buildMeal("lunch",  pickDish(lunchDishes),  poiCity, cityName, "12:15");
+    const dinner     = buildMeal("dinner", pickDish(dinnerDishes), poiCity, cityName, "19:30");
+    if (lunch)  meals.push(lunch);
+    if (dinner) meals.push(dinner);
 
     // Daily cost = POI entry fees + meals
     const stopsCost = dayStops.reduce((s, stop) => s + stop.poi.price_range, 0);
@@ -516,8 +582,9 @@ export function generateItinerary(
   const safeDishes    = (dishesData as Dish[]).filter(d =>
     !d.common_allergens.some(a => userAllergens.includes(a))
   );
+  const cityName      = CITY_NAMES[resolvedCity] ?? resolvedCity;
 
-  const days = buildDays(cityPois, safeDishes, objectives, trip, profile);
+  const days = buildDays(cityPois, safeDishes, objectives, trip, profile, poiCity, cityName);
 
   const allStops         = days.flatMap(d => d.stops);
   const totalCostSar     = days.reduce((s, d) => s + d.dailyCostSar, 0);
@@ -536,7 +603,7 @@ export function generateItinerary(
     candidateCount: cityPois.length,
     hiddenGemShare,
     cultureNoteCount,
-    cityName: CITY_NAMES[resolvedCity] ?? resolvedCity,
+    cityName,
     resolvedCity,
     budgetStatus: estimatedDailyAvg > trip.budget ? "over" : "ok",
     estimatedDailyAvg,

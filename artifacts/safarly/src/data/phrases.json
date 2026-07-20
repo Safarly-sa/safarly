@@ -81,5 +81,27 @@
   { "id": "sh_barg_2", "dialect": "shamali","situation": "bargaining", "arabic": "ما في أرخص؟",               "transliteration": "mā fi arkhaṣ?",                "english": "Is there nothing cheaper?" },
   { "id": "sh_ticket_1","dialect": "shamali","situation": "tickets",   "arabic": "بكم الدخلة؟",               "transliteration": "bikam ad-dakhlah?",             "english": "How much is entry? (northern term)" },
   { "id": "sh_ticket_2","dialect": "shamali","situation": "tickets",   "arabic": "في خصم للشباب؟",             "transliteration": "fi khaṣm lish-shabāb?",        "english": "Is there a youth discount?" },
-  { "id": "sh_ticket_3","dialect": "shamali","situation": "tickets",   "arabic": "متى الفتح؟",                 "transliteration": "mata l-fatḥ?",                 "english": "When does it open?" }
+  { "id": "sh_ticket_3","dialect": "shamali","situation": "tickets",   "arabic": "متى الفتح؟",                 "transliteration": "mata l-fatḥ?",                 "english": "When does it open?" },
+
+  { "id": "sr_greet_1", "dialect": "sharqi", "situation": "greeting",   "arabic": "شلونك؟",                     "transliteration": "shlōnak?",                     "english": "How's it going? (lit. \"what's your colour\" — the classic Gulf-coast greeting)" },
+  { "id": "sr_greet_2", "dialect": "sharqi", "situation": "greeting",   "arabic": "هلا وغلا",                   "transliteration": "hala w-ghalā",                 "english": "Welcome, most dear (warm Hasawi welcome)" },
+  { "id": "sr_greet_3", "dialect": "sharqi", "situation": "greeting",   "arabic": "زينين؟",                     "transliteration": "zainīn?",                      "english": "All well? (checking on how someone's doing)" },
+  { "id": "sr_ticket_1","dialect": "sharqi", "situation": "tickets",    "arabic": "چم التذكرة؟",                "transliteration": "cham at-tazkara?",             "english": "How much is the ticket? (\"ch\" for \"k\" — the Gulf-coast sound shift)" },
+  { "id": "sr_ticket_2","dialect": "sharqi", "situation": "tickets",    "arabic": "فيه خصم؟",                   "transliteration": "fīh khaṣm?",                   "english": "Is there a discount?" },
+  { "id": "sr_ticket_3","dialect": "sharqi", "situation": "tickets",    "arabic": "متى الافتتاح؟",              "transliteration": "mita al-iftitāḥ?",             "english": "When does it open?" },
+  { "id": "sr_taxi_1",  "dialect": "sharqi", "situation": "taxi",       "arabic": "ودّني للمطار",               "transliteration": "waddinī lil-maṭār",            "english": "Take me to the airport" },
+  { "id": "sr_taxi_2",  "dialect": "sharqi", "situation": "taxi",       "arabic": "بالعداد لو سمحت",            "transliteration": "bil-ʿaddād law samaḥt",        "english": "By the meter, please" },
+  { "id": "sr_taxi_3",  "dialect": "sharqi", "situation": "taxi",       "arabic": "وگف هني",                    "transliteration": "wagif hinī",                   "english": "Stop right here (\"g\" for \"q\" — another Gulf-coast sound shift)" },
+  { "id": "sr_order_1", "dialect": "sharqi", "situation": "ordering",   "arabic": "شتشتهي؟",                    "transliteration": "sh-tishtahī?",                 "english": "What are you in the mood for?" },
+  { "id": "sr_order_2", "dialect": "sharqi", "situation": "ordering",   "arabic": "أبيله...",                   "transliteration": "abbī-lah...",                  "english": "I'd like..." },
+  { "id": "sr_order_3", "dialect": "sharqi", "situation": "ordering",   "arabic": "بلا بصل لو سمحت",            "transliteration": "bilā baṣal law samaḥt",        "english": "No onion, please" },
+  { "id": "sr_barg_1",  "dialect": "sharqi", "situation": "bargaining", "arabic": "خفف علي شوي",                "transliteration": "khaffif ʿalay shwayy",         "english": "Ease up on the price a little" },
+  { "id": "sr_barg_2",  "dialect": "sharqi", "situation": "bargaining", "arabic": "هذا وايد غالي",              "transliteration": "hāḏa wāyid ghālī",             "english": "That's way too expensive (\"wāyid\" — signature Gulf-coast word for \"very/a lot\")" },
+  { "id": "sr_barg_3",  "dialect": "sharqi", "situation": "bargaining", "arabic": "آخر كلام؟",                  "transliteration": "ākhir kalām?",                 "english": "Is that your final word?" },
+  { "id": "sr_thanks_1","dialect": "sharqi", "situation": "thanks",     "arabic": "الله يخليك",                 "transliteration": "Allāh ykhallīk",               "english": "God keep you (everyday Gulf-coast way of saying thanks)" },
+  { "id": "sr_thanks_2","dialect": "sharqi", "situation": "thanks",     "arabic": "تسلم إيدينك",                "transliteration": "tislam īdaynik",               "english": "Bless both your hands (extra-warm thanks)" },
+  { "id": "sr_thanks_3","dialect": "sharqi", "situation": "thanks",     "arabic": "ما تقصر",                    "transliteration": "mā tgaṣṣir",                   "english": "You've done well (lit. \"you don't fall short\")" },
+  { "id": "sr_dir_1",   "dialect": "sharqi", "situation": "directions", "arabic": "سيدة لين النهاية",           "transliteration": "sīda lēn an-nihāya",           "english": "Straight until the end" },
+  { "id": "sr_dir_2",   "dialect": "sharqi", "situation": "directions", "arabic": "لف يمين عالإشارة",           "transliteration": "liff yamīn ʿal-ishāra",        "english": "Turn right at the signal" },
+  { "id": "sr_dir_3",   "dialect": "sharqi", "situation": "directions", "arabic": "قريبة، ما تبعد",             "transliteration": "qarība, mā tibʿid",            "english": "It's close, not far" }
 ]

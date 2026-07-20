@@ -1,6 +1,8 @@
+import { useEffect, useState } from "react";
 import safarlyLogo from "@assets/safarly-lockup-light_1784459757614.png";
 import { useTranslation } from "@/providers/translation-context";
 import { Link } from "wouter";
+import { getAuth } from "@/lib/auth";
 
 /* Hardcoded dark-mode palette — footer is always dark regardless of theme */
 const C = {
@@ -13,6 +15,23 @@ const C = {
 
 export function Footer() {
   const { t } = useTranslation();
+
+  /* Auth-aware — the planner link is gated behind login, so it must know
+     whether the visitor is signed in and react if that changes mid-visit. */
+  const [authed, setAuthed] = useState(() => !!getAuth());
+  useEffect(() => {
+    function sync() { setAuthed(!!getAuth()); }
+    window.addEventListener("safarly-auth-changed", sync);
+    window.addEventListener("storage", sync);
+    return () => {
+      window.removeEventListener("safarly-auth-changed", sync);
+      window.removeEventListener("storage", sync);
+    };
+  }, []);
+
+  const tripCraftingHref = authed
+    ? "/generating"
+    : `/login?returnTo=${encodeURIComponent("/generating")}`;
 
   return (
     <footer
@@ -60,9 +79,9 @@ export function Footer() {
             </h4>
             <ul className="space-y-3">
               {[
-                { href: "/onboarding", label: "Onboarding" },
-                { href: "/generating", label: "Trip Crafting" },
-                { href: "/itinerary",  label: "Your Itinerary" },
+                { href: "/onboarding",    label: t("footer.nav.onboarding") },
+                { href: tripCraftingHref, label: t("footer.nav.trip_crafting") },
+                { href: "/itinerary",     label: t("footer.nav.itinerary") },
               ].map(({ href, label }) => (
                 <li key={href}>
                   <Link
@@ -82,7 +101,7 @@ export function Footer() {
           {/* Feature links */}
           <div>
             <h4 className="font-semibold text-sm mb-4" style={{ color: C.text }}>
-              Features
+              {t("footer.nav.features")}
             </h4>
             <ul className="space-y-3">
               {[
@@ -111,9 +130,9 @@ export function Footer() {
           className="mt-12 pt-8 flex flex-col md:flex-row items-center justify-between gap-4"
           style={{ borderTop: `1px solid ${C.border}` }}
         >
-          <p className="text-xs" style={{ color: C.muted }}>© {new Date().getFullYear()} Safarly. All rights reserved.</p>
+          <p className="text-xs" style={{ color: C.muted }}>{t("footer.rights").replace("2026", String(new Date().getFullYear()))}</p>
           <div className="flex gap-4">
-            {["Privacy", "Terms"].map((label) => (
+            {[t("footer.legal.privacy"), t("footer.legal.terms")].map((label) => (
               <span
                 key={label}
                 className="text-xs cursor-pointer transition-colors duration-200"
