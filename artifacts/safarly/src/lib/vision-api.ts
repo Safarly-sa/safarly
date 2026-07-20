@@ -68,7 +68,7 @@ async function callVision<T>(mode: VisionMode, params: {
 }): Promise<VisionResult<T>> {
   let res: Response;
   try {
-    res = await fetch(`${API_BASE}/api/agents/vision`, {
+    res = await fetch(`${API_BASE}/api/lens/analyze`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",

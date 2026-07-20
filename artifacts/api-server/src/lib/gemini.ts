@@ -4,7 +4,8 @@
  * The key lives here, server-side, and never reaches the browser. Vite inlines
  * `import.meta.env.*` into the client bundle at build time, so a key referenced
  * anywhere in `artifacts/safarly` would ship to every visitor and be scrapeable
- * from the JS. The frontend calls our own `/api/agents/*` endpoints instead.
+ * from the JS. The frontend calls our own API endpoints instead (`/api/lens/*`,
+ * `/api/trip/*`, `/api/concierge/*`, `/api/dialect/*`, `/api/translate`).
  */
 import { GoogleGenAI } from "@google/genai";
 import { logger } from "./logger";

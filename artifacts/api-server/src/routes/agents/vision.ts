@@ -161,9 +161,9 @@ const schemaFor: Record<Mode, object> = {
   sign: signSchema,
 };
 
-/* ── POST /api/agents/vision ───────────────────────────────────────────── */
+/* ── POST /api/lens/analyze ─────────────────────────────────────────────── */
 router.post(
-  "/agents/vision",
+  "/lens/analyze",
   // A larger body only on this route; the global express.json limit stays at
   // 100kb so the rest of the API is not a soft DoS target.
   express.json({ limit: "9mb" }),
