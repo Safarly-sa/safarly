@@ -96,35 +96,42 @@ export function Vision2030() {
 
       {/* ── Hero — full-bleed Riyadh skyline photo ───────────────────────
           Breaks out to the viewport edge regardless of where this page's
-          content column sits, then folds back via a bottom gradient scrim
-          that lands exactly on --sf-bg, so the photo reads as part of the
-          page rather than a banner dropped on top of it. Text is pinned to
-          white regardless of theme — the photo's own tone is dark enough at
-          the scrim line that light-mode text would fail contrast otherwise. */}
+          content column sits. The photo is a night shot, so the scrim fades
+          to a fixed dark tone (not --sf-bg) at the bottom — fading to white
+          in light mode looked like a bright flash dropped on a night photo.
+          A uniform dark wash sits under that so the centered white text stays
+          legible against the sky/tower area too, not just the bottom edge. */}
       <section style={{
         position: "relative",
         width: "100vw",
         insetInlineStart: "calc(-50vw + 50%)",
       }}>
-        <div style={{ position: "relative", height: "clamp(420px, 58vw, 620px)", overflow: "hidden" }}>
+        <div style={{ position: "relative", height: "clamp(460px, 60vw, 640px)", overflow: "hidden" }}>
           <img
             src={vision2030Hero}
             alt="Riyadh's skyline at night, with the Kingdom Centre tower and the Saudi Vision 2030 emblem"
-            style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "center 60%" }}
+            style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "center 25%" }}
           />
           <div
             aria-hidden
             style={{
               position: "absolute", inset: 0,
-              background: "linear-gradient(to bottom, rgba(10,14,22,0.05) 0%, rgba(10,14,22,0.5) 60%, var(--sf-bg) 100%)",
+              background: "rgba(10,14,22,0.32)",
+            }}
+          />
+          <div
+            aria-hidden
+            style={{
+              position: "absolute", inset: 0,
+              background: "linear-gradient(to bottom, rgba(10,14,22,0.05) 0%, rgba(10,14,22,0.45) 70%, #0A0E16 100%)",
             }}
           />
           <div style={{
             position: "absolute", inset: 0,
             display: "flex", flexDirection: "column",
-            alignItems: "center", justifyContent: "flex-end",
+            alignItems: "center", justifyContent: "center",
             textAlign: "center",
-            padding: "20px clamp(20px, 6vw, 60px) clamp(28px, 6vw, 52px)",
+            padding: "20px clamp(20px, 6vw, 60px)",
           }}>
             <span style={{
               display: "inline-block",
