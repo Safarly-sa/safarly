@@ -27,8 +27,11 @@ import {
   parseJsonResponse,
 } from "../../lib/gemini";
 import { requireSession } from "../../lib/session";
-import { enforceQuota } from "../../lib/agent-quota";
+import { enforceQuotaUnlessDemo } from "../../lib/agent-quota";
+import { isDemoMode } from "../../lib/agent-mode";
 import { logger } from "../../lib/logger";
+import { MODES, type Mode } from "./vision-types";
+import { fixtureFor } from "./vision-fixtures";
 
 const router: IRouter = Router();
 
@@ -46,9 +49,6 @@ const ALLERGEN_TOKENS = [
   "eggs",
   "shellfish",
 ] as const;
-
-const MODES = ["menu", "place", "sign"] as const;
-type Mode = (typeof MODES)[number];
 
 /** ~8MB of base64 ≈ 6MB of image. Clients should downscale before upload. */
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
@@ -168,7 +168,7 @@ router.post(
   // 100kb so the rest of the API is not a soft DoS target.
   express.json({ limit: "9mb" }),
   requireSession,
-  enforceQuota,
+  enforceQuotaUnlessDemo,
   async (req, res) => {
     const mode = req.body?.mode;
     const imageBase64 = req.body?.imageBase64;
@@ -189,6 +189,14 @@ router.post(
     }
     if (imageBase64.length > MAX_IMAGE_BYTES) {
       return res.status(413).json({ error: "Image is too large. Please use a smaller photo." });
+    }
+
+    if (isDemoMode()) {
+      // Artificial delay so the frontend's scanning-phase UI (which is part of
+      // what demo mode exists to let people build against) doesn't get
+      // skipped in testing just because this branch resolves instantly.
+      await new Promise((resolve) => setTimeout(resolve, 900));
+      return res.json({ mode, result: fixtureFor(mode as Mode, imageBase64) });
     }
 
     try {

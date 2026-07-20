@@ -12,6 +12,7 @@
  * running more than one instance.
  */
 import type { Request, Response, NextFunction } from "express";
+import { isDemoMode } from "./agent-mode";
 
 const USER_PER_MINUTE = 4;
 const USER_PER_DAY = 40;
@@ -117,4 +118,21 @@ export function enforceQuota(req: Request, res: Response, next: NextFunction): v
         : "Too many AI requests at once. Try again in a moment.",
     retryAfterSeconds: result.retryAfterSeconds,
   });
+}
+
+/**
+ * Demo-mode responses cost nothing, so there is nothing to protect them from —
+ * gating them behind the same throttle would only add rate-limit friction to
+ * local development and preview deploys, the two cases demo mode exists for.
+ */
+export function enforceQuotaUnlessDemo(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): void {
+  if (isDemoMode()) {
+    next();
+    return;
+  }
+  enforceQuota(req, res, next);
 }
