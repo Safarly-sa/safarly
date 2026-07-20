@@ -267,7 +267,7 @@ export function Vision2030() {
           src={theme === "dark" ? vision2030Dark : vision2030Light}
           alt=""
           aria-hidden
-          style={{ height: 36, width: "auto", objectFit: "contain", opacity: 0.7, margin: "0 auto 20px" }}
+          style={{ height: 72, width: "auto", objectFit: "contain", margin: "0 auto 20px" }}
         />
         <h2 style={{
           fontSize: "clamp(1.5rem, 4vw, 2.25rem)",

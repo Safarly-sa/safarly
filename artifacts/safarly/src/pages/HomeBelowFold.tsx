@@ -198,7 +198,7 @@ export function HomeBelowFold() {
             <img
               src={theme === "dark" ? vision2030Dark : vision2030Light}
               alt="Saudi Vision 2030"
-              className="h-10 w-auto shrink-0"
+              className="h-16 md:h-20 w-auto shrink-0"
             />
             <p className="text-sm md:text-base font-medium text-foreground max-w-2xl">
               {t("vision.text")}
