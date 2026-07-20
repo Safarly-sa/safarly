@@ -1,10 +1,10 @@
 /**
  * Confirmation dialog for signing out.
  *
- * Shared by the Navbar and the profile page. `signOut()` clears every
- * account-scoped key — trips, favourites, learned phrases — and there is no
- * server copy, so the action is unrecoverable and must always be confirmed.
- * Never call `signOut()` straight from a click handler.
+ * Shared by the Navbar and the profile page. `signOut()` only clears the
+ * session — trips, favourites, and learned phrases stay on the device — but
+ * still confirms first, since re-entering credentials to get back in is real
+ * friction even though nothing is lost.
  */
 import { useEffect, useRef } from "react";
 import { AlertTriangle } from "lucide-react";

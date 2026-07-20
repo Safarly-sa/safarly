@@ -99,10 +99,9 @@ function useProfileStyles() {
 }
 
 /* ── Learned phrases / food list data ─────────────────────────────────
-   Both `safarly_learned` and `safarly_favorites` are account-scoped keys
-   (see ACCOUNT_KEYS in lib/auth.ts) — they were never trip-scoped, so they
-   already persist across trips and clear on sign-out with no migration
-   needed. */
+   Both `safarly_learned` and `safarly_favorites` were never trip-scoped, so
+   they already persist across trips, and (like the rest of the profile) also
+   survive sign-out — see lib/auth.ts's signOut(). */
 interface Phrase { id: string; dialect: string; situation: string; arabic: string; transliteration: string; english: string; }
 interface Dish { id: string; name: string; name_ar: string; price_sar: number; description: string; common_allergens: string[]; meal_type: string; }
 

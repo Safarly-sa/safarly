@@ -92,8 +92,8 @@ const DISPLAY_PREF_KEY = "safarly-currency-display";
  * Device-scoped display preference — "home" shows the user's home currency
  * when one is available, anything else (including absent) shows SAR. This
  * mirrors safarly-theme / safarly-lang: a device preference, not account
- * data, so it is deliberately excluded from auth.ts's ACCOUNT_KEYS and
- * survives sign-out.
+ * data — though sign-out no longer clears account data either, see
+ * lib/auth.ts's signOut().
  */
 export function getCurrencyDisplayPref(): "home" | "sar" {
   return localStorage.getItem(DISPLAY_PREF_KEY) === "home" ? "home" : "sar";

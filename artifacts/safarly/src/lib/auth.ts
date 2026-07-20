@@ -53,32 +53,9 @@ export function sanitizeReturnTo(path: string | null | undefined): string | null
 /* ── Sign out ────────────────────────────────────────────────────────── */
 
 /**
- * Every account-scoped key. Device preferences (`safarly-lang`,
- * `safarly-theme`) are deliberately absent — they describe the device, not the
- * person, and should survive a sign-out.
- *
- * Sign-in is passwordless: anyone can become "signed in" by typing a name. If
- * sign-out left this data behind, the next person to sign in on a shared device
- * would inherit the previous user's trips, dietary restrictions, and allergies.
- * So sign-out clears all of it.
- *
- * Add new account-scoped keys here, or they will leak across sign-outs.
- */
-const ACCOUNT_KEYS = [
-  "safarly_auth",
-  "safarly_profile",
-  "safarly_profile_complete",
-  "safarly_trip",
-  "safarly_itinerary",
-  "safarly_ongoing_trip",
-  "safarly_past_trips",
-  "safarly_learned",
-  "safarly_favorites",
-] as const;
-
-/**
- * Clears all account-scoped data and notifies listeners. There is no server
- * copy of any of this, so it cannot be undone — callers should confirm first.
+ * Sign-out clears identity only — trips, profile, learned phrases and saved
+ * dishes stay on the device, so signing back in (now a real account via the
+ * API, not just typing a name) picks up exactly where the user left off.
  */
 export function signOut(): void {
   // Fire-and-forget: destroy the server session too, so the httpOnly cookie
@@ -86,6 +63,6 @@ export function signOut(): void {
   // even when the API is unreachable, and the caller is a click handler.
   void logOutRemote();
 
-  for (const key of ACCOUNT_KEYS) localStorage.removeItem(key);
+  localStorage.removeItem("safarly_auth");
   window.dispatchEvent(new Event("safarly-auth-changed"));
 }
