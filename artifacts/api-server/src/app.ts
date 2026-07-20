@@ -1,4 +1,4 @@
-import express, { type Express } from "express";
+import express, { type Express, type ErrorRequestHandler } from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import pinoHttp from "pino-http";
@@ -58,5 +58,24 @@ app.use(express.json({ limit: "100kb" }));
 app.use(express.urlencoded({ extended: true, limit: "100kb" }));
 
 app.use("/api", router);
+
+/**
+ * Final error handler. Without this, an error thrown anywhere upstream —
+ * including the CORS `origin` callback rejecting a disallowed origin, or any
+ * route handler that forgets a try/catch — falls through to Express's default
+ * handler, which renders a full stack trace with absolute filesystem paths as
+ * an HTML page. That page is reachable by any non-browser client (curl,
+ * server-to-server, bots); a browser's CORS enforcement blocks *reading* the
+ * response but never blocks the request from being sent and answered.
+ *
+ * Must be registered last and keep all four parameters — Express identifies
+ * error-handling middleware by arity, not by name.
+ */
+const handleError: ErrorRequestHandler = (err, req, res, _next) => {
+  req.log?.error({ err }, "Unhandled error");
+  if (res.headersSent) return;
+  res.status(err?.status ?? 500).json({ error: "Something went wrong. Please try again." });
+};
+app.use(handleError);
 
 export default app;

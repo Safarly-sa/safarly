@@ -1,11 +1,17 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { Camera, CheckCircle2, AlertTriangle, X, Plus, ScanLine, RotateCcw, ChevronRight, MapPin, ExternalLink, Copy, Check } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Link } from "wouter";
+import { Camera, CheckCircle2, AlertTriangle, X, Plus, ScanLine, RotateCcw, ChevronRight, MapPin, ExternalLink, Copy, Check, Sparkles } from "lucide-react";
 import { useTranslation } from "@/providers/translation-context";
+import type { Language } from "@/providers/translation-context";
 import { usePageMeta } from "@/lib/usePageMeta";
-import { poiName, poiCulture } from "@/lib/poi-i18n";
+import { getAuth } from "@/lib/auth";
 import { ALLERGEN_LABEL_KEYS, readStoredAllergens } from "@/lib/allergens";
+import { prepareImageForUpload } from "@/lib/image";
+import {
+  scanMenuImage, scanPlaceImage, scanSignImage,
+  type VisionDish, type VisionPlace, type VisionSign, type VisionErrorCode,
+} from "@/lib/vision-api";
 import dishesRaw from "@/data/dishes.json";
-import poisRaw   from "@/data/pois.json";
 
 /* ── Types ──────────────────────────────────────────────────────────── */
 type LensMode = "menu" | "place" | "signage";
@@ -16,59 +22,58 @@ interface Dish {
   common_allergens: string[]; food_weight: number; description: string;
 }
 
-interface Poi {
-  id: string; name: string; city: string; category: string;
-  map_url?: string; culture_note?: string; hidden_gem?: boolean;
+/**
+ * Unified shape both the curated demo path (local dataset) and the real
+ * vision-agent path (photographed menu) render through. The two sources carry
+ * genuinely different guarantees — see `favoriteId` and `uncertain` below —
+ * so DishCard/DishModal must not assume every field is present.
+ */
+interface DisplayDish {
+  key: string;
+  primary: string;      // shown large — demo: Arabic dataset name; live: exactly as printed
+  secondary: string;     // shown small — demo: English name; live: translated
+  primaryIsArabic: boolean;
+  description: string;
+  allergenTokens: string[];
+  priceText?: string;
+  originStory?: string;  // demo only — hand-written, doesn't exist for a photographed dish
+  uncertain?: boolean;    // live only — the model flagged the read as unreliable
+  /**
+   * Only demo dishes have one: favorites are stored as dataset ids
+   * (`safarly_favorites`) and looked up later via DISHES_MAP on the
+   * dashboard. A live-scanned dish has no such id — "favoriting" it would
+   * silently do nothing on the dashboard, so the button is hidden instead of
+   * built to look like it works.
+   */
+  favoriteId?: string;
 }
 
-// `id` is carried so the card can look up `poi.<id>.name` / `.culture`; the raw
-// English `name` / `culture_note` stay as the fallback.
-interface PlaceResult { id: string; name: string; category: string; culture_note?: string; map_url?: string; }
-interface SignRow     { arrow: string; city: string; distance: number; }
+interface DisplayPlace {
+  primary: string;
+  category: string;
+  note: string;
+  tip?: string;
+  mapUrl: string;
+  uncertain: boolean;
+}
 
-/* ── Static data ────────────────────────────────────────────────────── */
+interface DisplaySign {
+  lines: { original: string; translated: string }[];
+  meaning: string;
+  uncertain: boolean;
+}
+
+interface ScanError {
+  code: VisionErrorCode;
+  retryAfterSeconds?: number;
+}
+
+/* ── Static data (demo path only) ──────────────────────────────────── */
 const ALL_DISHES = dishesRaw as Dish[];
 const DISHES_BY_ID = Object.fromEntries(ALL_DISHES.map(d => [d.id, d]));
 
-const ALL_POIS = poisRaw as Poi[];
-const POIS_WITH_NOTE = ALL_POIS.filter(p => p.culture_note);
-
-const SIGN_CITIES = ["Riyadh","Jeddah","AlUla","Madinah","Dammam","Makkah","Taif","Abha","Yanbu","Al Khobar"];
-const SIGN_ARROWS = ["→","←","↑","↗","↖"];
-
-/* Deterministic hash — same filename always gives same result */
-function strHash(s: string): number {
-  let h = 0;
-  for (let i = 0; i < s.length; i++) h = (Math.imul(31, h) + s.charCodeAt(i)) | 0;
-  return Math.abs(h);
-}
-
-function scanPlace(filename: string): PlaceResult {
-  if (POIS_WITH_NOTE.length === 0) return { id: "", name: "Unknown Landmark", category: "heritage" };
-  const idx = strHash(filename) % POIS_WITH_NOTE.length;
-  const poi  = POIS_WITH_NOTE[idx];
-  return { id: poi.id, name: poi.name, category: poi.category, culture_note: poi.culture_note, map_url: poi.map_url };
-}
-
-function scanSignage(filename: string): SignRow[] {
-  const h    = strHash(filename);
-  const count = 2 + (h % 3); // 2-4 rows
-  const rows: SignRow[] = [];
-  const usedCities = new Set<string>();
-  for (let i = 0; i < count; i++) {
-    let cityIdx = (h + i * 7) % SIGN_CITIES.length;
-    while (usedCities.has(SIGN_CITIES[cityIdx])) cityIdx = (cityIdx + 1) % SIGN_CITIES.length;
-    usedCities.add(SIGN_CITIES[cityIdx]);
-    rows.push({
-      arrow:    SIGN_ARROWS[(h + i * 3) % SIGN_ARROWS.length],
-      city:     SIGN_CITIES[cityIdx],
-      distance: 5 + ((h + i * 11) % 195), // 5–199 km
-    });
-  }
-  return rows;
-}
-
-// filename-substring → dish ID list (swap scanMenu() body for real vision API)
+// filename-substring → dish ID list. Curated so the "try a demo menu" buttons
+// give an instant, reliable result without spending real vision-agent quota.
 const DEMO_LOOKUP: Record<string, string[]> = {
   "menu-riyadh": ["kabsa_chicken","kabsa_lamb","jareesh","mandi_lamb","madfoon","ouzi"],
   "menu-jeddah": ["saleeg","machboos_rubyan","sayadiya","mutabbaq","fish_mandi","kunafa"],
@@ -103,17 +108,63 @@ const ORIGIN_STORIES: Record<string, string> = {
   kunafa:           "Kunafa bil Jibneh traveled from the Levant to the Hejaz with Hajj pilgrims. Jeddah's version uses local white cheese and is served warm with rose-water syrup — a beloved iftar treat.",
 };
 
-// Re-exported name kept so the existing call sites read unchanged; the
-// vocabulary itself now lives in lib/allergens.ts.
+// Re-exported name kept so the render code below reads unchanged; the
+// vocabulary itself lives in lib/allergens.ts.
 const ALLERGEN_KEYS: Record<string, string> = ALLERGEN_LABEL_KEYS;
 
-/* ── Scan function — swap body to call real vision API in Phase 3 ──── */
-function scanMenu(filename: string): Dish[] {
+/** English name Gemini is asked to translate into — must be a real language name, not a code. */
+const LANGUAGE_NAMES: Record<Language, string> = {
+  en: "English", ar: "Arabic", de: "German", fr: "French",
+  it: "Italian", ru: "Russian", ur: "Urdu", zh: "Chinese",
+};
+
+const ARABIC_RE = /[؀-ۿ]/;
+
+/* ── Demo-path lookup (curated, no API call) ───────────────────────── */
+function demoScanMenu(filename: string): Dish[] {
   const lower = filename.toLowerCase();
-  const key   = Object.keys(DEMO_LOOKUP).find(k => lower.includes(k));
+  const key = Object.keys(DEMO_LOOKUP).find(k => lower.includes(k));
   if (key) return DEMO_LOOKUP[key].map(id => DISHES_BY_ID[id]).filter(Boolean) as Dish[];
-  // Fallback: 6 random dishes (menu not recognized)
   return [...ALL_DISHES].sort(() => Math.random() - 0.5).slice(0, 6);
+}
+
+/* ── Adapters: source-specific shape → DisplayDish ─────────────────── */
+function demoDishToDisplay(d: Dish): DisplayDish {
+  return {
+    key: d.id,
+    primary: d.name_ar,
+    secondary: d.name,
+    primaryIsArabic: true,
+    description: d.description,
+    allergenTokens: d.common_allergens,
+    priceText: `SAR ${d.price_sar}`,
+    originStory: ORIGIN_STORIES[d.id],
+    favoriteId: d.id,
+  };
+}
+
+function visionDishToDisplay(d: VisionDish, index: number): DisplayDish {
+  return {
+    key: `live-${index}`,
+    primary: d.nameOriginal,
+    secondary: d.nameTranslated,
+    primaryIsArabic: ARABIC_RE.test(d.nameOriginal),
+    description: d.description,
+    allergenTokens: d.allergenTokens,
+    priceText: d.priceText?.trim() || undefined,
+    uncertain: d.uncertain,
+  };
+}
+
+function visionPlaceToDisplay(p: VisionPlace): DisplayPlace {
+  return {
+    primary: p.nameTranslated,
+    category: p.category,
+    note: p.culturalContext,
+    tip: p.visitorTip,
+    mapUrl: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.name + " Saudi Arabia")}`,
+    uncertain: p.uncertain,
+  };
 }
 
 /* ── Style injection ────────────────────────────────────────────────── */
@@ -134,7 +185,7 @@ function useLensStyles() {
         height: 3px;
         background: linear-gradient(90deg, transparent 0%, var(--sf-accent) 30%, var(--sf-accent) 70%, transparent 100%);
         box-shadow: 0 0 14px 4px color-mix(in srgb, var(--sf-accent) 60%, transparent);
-        animation: sf-sweep 2.0s ease-in-out forwards;
+        animation: sf-sweep 2.0s ease-in-out infinite;
         border-radius: 2px;
       }
       @keyframes sf-corner-pulse {
@@ -227,7 +278,7 @@ function useLensStyles() {
       }
       /* sign row */
       .sf-sign-row {
-        display: flex; align-items: center; gap: 16px;
+        display: flex; align-items: flex-start; gap: 12px;
         padding: 14px 16px; border-radius: 12px;
         background: var(--sf-surface); border: 1px solid var(--sf-border);
         transition: border-color .15s;
@@ -242,6 +293,18 @@ function useLensStyles() {
       }
       .sf-copy-btn:hover { border-color: var(--sf-accent); color: var(--sf-accent); }
       .sf-copy-btn.copied { border-color: var(--sf-success); color: var(--sf-success); }
+      .sf-uncertain-badge {
+        display: inline-flex; align-items: center; gap: 5px;
+        padding: 3px 8px; border-radius: 999px;
+        background: color-mix(in srgb, #F59E0B 12%, var(--sf-surface));
+        border: 1px solid color-mix(in srgb, #F59E0B 35%, transparent);
+        color: #B45309; font-size: 0.6875rem; font-weight: 700;
+      }
+      .sf-error-card {
+        background: var(--sf-surface); border: 1px solid var(--sf-border);
+        border-radius: 14px; padding: 28px 24px; text-align: center;
+        display: flex; flex-direction: column; align-items: center; gap: 14px;
+      }
     `;
     document.head.appendChild(s);
   }, []);
@@ -279,41 +342,56 @@ function AllergenChip({ allergen, t }: { allergen: string; t: (k: string) => str
   );
 }
 
+function UncertainBadge({ t }: { t: (k: string) => string }) {
+  return (
+    <span className="sf-uncertain-badge" title={t("lens.uncertain")}>
+      <Sparkles size={10} aria-hidden />
+      {t("lens.uncertain")}
+    </span>
+  );
+}
+
 /* ── Dish card ──────────────────────────────────────────────────────── */
 function DishCard({ dish, userAllergens, t, onClick }: {
-  dish: Dish; userAllergens: string[]; t: (k: string) => string;
+  dish: DisplayDish; userAllergens: string[]; t: (k: string) => string;
   onClick: () => void;
 }) {
-  const warnings = dish.common_allergens.filter(a => userAllergens.includes(a));
+  const warnings = dish.allergenTokens.filter(a => userAllergens.includes(a));
   return (
     <div className="sf-dish-card" onClick={onClick} role="button" tabIndex={0}
       onKeyDown={e => e.key === "Enter" && onClick()}
-      aria-label={`${dish.name} — ${t("lens.modal.details")}`}
+      aria-label={`${dish.secondary || dish.primary} — ${t("lens.modal.details")}`}
     >
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8, marginBottom: 6 }}>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: "1.25rem", fontWeight: 700, color: "var(--sf-text)", lineHeight: 1.2, direction: "rtl", textAlign: "end" }}>
-            {dish.name_ar}
+          <div style={{
+            fontSize: "1.25rem", fontWeight: 700, color: "var(--sf-text)", lineHeight: 1.2,
+            direction: dish.primaryIsArabic ? "rtl" : "ltr", textAlign: dish.primaryIsArabic ? "end" : "start",
+          }}>
+            {dish.primary}
           </div>
-          <div style={{ fontSize: "0.875rem", fontWeight: 600, color: "var(--sf-text-muted)", marginTop: 3 }}>
-            {dish.name}
-          </div>
+          {dish.secondary && (
+            <div style={{ fontSize: "0.875rem", fontWeight: 600, color: "var(--sf-text-muted)", marginTop: 3 }}>
+              {dish.secondary}
+            </div>
+          )}
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 4, flexShrink: 0 }}>
           <span style={{ fontSize: "0.9375rem", fontWeight: 800, color: "var(--sf-text)" }}>
-            {t("itin.summary.sar")} {dish.price_sar}
+            {dish.priceText ?? t("lens.price.unknown")}
           </span>
           <ChevronRight size={14} style={{ color: "var(--sf-text-muted)" }} aria-hidden />
         </div>
       </div>
 
-      <p style={{ fontSize: "0.8125rem", color: "var(--sf-text-muted)", lineHeight: 1.55, marginBottom: warnings.length ? 10 : 0 }}>
+      <p style={{ fontSize: "0.8125rem", color: "var(--sf-text-muted)", lineHeight: 1.55, marginBottom: (warnings.length || dish.uncertain) ? 10 : 0 }}>
         {dish.description}
       </p>
 
-      {warnings.length > 0 && (
+      {(warnings.length > 0 || dish.uncertain) && (
         <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 8 }}>
           {warnings.map(a => <AllergenChip key={a} allergen={a} t={t} />)}
+          {dish.uncertain && <UncertainBadge t={t} />}
         </div>
       )}
     </div>
@@ -322,17 +400,15 @@ function DishCard({ dish, userAllergens, t, onClick }: {
 
 /* ── Dish modal ─────────────────────────────────────────────────────── */
 function DishModal({ dish, userAllergens, isFav, t, onClose, onAddFav }: {
-  dish: Dish; userAllergens: string[]; isFav: boolean;
+  dish: DisplayDish; userAllergens: string[]; isFav: boolean;
   t: (k: string) => string;
   onClose: () => void; onAddFav: () => void;
 }) {
-  const warnings = dish.common_allergens.filter(a => userAllergens.includes(a));
-  const origin   = ORIGIN_STORIES[dish.id] ?? "";
+  const warnings = dish.allergenTokens.filter(a => userAllergens.includes(a));
 
   return (
     <div className="sf-modal-backdrop" onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="sf-modal-card">
-        {/* close */}
         <button onClick={onClose} style={{
           position: "absolute", top: 16, insetInlineEnd: 16,
           background: "var(--sf-surface-alt)", border: "none", borderRadius: "50%",
@@ -342,54 +418,56 @@ function DishModal({ dish, userAllergens, isFav, t, onClose, onAddFav }: {
           <X size={16} style={{ color: "var(--sf-text-muted)" }} />
         </button>
 
-        {/* Arabic name */}
-        <div style={{ fontSize: "2rem", fontWeight: 800, color: "var(--sf-text)", direction: "rtl", textAlign: "end", marginBottom: 4, paddingInlineEnd: 40 }}>
-          {dish.name_ar}
+        <div style={{
+          fontSize: "2rem", fontWeight: 800, color: "var(--sf-text)",
+          direction: dish.primaryIsArabic ? "rtl" : "ltr", textAlign: dish.primaryIsArabic ? "end" : "start",
+          marginBottom: 4, paddingInlineEnd: 40,
+        }}>
+          {dish.primary}
         </div>
-        <div style={{ fontSize: "1rem", color: "var(--sf-text-muted)", fontWeight: 600, marginBottom: 16 }}>
-          {dish.name}
-        </div>
+        {dish.secondary && (
+          <div style={{ fontSize: "1rem", color: "var(--sf-text-muted)", fontWeight: 600, marginBottom: 16 }}>
+            {dish.secondary}
+          </div>
+        )}
 
-        {/* Price chip */}
-        <div style={{ marginBottom: 20 }}>
+        <div style={{ marginBottom: 20, display: "flex", gap: 8, flexWrap: "wrap" }}>
           <span style={{
             display: "inline-block", padding: "4px 12px", borderRadius: 999,
             background: "color-mix(in srgb, var(--sf-accent) 12%, var(--sf-surface))",
             color: "var(--sf-text-accent)", fontWeight: 800, fontSize: "0.9375rem",
           }}>
-            {t("itin.summary.sar")} {dish.price_sar}
+            {dish.priceText ?? t("lens.price.unknown")}
           </span>
+          {dish.uncertain && <UncertainBadge t={t} />}
         </div>
 
-        {/* Description */}
         <p style={{ fontSize: "0.9375rem", color: "var(--sf-text)", lineHeight: 1.7, marginBottom: 20 }}>
           {dish.description}
         </p>
 
-        {/* Origin story */}
-        {origin && (
+        {dish.originStory && (
           <div style={{ marginBottom: 20 }}>
             <h3 style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--sf-text-muted)", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 8 }}>
               {t("lens.modal.origin")}
             </h3>
             <p style={{ fontSize: "0.875rem", color: "var(--sf-text-muted)", lineHeight: 1.7 }}>
-              {origin}
+              {dish.originStory}
             </p>
           </div>
         )}
 
-        {/* Allergens */}
         <div style={{ marginBottom: 24 }}>
           <h3 style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--sf-text-muted)", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 8 }}>
             {t("lens.modal.allergens")}
           </h3>
-          {dish.common_allergens.length === 0 ? (
+          {dish.allergenTokens.length === 0 ? (
             <span style={{ fontSize: "0.875rem", color: "var(--sf-success)", fontWeight: 600 }}>
               {t("lens.modal.none")}
             </span>
           ) : (
             <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-              {dish.common_allergens.map(a => (
+              {dish.allergenTokens.map(a => (
                 <span key={a} style={{
                   padding: "3px 10px", borderRadius: 999,
                   background: warnings.includes(a)
@@ -407,18 +485,20 @@ function DishModal({ dish, userAllergens, isFav, t, onClose, onAddFav }: {
           )}
         </div>
 
-        {/* Add button */}
-        <button
-          className="sf-add-btn"
-          onClick={onAddFav}
-          style={{
-            background: isFav ? "var(--sf-surface-alt)" : "var(--sf-accent)",
-            color: isFav ? "var(--sf-success)" : "#0A0E16",
-          }}
-        >
-          {isFav ? <CheckCircle2 size={16} aria-hidden /> : <Plus size={16} aria-hidden />}
-          {isFav ? t("lens.added") : t("lens.add_fav")}
-        </button>
+        {/* Favorite only offered for demo dishes — see DisplayDish.favoriteId */}
+        {dish.favoriteId && (
+          <button
+            className="sf-add-btn"
+            onClick={onAddFav}
+            style={{
+              background: isFav ? "var(--sf-surface-alt)" : "var(--sf-accent)",
+              color: isFav ? "var(--sf-success)" : "#0A0E16",
+            }}
+          >
+            {isFav ? <CheckCircle2 size={16} aria-hidden /> : <Plus size={16} aria-hidden />}
+            {isFav ? t("lens.added") : t("lens.add_fav")}
+          </button>
+        )}
       </div>
     </div>
   );
@@ -451,18 +531,17 @@ function ModeTabs({ mode, onSwitch, t }: {
 
 /* ── Place result card ──────────────────────────────────────────────── */
 function PlaceCard({ result, t, onReset }: {
-  result: PlaceResult; t: (k: string) => string; onReset: () => void;
+  result: DisplayPlace; t: (k: string) => string; onReset: () => void;
 }) {
   const CAT_ICONS: Record<string, string> = {
     heritage: "🏛️", museum: "🏺", nature: "🌿", culture: "🕌",
     food: "🍽️", shopping: "🛍️", park: "🌳", beach: "🏖️",
     modern: "🏙️", entertainment: "🎡", art: "🎨", adventure: "🧗", religion: "☪️",
   };
-  const icon = CAT_ICONS[result.category] ?? "📍";
+  const icon = CAT_ICONS[result.category.toLowerCase()] ?? "📍";
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-      {/* Header */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <h2 style={{ fontSize: "1.0625rem", fontWeight: 800, color: "var(--sf-text)" }}>
           {t("lens.place.title")}
@@ -476,7 +555,6 @@ function PlaceCard({ result, t, onReset }: {
       </div>
 
       <div className="sf-place-card">
-        {/* Icon + name */}
         <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
           <div style={{
             width: 64, height: 64, borderRadius: 14, flexShrink: 0,
@@ -489,77 +567,70 @@ function PlaceCard({ result, t, onReset }: {
           </div>
           <div>
             <h3 style={{ fontWeight: 800, color: "var(--sf-text)", fontSize: "1.125rem", lineHeight: 1.25, marginBottom: 6 }}>
-              {poiName(t, result)}
+              {result.primary}
             </h3>
-            <span style={{
-              display: "inline-block", fontSize: "0.6875rem", fontWeight: 700,
-              textTransform: "uppercase", letterSpacing: "0.07em",
-              padding: "3px 10px", borderRadius: 20,
-              background: "var(--sf-surface-alt)", color: "var(--sf-text-muted)",
-            }}>
-              {result.category}
-            </span>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+              <span style={{
+                display: "inline-block", fontSize: "0.6875rem", fontWeight: 700,
+                textTransform: "uppercase", letterSpacing: "0.07em",
+                padding: "3px 10px", borderRadius: 20,
+                background: "var(--sf-surface-alt)", color: "var(--sf-text-muted)",
+              }}>
+                {result.category}
+              </span>
+              {result.uncertain && <UncertainBadge t={t} />}
+            </div>
           </div>
         </div>
 
-        {/* Culture note */}
         <div>
           <p style={{ fontSize: "0.6875rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: "var(--sf-text-muted)", marginBottom: 8 }}>
             {t("lens.place.culture")}
           </p>
           <p style={{ fontSize: "0.9375rem", color: "var(--sf-text)", lineHeight: 1.7 }}>
-            {poiCulture(t, result) ?? t("lens.place.unknown.note")}
+            {result.note}
           </p>
         </div>
 
-        {/* Maps link */}
-        {result.map_url ? (
-          <a
-            href={result.map_url} target="_blank" rel="noopener noreferrer"
-            style={{
-              display: "inline-flex", alignItems: "center", gap: 7, alignSelf: "flex-start",
-              padding: "10px 18px", borderRadius: 999,
-              border: "1.5px solid var(--sf-indigo)",
-              background: "color-mix(in srgb, var(--sf-indigo) 8%, var(--sf-surface))",
-              color: "var(--sf-indigo)", fontWeight: 700, fontSize: "0.875rem",
-              textDecoration: "none", transition: "background .15s",
-            }}
-          >
-            <MapPin size={14} aria-hidden />
-            {t("lens.place.maps")}
-            <ExternalLink size={12} aria-hidden style={{ opacity: 0.7 }} />
-          </a>
-        ) : (
-          <a
-            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(result.name + " Saudi Arabia")}`}
-            target="_blank" rel="noopener noreferrer"
-            style={{
-              display: "inline-flex", alignItems: "center", gap: 7, alignSelf: "flex-start",
-              padding: "10px 18px", borderRadius: 999,
-              border: "1.5px solid var(--sf-indigo)",
-              background: "color-mix(in srgb, var(--sf-indigo) 8%, var(--sf-surface))",
-              color: "var(--sf-indigo)", fontWeight: 700, fontSize: "0.875rem",
-              textDecoration: "none",
-            }}
-          >
-            <MapPin size={14} aria-hidden />
-            {t("lens.place.maps")}
-            <ExternalLink size={12} aria-hidden style={{ opacity: 0.7 }} />
-          </a>
+        {result.tip && (
+          <div>
+            <p style={{ fontSize: "0.6875rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: "var(--sf-text-muted)", marginBottom: 8 }}>
+              {t("lens.place.tip")}
+            </p>
+            <p style={{ fontSize: "0.9375rem", color: "var(--sf-text)", lineHeight: 1.7 }}>
+              {result.tip}
+            </p>
+          </div>
         )}
+
+        <a
+          href={result.mapUrl} target="_blank" rel="noopener noreferrer"
+          style={{
+            display: "inline-flex", alignItems: "center", gap: 7, alignSelf: "flex-start",
+            padding: "10px 18px", borderRadius: 999,
+            border: "1.5px solid var(--sf-indigo)",
+            background: "color-mix(in srgb, var(--sf-indigo) 8%, var(--sf-surface))",
+            color: "var(--sf-indigo)", fontWeight: 700, fontSize: "0.875rem",
+            textDecoration: "none",
+          }}
+        >
+          <MapPin size={14} aria-hidden />
+          {t("lens.place.maps")}
+          <ExternalLink size={12} aria-hidden style={{ opacity: 0.7 }} />
+        </a>
       </div>
     </div>
   );
 }
 
 /* ── Signage result ─────────────────────────────────────────────────── */
-function SignResults({ rows, t, onReset }: {
-  rows: SignRow[]; t: (k: string) => string; onReset: () => void;
+function SignResults({ result, t, onReset }: {
+  result: DisplaySign; t: (k: string) => string; onReset: () => void;
 }) {
   const [copied, setCopied] = useState(false);
 
   function copyAll() {
-    const text = rows.map(r => `${r.arrow} ${r.city} — ${r.distance} ${t("lens.sign.km")}`).join("\n");
+    const text = result.lines.map(l => `${l.original} — ${l.translated}`).join("\n") + `\n\n${result.meaning}`;
     navigator.clipboard.writeText(text).catch(() => { /* silent */ });
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -567,11 +638,13 @@ function SignResults({ rows, t, onReset }: {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-      {/* Header */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
-        <h2 style={{ fontSize: "1.0625rem", fontWeight: 800, color: "var(--sf-text)" }}>
-          {t("lens.sign.title")}
-        </h2>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <h2 style={{ fontSize: "1.0625rem", fontWeight: 800, color: "var(--sf-text)" }}>
+            {t("lens.sign.title")}
+          </h2>
+          {result.uncertain && <UncertainBadge t={t} />}
+        </div>
         <button
           onClick={onReset}
           style={{ display: "flex", alignItems: "center", gap: 6, padding: "9px 16px", borderRadius: 999, minHeight: 40, border: "1px solid var(--sf-border)", background: "var(--sf-surface)", color: "var(--sf-text-muted)", fontSize: "0.8125rem", fontWeight: 600, cursor: "pointer" }}
@@ -580,24 +653,36 @@ function SignResults({ rows, t, onReset }: {
         </button>
       </div>
 
-      {/* Sign rows */}
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-        {rows.map((row, i) => (
+        {result.lines.map((line, i) => (
           <div key={i} className="sf-sign-row">
-            <span style={{ fontSize: "2rem", lineHeight: 1, flexShrink: 0 }}>{row.arrow}</span>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontWeight: 800, color: "var(--sf-text)", fontSize: "1.0625rem", lineHeight: 1.2 }}>
-                {row.city}
+              <div style={{
+                fontWeight: 800, color: "var(--sf-text)", fontSize: "1.0625rem", lineHeight: 1.3,
+                direction: ARABIC_RE.test(line.original) ? "rtl" : "ltr",
+                textAlign: ARABIC_RE.test(line.original) ? "end" : "start",
+              }}>
+                {line.original}
               </div>
-              <div style={{ fontSize: "0.8125rem", color: "var(--sf-text-muted)", marginTop: 3 }}>
-                {row.distance} {t("lens.sign.km")}
+              <div style={{ fontSize: "0.8125rem", color: "var(--sf-text-muted)", marginTop: 4 }}>
+                {line.translated}
               </div>
             </div>
           </div>
         ))}
       </div>
 
-      {/* Copy button */}
+      {result.meaning && (
+        <div className="sf-place-card" style={{ padding: "16px 18px" }}>
+          <p style={{ fontSize: "0.6875rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: "var(--sf-text-muted)", marginBottom: 6 }}>
+            {t("lens.sign.meaning")}
+          </p>
+          <p style={{ fontSize: "0.9375rem", color: "var(--sf-text)", lineHeight: 1.6 }}>
+            {result.meaning}
+          </p>
+        </div>
+      )}
+
       <div style={{ display: "flex", justifyContent: "center", marginTop: 4 }}>
         <button
           type="button" onClick={copyAll}
@@ -613,6 +698,63 @@ function SignResults({ rows, t, onReset }: {
   );
 }
 
+/* ── Error card ─────────────────────────────────────────────────────── */
+function ErrorCard({ error, t, onRetry }: {
+  error: ScanError; t: (k: string) => string; onRetry: () => void;
+}) {
+  const messageKey: Record<VisionErrorCode, string> = {
+    "not-signed-in": "lens.error.signin",
+    "rate-limited": "lens.error.ratelimited",
+    "not-configured": "lens.error.notconfigured",
+    "bad-image": "lens.error.badimage",
+    "offline": "lens.error.offline",
+    "unknown": "lens.error.unknown",
+  };
+
+  return (
+    <div className="sf-error-card">
+      <AlertTriangle size={28} style={{ color: "#F59E0B" }} aria-hidden />
+      <div>
+        <p style={{ fontWeight: 800, color: "var(--sf-text)", fontSize: "1.0625rem", marginBottom: 6 }}>
+          {t("lens.error.title")}
+        </p>
+        <p style={{ color: "var(--sf-text-muted)", fontSize: "0.875rem", lineHeight: 1.6 }}>
+          {t(messageKey[error.code])}
+        </p>
+        {typeof error.retryAfterSeconds === "number" && error.retryAfterSeconds > 0 && (
+          <p style={{ color: "var(--sf-text-muted)", fontSize: "0.75rem", marginTop: 6 }}>
+            ~{error.retryAfterSeconds}s
+          </p>
+        )}
+      </div>
+
+      {error.code === "not-signed-in" ? (
+        <Link
+          href="/login"
+          style={{
+            display: "inline-flex", alignItems: "center", padding: "11px 22px",
+            borderRadius: 999, background: "var(--sf-accent)", color: "#0A0E16",
+            fontWeight: 700, fontSize: "0.875rem", textDecoration: "none",
+          }}
+        >
+          {t("lens.error.signin.cta")}
+        </Link>
+      ) : (
+        <button
+          type="button" onClick={onRetry}
+          style={{
+            display: "inline-flex", alignItems: "center", gap: 6, padding: "11px 22px",
+            borderRadius: 999, border: "1.5px solid var(--sf-border)", background: "var(--sf-surface)",
+            color: "var(--sf-text)", fontWeight: 700, fontSize: "0.875rem", cursor: "pointer",
+          }}
+        >
+          <RotateCcw size={14} aria-hidden /> {t("lens.error.retry")}
+        </button>
+      )}
+    </div>
+  );
+}
+
 /* ── Main Lens page ─────────────────────────────────────────────────── */
 type Phase = "upload" | "scanning" | "results";
 
@@ -624,55 +766,93 @@ export function Lens() {
   const [mode,        setMode]        = useState<LensMode>("menu");
   const [phase,       setPhase]       = useState<Phase>("upload");
   const [imageUrl,    setImageUrl]    = useState<string | null>(null);
-  const [scanFilename,setScanFilename]= useState("");
+  const [scanError,   setScanError]   = useState<ScanError | null>(null);
   // Menu-mode state
-  const [dishes,      setDishes]      = useState<Dish[]>([]);
-  const [selected,    setSelected]    = useState<Dish | null>(null);
+  const [displayDishes, setDisplayDishes] = useState<DisplayDish[]>([]);
+  const [selected,    setSelected]    = useState<DisplayDish | null>(null);
   const [favorites,   setFavorites]   = useState<string[]>(() => {
     try { return JSON.parse(localStorage.getItem("safarly_favorites") ?? "[]"); } catch { return []; }
   });
   // Place-mode state
-  const [placeResult, setPlaceResult] = useState<PlaceResult | null>(null);
+  const [displayPlace, setDisplayPlace] = useState<DisplayPlace | null>(null);
   // Signage-mode state
-  const [signRows,    setSignRows]    = useState<SignRow[]>([]);
+  const [displaySign, setDisplaySign] = useState<DisplaySign | null>(null);
   const [userAllergens, setAllergens] = useState<string[]>([]);
   const [isDragging,  setIsDragging]  = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const objectUrlRef = useRef<string | null>(null);
+  const lastActionRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
     // Via the normaliser: profiles saved by the onboarding wizard stored
-    // "ob.allergy.*" keys, which never matched dish.common_allergens tokens.
+    // "ob.allergy.*" keys, which never matched dish allergen tokens.
     setAllergens(readStoredAllergens());
     return () => { if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current); };
   }, []);
 
-  function startScan(filename: string, imgUrl: string, currentMode: LensMode = mode) {
-    setScanFilename(filename);
-    setImageUrl(imgUrl);
+  function clearResults() {
+    setScanError(null);
+    setDisplayDishes([]);
+    setSelected(null);
+    setDisplayPlace(null);
+    setDisplaySign(null);
+  }
+
+  async function runDemoScan(filename: string) {
     setPhase("scanning");
-    setTimeout(() => {
-      if (currentMode === "menu") {
-        setDishes(scanMenu(filename));
-      } else if (currentMode === "place") {
-        setPlaceResult(scanPlace(filename));
-      } else {
-        setSignRows(scanSignage(filename));
-      }
+    await new Promise(r => setTimeout(r, 1100));
+    setDisplayDishes(demoScanMenu(filename).map(demoDishToDisplay));
+    setPhase("results");
+  }
+
+  async function runLiveScan(file: File, targetMode: LensMode) {
+    setPhase("scanning");
+
+    if (!getAuth()) {
+      setScanError({ code: "not-signed-in" });
       setPhase("results");
-    }, 2200);
+      return;
+    }
+
+    try {
+      const prepared = await prepareImageForUpload(file);
+      const languageName = LANGUAGE_NAMES[language] ?? "English";
+
+      if (targetMode === "menu") {
+        const r = await scanMenuImage(prepared.base64, prepared.mimeType, languageName);
+        if (!r.ok) { setScanError(r); } else { setDisplayDishes(r.data.dishes.map(visionDishToDisplay)); }
+      } else if (targetMode === "place") {
+        const r = await scanPlaceImage(prepared.base64, prepared.mimeType, languageName);
+        if (!r.ok) { setScanError(r); } else { setDisplayPlace(visionPlaceToDisplay(r.data)); }
+      } else {
+        const r = await scanSignImage(prepared.base64, prepared.mimeType, languageName);
+        if (!r.ok) { setScanError(r); } else { setDisplaySign(r.data); }
+      }
+    } catch {
+      setScanError({ code: "unknown" });
+    }
+    setPhase("results");
   }
 
   function handleFile(file: File) {
     if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current);
     const url = URL.createObjectURL(file);
     objectUrlRef.current = url;
-    startScan(file.name, url);
+    setImageUrl(url);
+    clearResults();
+    const targetMode = mode;
+    lastActionRef.current = () => { void runLiveScan(file, targetMode); };
+    void runLiveScan(file, targetMode);
   }
 
-  async function tryDemo(key: string) {
+  function tryDemo(key: string) {
     const base = import.meta.env.BASE_URL.replace(/\/$/, "");
-    startScan(`${key}.svg`, `${base}/demo-menus/${key}.svg`);
+    const url = `${base}/demo-menus/${key}.svg`;
+    if (objectUrlRef.current) { URL.revokeObjectURL(objectUrlRef.current); objectUrlRef.current = null; }
+    setImageUrl(url);
+    clearResults();
+    lastActionRef.current = () => { void runDemoScan(`${key}.svg`); };
+    void runDemoScan(`${key}.svg`);
   }
 
   function addFavorite(dishId: string) {
@@ -684,22 +864,19 @@ export function Lens() {
   function reset() {
     setPhase("upload");
     setImageUrl(null);
-    setDishes([]);
-    setSelected(null);
-    setPlaceResult(null);
-    setSignRows([]);
+    clearResults();
+    lastActionRef.current = null;
     if (objectUrlRef.current) { URL.revokeObjectURL(objectUrlRef.current); objectUrlRef.current = null; }
   }
 
   function switchMode(m: LensMode) {
     setMode(m);
-    setPhase("upload");
-    setImageUrl(null);
-    setDishes([]);
-    setSelected(null);
-    setPlaceResult(null);
-    setSignRows([]);
-    if (objectUrlRef.current) { URL.revokeObjectURL(objectUrlRef.current); objectUrlRef.current = null; }
+    reset();
+  }
+
+  function retryLastAction() {
+    setScanError(null);
+    lastActionRef.current?.();
   }
 
   /* ── Render ── */
@@ -712,7 +889,6 @@ export function Lens() {
             {t("page.lens.title")}
           </h1>
           <p style={{ color: "var(--sf-text-muted)", fontSize: "0.875rem", marginBottom: 16 }}>{t("lens.subtitle")}</p>
-          {/* Mode tab strip */}
           <ModeTabs mode={mode} onSwitch={switchMode} t={t} />
         </div>
       </div>
@@ -722,7 +898,6 @@ export function Lens() {
         {/* ── Upload phase ── */}
         {phase === "upload" && (
           <>
-            {/* Drag-drop zone */}
             <div
               className={isDragging ? "sf-drop-active" : ""}
               onDragOver={e => { e.preventDefault(); setIsDragging(true); }}
@@ -765,14 +940,17 @@ export function Lens() {
               onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f); e.target.value = ""; }}
             />
 
-            {/* No-profile notice */}
             {userAllergens.length === 0 && (
               <p style={{ fontSize: "0.8125rem", color: "var(--sf-text-muted)", textAlign: "center", marginTop: 16, lineHeight: 1.6 }}>
                 {t("lens.no_profile")}
               </p>
             )}
 
-            {/* Demo menu buttons — only in Menu mode */}
+            {/* Demo menu buttons — Menu mode only. These use curated, hand-picked
+                data (no vision-agent call), so they stay instant and don't touch
+                the per-user quota. Place/Signage never had a demo path — every
+                scan there used to be fake data pretending to be real, which is
+                why those two modes go straight to the real agent now. */}
             {mode === "menu" && (
               <div style={{ marginTop: 28 }}>
                 <p style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--sf-text-muted)", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 12, textAlign: "center" }}>
@@ -792,9 +970,11 @@ export function Lens() {
         )}
 
         {/* ── Scanning phase ── */}
-        {phase === "scanning" && imageUrl && (
+        {phase === "scanning" && (
           <div style={{ borderRadius: 16, overflow: "hidden", border: "1px solid var(--sf-border)", position: "relative" }}>
-            <img src={imageUrl} alt="menu" style={{ width: "100%", display: "block", maxHeight: 420, objectFit: "cover" }} />
+            {imageUrl && (
+              <img src={imageUrl} alt="" style={{ width: "100%", display: "block", maxHeight: 420, objectFit: "cover" }} />
+            )}
             <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.35)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16 }}>
               <div className="sf-scan-sweep" />
               <p style={{ color: "#fff", fontWeight: 700, fontSize: "1.0625rem", textShadow: "0 2px 8px rgba(0,0,0,0.5)" }}>
@@ -807,50 +987,53 @@ export function Lens() {
         {/* ── Results phase ── */}
         {phase === "results" && (
           <>
-            {/* Menu mode — dish cards */}
-            {mode === "menu" && (
+            {scanError ? (
+              <ErrorCard error={scanError} t={t} onRetry={retryLastAction} />
+            ) : (
               <>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20, flexWrap: "wrap", gap: 10 }}>
-                  <div>
-                    <h2 style={{ fontSize: "1.0625rem", fontWeight: 800, color: "var(--sf-text)", marginBottom: 2 }}>
-                      {t("lens.results.title")}
-                    </h2>
-                    <p style={{ fontSize: "0.8125rem", color: "var(--sf-text-muted)" }}>
-                      {t("lens.results.count").replace("{n}", String(dishes.length))}
+                {mode === "menu" && (
+                  <>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20, flexWrap: "wrap", gap: 10 }}>
+                      <div>
+                        <h2 style={{ fontSize: "1.0625rem", fontWeight: 800, color: "var(--sf-text)", marginBottom: 2 }}>
+                          {t("lens.results.title")}
+                        </h2>
+                        <p style={{ fontSize: "0.8125rem", color: "var(--sf-text-muted)" }}>
+                          {t("lens.results.count").replace("{n}", String(displayDishes.length))}
+                        </p>
+                      </div>
+                      <button
+                        onClick={reset}
+                        style={{
+                          display: "flex", alignItems: "center", gap: 6,
+                          padding: "9px 16px", borderRadius: 999, minHeight: 40,
+                          border: "1px solid var(--sf-border)", background: "var(--sf-surface)",
+                          color: "var(--sf-text-muted)", fontSize: "0.8125rem", fontWeight: 600, cursor: "pointer",
+                        }}
+                      >
+                        <RotateCcw size={13} aria-hidden /> {t("lens.rescan")}
+                      </button>
+                    </div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 16 }}>
+                      {displayDishes.map(d => (
+                        <DishCard key={d.key} dish={d} userAllergens={userAllergens}
+                          t={t} onClick={() => setSelected(d)} />
+                      ))}
+                    </div>
+                    <p style={{ fontSize: "0.75rem", color: "var(--sf-text-muted)", textAlign: "center", lineHeight: 1.6 }}>
+                      ⚠ {t("lens.results.disclaimer")}
                     </p>
-                  </div>
-                  <button
-                    onClick={reset}
-                    style={{
-                      display: "flex", alignItems: "center", gap: 6,
-                      padding: "9px 16px", borderRadius: 999, minHeight: 40,
-                      border: "1px solid var(--sf-border)", background: "var(--sf-surface)",
-                      color: "var(--sf-text-muted)", fontSize: "0.8125rem", fontWeight: 600, cursor: "pointer",
-                    }}
-                  >
-                    <RotateCcw size={13} aria-hidden /> {t("lens.rescan")}
-                  </button>
-                </div>
-                <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 16 }}>
-                  {dishes.map(d => (
-                    <DishCard key={d.id} dish={d} userAllergens={userAllergens}
-                      t={t} onClick={() => setSelected(d)} />
-                  ))}
-                </div>
-                <p style={{ fontSize: "0.75rem", color: "var(--sf-text-muted)", textAlign: "center", lineHeight: 1.6 }}>
-                  ⚠ {t("lens.results.disclaimer")}
-                </p>
+                  </>
+                )}
+
+                {mode === "place" && displayPlace && (
+                  <PlaceCard result={displayPlace} t={t} onReset={reset} />
+                )}
+
+                {mode === "signage" && displaySign && (
+                  <SignResults result={displaySign} t={t} onReset={reset} />
+                )}
               </>
-            )}
-
-            {/* Place mode — single place card */}
-            {mode === "place" && placeResult && (
-              <PlaceCard result={placeResult} t={t} onReset={reset} />
-            )}
-
-            {/* Signage mode — direction rows */}
-            {mode === "signage" && signRows.length > 0 && (
-              <SignResults rows={signRows} t={t} onReset={reset} />
             )}
           </>
         )}
@@ -860,10 +1043,10 @@ export function Lens() {
       {selected && (
         <DishModal
           dish={selected} userAllergens={userAllergens}
-          isFav={favorites.includes(selected.id)}
+          isFav={!!selected.favoriteId && favorites.includes(selected.favoriteId)}
           t={t}
           onClose={() => setSelected(null)}
-          onAddFav={() => { addFavorite(selected.id); }}
+          onAddFav={() => { if (selected.favoriteId) addFavorite(selected.favoriteId); }}
         />
       )}
     </div>
