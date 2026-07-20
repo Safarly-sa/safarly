@@ -5,7 +5,7 @@ import { usePageMeta } from "@/lib/usePageMeta";
 import phrasesRaw from "@/data/phrases.json";
 
 /* ── Types ──────────────────────────────────────────────────────────── */
-type DialectKey = "najdi" | "hijazi" | "janubi" | "shamali";
+type DialectKey = "najdi" | "hijazi" | "janubi" | "shamali" | "sharqi";
 
 interface Phrase {
   id: string; dialect: DialectKey;
@@ -14,6 +14,9 @@ interface Phrase {
 }
 
 type PracticePhase = "idle" | "playing" | "listening" | "recording" | "result" | "done";
+
+// Why practice fell back to manual "I said it" confirmation instead of live recognition.
+type MicErrorReason = "unsupported" | "denied" | "no-device" | "insecure" | "generic";
 
 /* ── Static data ────────────────────────────────────────────────────── */
 const ALL_PHRASES = phrasesRaw as Phrase[];
@@ -157,27 +160,75 @@ function useDialectStyles() {
 }
 
 /* ── Arabic comparison helpers ──────────────────────────────────────── */
-function stripTashkeel(s: string): string {
-  return s.replace(/[\u064B-\u065F\u0670]/g, "").trim();
+// Normalizes tashkeel/diacritics, alef/hamza variants, and taa marbuta so that
+// spelling variation the recognizer introduces doesn't count against the user.
+function normalizeArabic(s: string): string {
+  return s
+    .replace(/[\u064B-\u065F\u0670\u06D6-\u06ED]/g, "") // tashkeel + diacritics
+    .replace(/[\u0623\u0625\u0622\u0627]/g, "\u0627")   // alef/hamza variants -> bare alef
+    .replace(/\u0649/g, "\u064A")                       // alef maksura -> yaa
+    .replace(/\u0629/g, "\u0647")                       // taa marbuta -> haa
+    .replace(/\s+/g, " ")
+    .trim();
 }
+
+function levenshtein(a: string, b: string): number {
+  if (a === b) return 0;
+  if (a.length === 0) return b.length;
+  if (b.length === 0) return a.length;
+  const dp: number[][] = Array.from({ length: a.length + 1 }, () => new Array(b.length + 1).fill(0));
+  for (let i = 0; i <= a.length; i++) dp[i][0] = i;
+  for (let j = 0; j <= b.length; j++) dp[0][j] = j;
+  for (let i = 1; i <= a.length; i++) {
+    for (let j = 1; j <= b.length; j++) {
+      dp[i][j] = a[i - 1] === b[j - 1]
+        ? dp[i - 1][j - 1]
+        : 1 + Math.min(dp[i - 1][j - 1], dp[i - 1][j], dp[i][j - 1]);
+    }
+  }
+  return dp[a.length][b.length];
+}
+// A word "fuzzy matches" if it's an exact hit or within ~30% edit distance \u2014
+// tolerant of the small substitutions ASR commonly makes.
+function fuzzyWordMatch(a: string, b: string): boolean {
+  if (a === b) return true;
+  return levenshtein(a, b) <= Math.max(1, Math.ceil(Math.min(a.length, b.length) * 0.3));
+}
+
 function arabicMatch(transcript: string, expected: string): boolean {
-  const t = stripTashkeel(transcript);
-  const e = stripTashkeel(expected);
-  const tWords = t.split(/\s+/).filter(w => w.length > 1);
-  const eWords = e.split(/\s+/).filter(w => w.length > 1);
+  const t = normalizeArabic(transcript);
+  const e = normalizeArabic(expected);
+  if (!e) return false;
+  if (t === e) return true;
+
+  // Whole-phrase closeness, for short phrases spoken as one run.
+  const wholeDist = levenshtein(t, e);
+  if (wholeDist <= Math.max(2, Math.ceil(e.length * 0.3))) return true;
+
+  // Word-level closeness, for longer phrases or ones split differently by the recognizer.
+  const tWords = t.split(" ").filter(w => w.length > 1);
+  const eWords = e.split(" ").filter(w => w.length > 1);
   if (eWords.length === 0) return false;
-  const matched = eWords.filter(ew => tWords.some(tw => tw.includes(ew) || ew.includes(tw)));
-  return matched.length >= Math.max(1, Math.ceil(eWords.length * 0.4));
+  const matched = eWords.filter(ew => tWords.some(tw => fuzzyWordMatch(tw, ew)));
+  return matched.length >= Math.max(1, Math.ceil(eWords.length * 0.6));
 }
 
 /* ── Phrase card ────────────────────────────────────────────────────── */
-function PhraseCard({ phrase, practicePhase, hasAudio, t, language, onPlay, onPractice, onConfirm, onRetry, onSkip, practiceResult, noMic }: {
+const MIC_ERROR_KEY: Record<MicErrorReason, string> = {
+  unsupported: "dialect.mic_unsupported",
+  denied:      "dialect.mic_denied",
+  "no-device": "dialect.mic_no_device",
+  insecure:    "dialect.mic_insecure",
+  generic:     "dialect.mic_error",
+};
+
+function PhraseCard({ phrase, practicePhase, hasAudio, t, language, onPlay, onPractice, onConfirm, onRetry, onSkip, practiceResult, micError }: {
   phrase: Phrase; practicePhase: PracticePhase; hasAudio: boolean;
   t: (k: string) => string; language: string;
   onPlay: () => void; onPractice: () => void; onConfirm: () => void;
   onRetry: () => void; onSkip: () => void;
-  practiceResult: { passed: boolean } | null;
-  noMic: boolean;
+  practiceResult: { passed: boolean; heard?: string } | null;
+  micError: MicErrorReason | null;
 }) {
   const isLearned    = practicePhase === "done";
   const isListening  = practicePhase === "listening"; // fallback: no mic
@@ -233,8 +284,8 @@ function PhraseCard({ phrase, practicePhase, hasAudio, t, language, onPlay, onPr
               <Mic size={22} style={{ color: "#EF4444", position: "relative", zIndex: 1 }} aria-hidden />
             </div>
           </div>
-          <p style={{ fontSize: "0.9375rem", fontWeight: 700, color: "#EF4444", marginBottom: 4 }}>Listening…</p>
-          <p style={{ fontSize: "0.8125rem", color: "var(--sf-text-muted)" }}>Say the phrase aloud</p>
+          <p style={{ fontSize: "0.9375rem", fontWeight: 700, color: "#EF4444", marginBottom: 4 }}>{t("dialect.listening")}</p>
+          <p style={{ fontSize: "0.8125rem", color: "var(--sf-text-muted)" }}>{t("dialect.now_say")}</p>
         </div>
       )}
 
@@ -242,36 +293,42 @@ function PhraseCard({ phrase, practicePhase, hasAudio, t, language, onPlay, onPr
       {isResult && practiceResult?.passed && (
         <div className="sf-result-pass" style={{ marginBottom: 14 }}>
           <div style={{ fontSize: "2rem", marginBottom: 6 }}>✓</div>
-          <p style={{ fontSize: "1rem", fontWeight: 800, color: "var(--sf-text-accent)", marginBottom: 4 }}>Got it!</p>
-          <p style={{ fontSize: "0.8125rem", color: "var(--sf-text-muted)", marginBottom: 14 }}>Great pronunciation.</p>
+          <p style={{ fontSize: "1rem", fontWeight: 800, color: "var(--sf-text-accent)", marginBottom: 4 }}>{t("dialect.pass_title")}</p>
+          <p style={{ fontSize: "0.8125rem", color: "var(--sf-text-muted)", marginBottom: 14 }}>{t("dialect.pass_sub")}</p>
           <button className="sf-confirm-btn" onClick={onConfirm}>
             <CheckCircle2 size={16} aria-hidden />
-            Mark as learned
+            {t("dialect.mark_learned")}
           </button>
         </div>
       )}
 
-      {/* Result panel — fail */}
+      {/* Result panel — fail: show what was heard vs. what was expected */}
       {isResult && practiceResult && !practiceResult.passed && (
         <div className="sf-result-fail" style={{ marginBottom: 14 }}>
           <div style={{ fontSize: "1.75rem", marginBottom: 6 }}>✗</div>
-          <p style={{ fontSize: "0.9375rem", fontWeight: 700, color: "#EF4444", marginBottom: 4 }}>Try again</p>
+          <p style={{ fontSize: "0.9375rem", fontWeight: 700, color: "#EF4444", marginBottom: 4 }}>{t("dialect.try_again")}</p>
+          {practiceResult.heard && (
+            <p style={{ fontSize: "0.8125rem", color: "var(--sf-text-muted)", marginBottom: 4 }}>
+              {t("dialect.heard")}{" "}
+              <span dir="rtl" style={{ color: "var(--sf-text)", fontWeight: 600 }}>{practiceResult.heard}</span>
+            </p>
+          )}
           <p style={{ fontSize: "0.8125rem", color: "var(--sf-text-muted)", marginBottom: 14 }}>
-            Listen for: <span style={{ color: "var(--sf-text-accent)", fontStyle: "italic" }}>{phrase.transliteration}</span>
+            {t("dialect.expected")} <span style={{ color: "var(--sf-text-accent)", fontStyle: "italic" }}>{phrase.transliteration}</span>
           </p>
           <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap" }}>
             <button className="sf-play-btn" onClick={onPlay} disabled={!hasAudio} style={{ minWidth: 90 }}>
-              <Volume2 size={13} aria-hidden /> Listen first
+              <Volume2 size={13} aria-hidden /> {t("dialect.listen_first")}
             </button>
             <button className="sf-practice-btn" onClick={onRetry} style={{ minWidth: 90 }}>
-              <Mic size={13} aria-hidden /> Try again
+              <Mic size={13} aria-hidden /> {t("dialect.try_again")}
             </button>
-            <button className="sf-skip-btn" onClick={onSkip}>Skip →</button>
+            <button className="sf-skip-btn" onClick={onSkip}>{t("dialect.skip")}</button>
           </div>
         </div>
       )}
 
-      {/* Fallback panel — no mic / no SpeechRecognition */}
+      {/* Fallback panel — mic unsupported/blocked/missing; user self-confirms instead */}
       {isListening && (
         <div style={{
           background: "color-mix(in srgb, var(--sf-indigo) 8%, var(--sf-surface))",
@@ -285,13 +342,13 @@ function PhraseCard({ phrase, practicePhase, hasAudio, t, language, onPlay, onPr
             </div>
           </div>
           <p style={{ fontSize: "0.8125rem", color: "var(--sf-text-muted)", marginBottom: 14 }}>
-            {noMic ? "Mic unavailable — tap when you've said it" : t("dialect.now_say")}
+            {t(MIC_ERROR_KEY[micError ?? "generic"])}
           </p>
           <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
             <button className="sf-confirm-btn" onClick={onConfirm} style={{ flex: 1 }}>
               <CheckCircle2 size={16} aria-hidden /> {t("dialect.i_said")}
             </button>
-            <button className="sf-skip-btn" onClick={onSkip}>Skip</button>
+            <button className="sf-skip-btn" onClick={onSkip}>{t("dialect.skip")}</button>
           </div>
         </div>
       )}
@@ -352,8 +409,8 @@ export function Dialect() {
     try { return JSON.parse(localStorage.getItem("safarly_learned") ?? "[]"); } catch { return []; }
   });
   const [practiceMap,  setPMap]      = useState<Record<string, PracticePhase>>({});
-  const [resultMap,    setResultMap] = useState<Record<string, { passed: boolean }>>({});
-  const [micMissing,   setMicMissing] = useState<Record<string, boolean>>({});
+  const [resultMap,    setResultMap] = useState<Record<string, { passed: boolean; heard?: string }>>({});
+  const [micErrorMap,  setMicErrorMap] = useState<Record<string, MicErrorReason>>({});
   const [hasAudio,     setHasAudio]  = useState(false);
   const timerRefs = useRef<Record<string, ReturnType<typeof setTimeout>>>({}); 
 
@@ -363,6 +420,7 @@ export function Dialect() {
       const trip = JSON.parse(localStorage.getItem("safarly_trip") ?? "{}");
       if (trip.city === "jeddah" || trip.city === "madinah" || trip.city === "taif") setDialect("hijazi");
       else if (trip.city === "abha") setDialect("janubi");
+      else if (trip.city === "al_khobar") setDialect("sharqi");
       else setDialect("najdi");
     } catch { /* default najdi */ }
   }, []);
@@ -438,16 +496,26 @@ export function Dialect() {
     });
   }
 
-  function handlePractice(phrase: Phrase) {
-    const SR = window.SpeechRecognition ?? window.webkitSpeechRecognition;
+  function fallbackToManual(phraseId: string, reason: MicErrorReason) {
+    setMicErrorMap(m => ({ ...m, [phraseId]: reason }));
+    setPMap(m => ({ ...m, [phraseId]: "listening" }));
+  }
 
-    if (!SR) {
-      // Browser doesn't support SpeechRecognition — fall back to manual confirmation
-      setMicMissing(m => ({ ...m, [phrase.id]: true }));
-      setPMap(m => ({ ...m, [phrase.id]: "listening" }));
+  function handlePractice(phrase: Phrase) {
+    // (d) non-secure context — getUserMedia/SpeechRecognition are unavailable outside https/localhost.
+    if (!window.isSecureContext) {
+      fallbackToManual(phrase.id, "insecure");
       return;
     }
 
+    // (a) prefer the standard name, fall back to the webkit-prefixed one; (c) no support at all.
+    const SR = window.SpeechRecognition ?? window.webkitSpeechRecognition;
+    if (!SR) {
+      fallbackToManual(phrase.id, "unsupported");
+      return;
+    }
+
+    setMicErrorMap(m => { const next = { ...m }; delete next[phrase.id]; return next; });
     setPMap(m => ({ ...m, [phrase.id]: "recording" }));
 
     let handled = false;
@@ -464,37 +532,58 @@ export function Dialect() {
         // Auto-mark as learned on correct pronunciation
         handleConfirm(phrase.id);
       } else {
-        setResultMap(prev => ({ ...prev, [phrase.id]: { passed: false } }));
+        setResultMap(prev => ({ ...prev, [phrase.id]: { passed: false, heard: alternatives[0] ?? "" } }));
         setPMap(m => ({ ...m, [phrase.id]: "result" }));
       }
     };
 
-    rec.onerror = () => {
-      if (!handled) {
-        handled = true;
-        setMicMissing(m => ({ ...m, [phrase.id]: true }));
-        setPMap(m => ({ ...m, [phrase.id]: "listening" }));
+    // (b) permission prompt/denial and other recognition errors, distinguished by reason.
+    rec.onerror = (event: SpeechRecognitionErrorEvent) => {
+      if (handled) return;
+      handled = true;
+
+      if (event.error === "no-speech") {
+        // Nothing to fall back for — just didn't catch an attempt; let them retry normally.
+        setResultMap(prev => ({ ...prev, [phrase.id]: { passed: false, heard: "" } }));
+        setPMap(m => ({ ...m, [phrase.id]: "result" }));
+        return;
       }
+      if (event.error === "aborted") {
+        setPMap(m => ({ ...m, [phrase.id]: "idle" }));
+        return;
+      }
+
+      const reason: MicErrorReason =
+        event.error === "not-allowed" || event.error === "permission-denied" ? "denied" :
+        event.error === "audio-capture" ? "no-device" :
+        "generic";
+      fallbackToManual(phrase.id, reason);
     };
 
     rec.onend = () => {
       if (!handled) {
         handled = true;
         // No speech detected — treat as failed attempt
-        setResultMap(prev => ({ ...prev, [phrase.id]: { passed: false } }));
+        setResultMap(prev => ({ ...prev, [phrase.id]: { passed: false, heard: "" } }));
         setPMap(m => ({ ...m, [phrase.id]: "result" }));
       }
     };
 
     try { rec.start(); }
     catch {
-      setMicMissing(m => ({ ...m, [phrase.id]: true }));
-      setPMap(m => ({ ...m, [phrase.id]: "listening" }));
+      fallbackToManual(phrase.id, "generic");
     }
   }
 
   function handleRetry(phraseId: string) {
     setResultMap(prev => { const next = { ...prev }; delete next[phraseId]; return next; });
+    setPMap(m => ({ ...m, [phraseId]: "idle" }));
+  }
+
+  // Skip only exits the retry loop — it must not fake progress by marking the phrase learned.
+  function handleSkip(phraseId: string) {
+    setResultMap(prev => { const next = { ...prev }; delete next[phraseId]; return next; });
+    setMicErrorMap(prev => { const next = { ...prev }; delete next[phraseId]; return next; });
     setPMap(m => ({ ...m, [phraseId]: "idle" }));
   }
 
@@ -511,6 +600,7 @@ export function Dialect() {
     hijazi:  { name: "dialect.hijazi_name",  desc: "dialect.hijazi_desc"  },
     janubi:  { name: "dialect.janubi_name",  desc: "dialect.janubi_desc"  },
     shamali: { name: "dialect.shamali_name", desc: "dialect.shamali_desc" },
+    sharqi:  { name: "dialect.sharqi_name",  desc: "dialect.sharqi_desc"  },
   };
   const dialectName = t(DIALECT_I18N[dialect].name);
   const dialectDesc = t(DIALECT_I18N[dialect].desc);
@@ -556,7 +646,7 @@ export function Dialect() {
 
           {/* Dialect switcher */}
           <div style={{ display: "flex", gap: 8, marginTop: 14, flexWrap: "wrap" }}>
-            {(["najdi","hijazi","janubi","shamali"] as const).map(d => (
+            {(["najdi","hijazi","janubi","shamali","sharqi"] as const).map(d => (
               <button
                 key={d}
                 onClick={() => setDialect(d)}
@@ -598,9 +688,9 @@ export function Dialect() {
                   onPractice={() => handlePractice(p)}
                   onConfirm={() => handleConfirm(p.id)}
                   onRetry={() => handleRetry(p.id)}
-                  onSkip={() => handleConfirm(p.id)}
+                  onSkip={() => handleSkip(p.id)}
                   practiceResult={resultMap[p.id] ?? null}
-                  noMic={micMissing[p.id] ?? false}
+                  micError={micErrorMap[p.id] ?? null}
                 />
               ))}
             </div>
