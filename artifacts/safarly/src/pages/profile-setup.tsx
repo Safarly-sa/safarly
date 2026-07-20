@@ -15,6 +15,7 @@ import { Check, ChevronLeft, ChevronRight, Search } from "lucide-react";
 import { useTranslation } from "@/providers/translation-context";
 import { usePageMeta } from "@/lib/usePageMeta";
 import { getAuth, markProfileComplete } from "@/lib/auth";
+import { ALLERGEN_TOKENS, ALLERGEN_LABEL_KEYS } from "@/lib/allergens";
 
 /* ── Style injection ────────────────────────────────────────────────── */
 function useFormStyles() {
@@ -329,10 +330,9 @@ export function ProfileSetup() {
   const langs = ["العربية", "English", "اردو", "中文", "Русский", "Français"];
   const ages  = ["ob.age.18", "ob.age.25", "ob.age.35", "ob.age.45", "ob.age.55"];
   const diets = ["ob.diet.vegetarian", "ob.diet.vegan", "ob.diet.halal", "ob.diet.none"];
-  const allergyList = [
-    "ob.allergy.nuts", "ob.allergy.dairy", "ob.allergy.gluten",
-    "ob.allergy.sesame", "ob.allergy.eggs", "ob.allergy.shellfish",
-  ];
+  // Tokens, not i18n keys — the stored value must match dish.common_allergens
+  // or Live Lens silently shows no allergy warnings. See lib/allergens.ts.
+  const allergyList = [...ALLERGEN_TOKENS];
   const interestList = [
     { key: "history",      icon: "🏛️" }, { key: "food",         icon: "🍽️" },
     { key: "adventure",    icon: "🧗" }, { key: "shopping",     icon: "🛍️" },
@@ -386,7 +386,7 @@ export function ProfileSetup() {
         <SectionLabel label={t("ob.allergy.label")} />
         <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
           {allergyList.map((a) => (
-            <Chip key={a} label={t(a)} selected={allergies.includes(a)} onClick={() => toggleMulti(allergies, setAllergies, a)} />
+            <Chip key={a} label={t(ALLERGEN_LABEL_KEYS[a])} selected={allergies.includes(a)} onClick={() => toggleMulti(allergies, setAllergies, a)} />
           ))}
         </div>
       </div>

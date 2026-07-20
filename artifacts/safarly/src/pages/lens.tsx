@@ -3,6 +3,7 @@ import { Camera, CheckCircle2, AlertTriangle, X, Plus, ScanLine, RotateCcw, Chev
 import { useTranslation } from "@/providers/translation-context";
 import { usePageMeta } from "@/lib/usePageMeta";
 import { poiName, poiCulture } from "@/lib/poi-i18n";
+import { ALLERGEN_LABEL_KEYS, readStoredAllergens } from "@/lib/allergens";
 import dishesRaw from "@/data/dishes.json";
 import poisRaw   from "@/data/pois.json";
 
@@ -102,11 +103,9 @@ const ORIGIN_STORIES: Record<string, string> = {
   kunafa:           "Kunafa bil Jibneh traveled from the Levant to the Hejaz with Hajj pilgrims. Jeddah's version uses local white cheese and is served warm with rose-water syrup — a beloved iftar treat.",
 };
 
-const ALLERGEN_KEYS: Record<string, string> = {
-  nuts: "ob.allergy.nuts", dairy: "ob.allergy.dairy",
-  gluten: "ob.allergy.gluten", sesame: "ob.allergy.sesame",
-  eggs: "ob.allergy.eggs", shellfish: "ob.allergy.shellfish",
-};
+// Re-exported name kept so the existing call sites read unchanged; the
+// vocabulary itself now lives in lib/allergens.ts.
+const ALLERGEN_KEYS: Record<string, string> = ALLERGEN_LABEL_KEYS;
 
 /* ── Scan function — swap body to call real vision API in Phase 3 ──── */
 function scanMenu(filename: string): Dish[] {
@@ -642,10 +641,9 @@ export function Lens() {
   const objectUrlRef = useRef<string | null>(null);
 
   useEffect(() => {
-    try {
-      const p = JSON.parse(localStorage.getItem("safarly_profile") ?? "{}");
-      setAllergens(Array.isArray(p.allergies) ? p.allergies : []);
-    } catch { /* no profile */ }
+    // Via the normaliser: profiles saved by the onboarding wizard stored
+    // "ob.allergy.*" keys, which never matched dish.common_allergens tokens.
+    setAllergens(readStoredAllergens());
     return () => { if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current); };
   }, []);
 

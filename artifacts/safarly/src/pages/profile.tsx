@@ -9,6 +9,7 @@ import { CheckCircle2, ArrowLeft, LogOut } from "lucide-react";
 import { useTranslation } from "@/providers/translation-context";
 import { usePageMeta } from "@/lib/usePageMeta";
 import { getAuth, setAuth, signOut } from "@/lib/auth";
+import { ALLERGEN_KEY_TO_TOKEN, normaliseAllergens } from "@/lib/allergens";
 import { SignOutDialog } from "@/components/SignOutDialog";
 import {
   Chip,
@@ -95,7 +96,16 @@ interface ProfileData {
 function loadProfile(): ProfileData {
   try {
     const raw = localStorage.getItem("safarly_profile");
-    if (raw) return { ...emptyProfile(), ...JSON.parse(raw) };
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      // Normalised on read so a profile saved by the old onboarding wizard
+      // (which stored "ob.allergy.*" keys) is repaired the next time it's saved.
+      return {
+        ...emptyProfile(),
+        ...parsed,
+        allergies: normaliseAllergens(parsed?.allergies),
+      };
+    }
   } catch { /* */ }
   const auth = getAuth();
   return { ...emptyProfile(), name: auth?.name ?? "" };
@@ -156,10 +166,7 @@ export function Profile() {
     { key: "arts",        icon: "🎨" }, { key: "nature",      icon: "🌿" },
     { key: "photography", icon: "📸" },
   ];
-  const allergyKeys: Record<string, string> = {
-    "ob.allergy.nuts": "nuts", "ob.allergy.dairy": "dairy", "ob.allergy.gluten": "gluten",
-    "ob.allergy.sesame": "sesame", "ob.allergy.eggs": "eggs", "ob.allergy.shellfish": "shellfish",
-  };
+  const allergyKeys: Record<string, string> = ALLERGEN_KEY_TO_TOKEN;
 
   return (
     <div style={{
