@@ -93,3 +93,52 @@ export async function fetchMe(): Promise<ApiUser | null> {
     return null;
   }
 }
+
+export type ForgotPasswordResult =
+  | { ok: true; resetToken: string }
+  | { ok: false; error: string };
+
+/**
+ * No email provider is wired up yet, so the server hands the reset token
+ * back directly instead of emailing a link — see the comment on
+ * POST /api/auth/forgot-password. The frontend is responsible for turning
+ * this into a /reset-password?token=... link and showing it on screen.
+ */
+export async function forgotPassword(email: string): Promise<ForgotPasswordResult> {
+  try {
+    const res = await post("/auth/forgot-password", { email });
+    let payload: { resetToken?: string; error?: string } = {};
+    try {
+      payload = await res.json();
+    } catch {
+      /* Non-JSON body — fall through to status text. */
+    }
+    if (!res.ok || !payload.resetToken) {
+      return { ok: false, error: payload.error ?? `Something went wrong (${res.status}).` };
+    }
+    return { ok: true, resetToken: payload.resetToken };
+  } catch {
+    return { ok: false, error: OFFLINE_MESSAGE };
+  }
+}
+
+export type ResetPasswordResult = { ok: true } | { ok: false; error: string };
+
+export async function resetPassword(input: {
+  token: string;
+  password: string;
+}): Promise<ResetPasswordResult> {
+  try {
+    const res = await post("/auth/reset-password", input);
+    if (res.ok) return { ok: true };
+    let payload: { error?: string } = {};
+    try {
+      payload = await res.json();
+    } catch {
+      /* Non-JSON body — fall through to status text. */
+    }
+    return { ok: false, error: payload.error ?? `Something went wrong (${res.status}).` };
+  } catch {
+    return { ok: false, error: OFFLINE_MESSAGE };
+  }
+}

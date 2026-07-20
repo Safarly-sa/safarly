@@ -50,6 +50,32 @@ export const sessionsTable = pgTable(
   (table) => [index("sessions_user_id_idx").on(table.userId)],
 );
 
+/**
+ * Password-reset tokens.
+ *
+ * The token itself is the primary key (same convention as `sessionsTable`'s
+ * session id) — an opaque, high-entropy random string generated with
+ * `generateSessionId()`, so knowing it is equivalent to proving control of
+ * the reset request. `usedAt` is set the moment it's redeemed so a captured
+ * link can't be replayed; expired or already-used rows are rejected at
+ * lookup time regardless of `usedAt`/`expiresAt` housekeeping.
+ */
+export const passwordResetTokensTable = pgTable(
+  "password_reset_tokens",
+  {
+    id: text("id").primaryKey(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => usersTable.id, { onDelete: "cascade" }),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    usedAt: timestamp("used_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [index("password_reset_tokens_user_id_idx").on(table.userId)],
+);
+
+export type PasswordResetToken = typeof passwordResetTokensTable.$inferSelect;
+
 export const insertUserSchema = createInsertSchema(usersTable).omit({
   id: true,
   createdAt: true,

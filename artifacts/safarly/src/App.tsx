@@ -13,6 +13,8 @@ import { Footer } from '@/components/Footer';
 
 import { Home } from '@/pages/home';
 import { Login } from '@/pages/login';
+import { ForgotPassword } from '@/pages/forgot-password';
+import { ResetPassword } from '@/pages/reset-password';
 import { ProfileSetup } from '@/pages/profile-setup';
 import { Profile } from '@/pages/profile';
 import { Trip } from '@/pages/trip';
@@ -80,6 +82,8 @@ function Router() {
           <Route path="/" component={Home} />
           
           <Route path="/login"         component={Login} />
+          <Route path="/forgot-password" component={ForgotPassword} />
+          <Route path="/reset-password"  component={ResetPassword} />
           <Route path="/profile-setup" component={ProfileSetup} />
           <Route path="/profile"       component={Profile} />
           {/* Legacy redirect: old /onboarding links go to /login */}

@@ -13,19 +13,6 @@ export const PASSWORD_MAX_LENGTH = 128;
 export const EMAIL_MAX_LENGTH = 254;
 export const NAME_MAX_LENGTH = 80;
 
-const COMMON_PASSWORDS = [
-  "password", "passwd", "welcome", "letmein", "qwerty", "azerty", "iloveyou",
-  "admin", "administrator", "root", "login", "monkey", "dragon", "sunshine",
-  "princess", "football", "baseball", "superman", "trustno", "starwars",
-  "abcdef", "abcdefg", "asdfgh", "zxcvbn", "qwertyuiop",
-  "safarly", "saudi", "riyadh", "jeddah",
-];
-
-const LEET: Record<string, string> = {
-  "0": "o", "1": "i", "3": "e", "4": "a", "5": "s",
-  "7": "t", "8": "b", "9": "g", "@": "a", "$": "s", "!": "i", "+": "t",
-};
-
 export function isValidEmail(value: string): boolean {
   const email = value.trim();
   if (email.length === 0 || email.length > EMAIL_MAX_LENGTH) return false;
@@ -51,30 +38,6 @@ export function normaliseEmail(value: string): string {
   return value.trim().toLowerCase();
 }
 
-function isCommonPassword(password: string): boolean {
-  const normalised = password
-    .toLowerCase()
-    .replace(/[01345789@$!+]/g, (c) => LEET[c] ?? c)
-    .replace(/[^a-z]/g, "");
-  if (normalised.length === 0) return false;
-  return COMMON_PASSWORDS.some((c) => normalised.includes(c));
-}
-
-function hasTrivialSequence(password: string): boolean {
-  const lower = password.toLowerCase();
-  if (/(.)\1{3,}/.test(lower)) return true;
-
-  let ascending = 1;
-  let descending = 1;
-  for (let i = 1; i < lower.length; i++) {
-    const delta = lower.charCodeAt(i) - lower.charCodeAt(i - 1);
-    ascending = delta === 1 ? ascending + 1 : 1;
-    descending = delta === -1 ? descending + 1 : 1;
-    if (ascending >= 4 || descending >= 4) return true;
-  }
-  return false;
-}
-
 /** Returns an error message, or null when the password is acceptable. */
 export function validatePassword(password: string, identifiers: string[] = []): string | null {
   if (password.length < PASSWORD_MIN_LENGTH) {
@@ -87,9 +50,6 @@ export function validatePassword(password: string, identifiers: string[] = []): 
   if (!/[a-z]/.test(password)) return "Password must include a lowercase letter.";
   if (!/[A-Z]/.test(password)) return "Password must include an uppercase letter.";
   if (!/[0-9]/.test(password)) return "Password must include a number.";
-  if (isCommonPassword(password) || hasTrivialSequence(password)) {
-    return "That password is too easy to guess. Try something less predictable.";
-  }
 
   const contains = identifiers
     .map((v) => v.trim().toLowerCase())

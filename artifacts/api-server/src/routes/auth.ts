@@ -8,8 +8,14 @@
  * localStorage.
  */
 import { Router, type IRouter, type Request, type Response } from "express";
-import { eq, and, gt, lt } from "drizzle-orm";
-import { db, usersTable, sessionsTable, toPublicUser } from "@workspace/db";
+import { eq, and, gt, lt, isNull } from "drizzle-orm";
+import {
+  db,
+  usersTable,
+  sessionsTable,
+  passwordResetTokensTable,
+  toPublicUser,
+} from "@workspace/db";
 import {
   hashPassword,
   verifyPassword,
@@ -26,6 +32,7 @@ const router: IRouter = Router();
 
 const SESSION_COOKIE = "safarly_session";
 const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
+const RESET_TOKEN_TTL_MS = 60 * 60 * 1000; // 1 hour
 const isProduction = process.env.NODE_ENV === "production";
 
 function setSessionCookie(res: Response, sessionId: string, expiresAt: Date): void {
@@ -197,6 +204,78 @@ router.get("/auth/me", async (req, res) => {
   }
 
   return res.json({ user: toPublicUser(row.user) });
+});
+
+/* ── POST /api/auth/forgot-password ────────────────────────────────────── */
+/**
+ * No email provider is wired up yet (see CLAUDE.md / .env.example), so there
+ * is no way to deliver the reset link out of band. Until one exists, the link
+ * is handed back directly in the response — the frontend shows it on screen
+ * instead of "check your email". This intentionally trades the usual
+ * "doesn't reveal whether the address is registered" property for something
+ * that actually works end to end; swap this for a real email send before
+ * this app has anything worth protecting.
+ */
+router.post("/auth/forgot-password", async (req, res) => {
+  const rawEmail = typeof req.body?.email === "string" ? req.body.email : "";
+  const email = normaliseEmail(rawEmail);
+
+  if (!isValidEmail(rawEmail)) {
+    return res.status(400).json({ error: "Please enter a valid email address." });
+  }
+
+  const [user] = await db.select().from(usersTable).where(eq(usersTable.email, email)).limit(1);
+  if (!user) {
+    return res.status(404).json({ error: "No account found with that email address." });
+  }
+
+  const token = generateSessionId();
+  const expiresAt = new Date(Date.now() + RESET_TOKEN_TTL_MS);
+  await db.insert(passwordResetTokensTable).values({ id: token, userId: user.id, expiresAt });
+
+  return res.status(201).json({ resetToken: token });
+});
+
+/* ── POST /api/auth/reset-password ─────────────────────────────────────── */
+router.post("/auth/reset-password", async (req, res) => {
+  const token = typeof req.body?.token === "string" ? req.body.token : "";
+  const password = typeof req.body?.password === "string" ? req.body.password : "";
+
+  if (!token) return res.status(400).json({ error: "Missing or invalid reset link." });
+
+  const [row] = await db
+    .select({ userId: passwordResetTokensTable.userId, email: usersTable.email, name: usersTable.name })
+    .from(passwordResetTokensTable)
+    .innerJoin(usersTable, eq(passwordResetTokensTable.userId, usersTable.id))
+    .where(
+      and(
+        eq(passwordResetTokensTable.id, token),
+        isNull(passwordResetTokensTable.usedAt),
+        gt(passwordResetTokensTable.expiresAt, new Date()),
+      ),
+    )
+    .limit(1);
+
+  if (!row) {
+    return res.status(400).json({ error: "This reset link is invalid or has expired." });
+  }
+
+  const passwordError = validatePassword(password, [row.email, row.name]);
+  if (passwordError) return res.status(400).json({ error: passwordError });
+
+  const passwordHash = await hashPassword(password);
+  await db.update(usersTable).set({ passwordHash }).where(eq(usersTable.id, row.userId));
+  await db
+    .update(passwordResetTokensTable)
+    .set({ usedAt: new Date() })
+    .where(eq(passwordResetTokensTable.id, token));
+
+  // A password reset means any session started before it should not survive
+  // it — otherwise a stolen-then-recovered account stays reachable via the
+  // attacker's still-live session.
+  await db.delete(sessionsTable).where(eq(sessionsTable.userId, row.userId));
+
+  return res.status(204).end();
 });
 
 export default router;

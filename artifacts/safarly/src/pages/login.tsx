@@ -5,7 +5,7 @@
  * Login   → /home (/) if profile complete, else /profile-setup
  */
 import { useState, useEffect } from "react";
-import { useLocation, useSearchParams } from "wouter";
+import { useLocation, useSearchParams, Link } from "wouter";
 import { AnimatePresence, motion } from "framer-motion";
 import { Mail, User, ArrowRight, Lock, Eye, EyeOff, Check, X } from "lucide-react";
 import { usePageMeta } from "@/lib/usePageMeta";
@@ -319,6 +319,18 @@ export function Login() {
               </div>
             )}
           </div>
+
+          {/* Forgot password — login only; signup has no password to forget yet */}
+          {mode === "login" && (
+            <p style={{ textAlign: "end", margin: "-8px 0 0" }}>
+              <Link
+                href="/forgot-password"
+                style={{ color: "var(--sf-indigo)", fontWeight: 600, fontSize: "0.8125rem", textDecoration: "none" }}
+              >
+                Forgot your password?
+              </Link>
+            </p>
+          )}
 
           {/* Error */}
           {error && (

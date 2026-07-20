@@ -8,25 +8,11 @@
  * client-side pass as authorisation; the server is the authority. Keep the two
  * in sync (artifacts/api-server/src/routes/auth.ts).
  *
- * Follows NIST SP 800-63B in weighting length and a blocklist of predictable
- * choices over character-class gymnastics, while still requiring enough
- * variety to rule out "aaaaaaaaaaaa".
+ * Length and character variety only — no common-password blocklist or
+ * trivial-sequence check, by design.
  */
 export const PASSWORD_MIN_LENGTH = 10;
 export const PASSWORD_MAX_LENGTH = 128;
-
-/**
- * Passwords that pass the mechanical rules but are guessed immediately.
- * Compared case-insensitively with digits/symbols stripped, so "P@ssw0rd1"
- * is caught by the "password" entry.
- */
-const COMMON_PASSWORDS = [
-  "password", "passwd", "welcome", "letmein", "qwerty", "azerty", "iloveyou",
-  "admin", "administrator", "root", "login", "monkey", "dragon", "sunshine",
-  "princess", "football", "baseball", "superman", "trustno", "starwars",
-  "abcdef", "abcdefg", "asdfgh", "zxcvbn", "qwertyuiop",
-  "safarly", "saudi", "riyadh", "jeddah",
-];
 
 export interface PasswordRule {
   id: string;
@@ -42,43 +28,6 @@ export interface PasswordAssessment {
   score: number;
   /** First unmet requirement, ready to show as an error. */
   firstFailure: string | null;
-}
-
-/**
- * Leetspeak substitutions are folded back to letters *before* stripping, or
- * the blocklist is trivially bypassed: "P@ssw0rd" would otherwise reduce to
- * "psswrd" and sail past the "password" entry.
- */
-const LEET: Record<string, string> = {
-  "0": "o", "1": "i", "3": "e", "4": "a", "5": "s",
-  "7": "t", "8": "b", "9": "g", "@": "a", "$": "s", "!": "i", "+": "t",
-};
-
-function isCommon(password: string): boolean {
-  const normalised = password
-    .toLowerCase()
-    .replace(/[01345789@$!+]/g, (c) => LEET[c] ?? c)
-    .replace(/[^a-z]/g, "");
-
-  if (normalised.length === 0) return false;
-  return COMMON_PASSWORDS.some((c) => normalised.includes(c));
-}
-
-/** Rejects "aaaaaaaaaa", "abcdefghij", "1234567890". */
-function hasNoTrivialSequence(password: string): boolean {
-  const lower = password.toLowerCase();
-  if (/(.)\1{3,}/.test(lower)) return false;
-
-  const runLimit = 4;
-  let ascending = 1;
-  let descending = 1;
-  for (let i = 1; i < lower.length; i++) {
-    const delta = lower.charCodeAt(i) - lower.charCodeAt(i - 1);
-    ascending = delta === 1 ? ascending + 1 : 1;
-    descending = delta === -1 ? descending + 1 : 1;
-    if (ascending >= runLimit || descending >= runLimit) return false;
-  }
-  return true;
 }
 
 /**
@@ -114,11 +63,6 @@ export function assessPassword(password: string, identifiers: string[] = []): Pa
       id: "number",
       label: "One number",
       passed: /[0-9]/.test(password),
-    },
-    {
-      id: "notCommon",
-      label: "Not a commonly used password",
-      passed: password.length > 0 && !isCommon(password) && hasNoTrivialSequence(password),
     },
     {
       id: "notPersonal",
