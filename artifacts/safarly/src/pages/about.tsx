@@ -12,6 +12,12 @@ const AGENTS = [
   { icon: "🛡️", title: "Safety Monitor",       desc: "Monitors advisories and ensures every stop meets current travel-safety standards." },
   { icon: "🌱", title: "Sustainability Tracker", desc: "Prioritises eco-certified sites and low-impact experiences aligned with Saudi Vision 2030." },
   { icon: "✓",  title: "Verification Engine",  desc: "Cross-checks opening hours, prices, and availability in real time so your plan is always accurate." },
+  { icon: "🎉", title: "Events Curator",        desc: "Surfaces festivals, exhibitions, and local events happening during your stay so nothing worth attending gets missed." },
+  { icon: "🚗", title: "Transportation Planner", desc: "Plans the fastest, most comfortable way between every stop — rideshare, transit, or rental — matched to your budget." },
+  { icon: "🏨", title: "Accommodation Finder",  desc: "Matches you to stays that fit your budget, location, and travel style, from boutique riads to major hotel chains." },
+  { icon: "🛎️", title: "Personal Concierge",    desc: "Answers questions and adjusts your plan on the fly, day or night, like a concierge who never sleeps." },
+  { icon: "🗣️", title: "Dialect Coach",         desc: "Teaches Najdi, Hijazi, and other regional phrases with pronunciation practice so you can speak like a local." },
+  { icon: "👁️", title: "Vision & Translation",  desc: "Reads menus, signs, and landmarks through your camera, translating and explaining them in real time." },
 ];
 
 const FEATURES = [
@@ -23,7 +29,7 @@ const FEATURES = [
 
 export function About() {
   const { t } = useTranslation();
-  usePageMeta("About Safarly", "Learn how eight AI agents work together to craft your perfect Saudi journey.");
+  usePageMeta("About Safarly", "Learn how 14 AI agents work together to craft your perfect Saudi journey.");
 
   return (
     <div style={{ paddingTop: 68, paddingBottom: 88, background: "var(--sf-bg)", minHeight: "100dvh" }}>
@@ -68,7 +74,7 @@ export function About() {
           maxWidth: 600,
           margin: "0 auto 36px",
         }}>
-          Safarly is Saudi Arabia's first multi-agent AI travel companion. Eight specialised agents
+          Safarly is Saudi Arabia's first multi-agent AI travel companion. 14 specialised agents
           collaborate behind the scenes — each one an expert — to plan, guide, translate, and enrich
           every moment of your journey.
         </p>
@@ -94,7 +100,7 @@ export function About() {
       {/* ── Divider ───────────────────────────────────────────────────── */}
       <div style={{ height: 1, background: "var(--sf-border)", maxWidth: 900, margin: "0 auto 64px" }} />
 
-      {/* ── 8 Agents ──────────────────────────────────────────────────── */}
+      {/* ── 14 Agents ─────────────────────────────────────────────────── */}
       <section style={{ maxWidth: 960, margin: "0 auto", padding: "0 20px 72px" }}>
         <h2 style={{
           textAlign: "center",
@@ -229,7 +235,7 @@ export function About() {
           Ready to explore?
         </h2>
         <p style={{ color: "var(--sf-text-muted)", marginBottom: 28 }}>
-          Let eight AI agents plan every detail of your perfect journey.
+          Let 14 AI agents plan every detail of your perfect journey.
         </p>
         <Link
           href="/trip"

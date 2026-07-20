@@ -57,6 +57,8 @@ const AGENT_CHIPS = [
   "agents.chips.goal", "agents.chips.discovery", "agents.chips.restaurant",
   "agents.chips.budget", "agents.chips.culture", "agents.chips.safety",
   "agents.chips.sustainability", "agents.chips.verification",
+  "agents.chips.events", "agents.chips.transport", "agents.chips.accommodation",
+  "agents.chips.concierge", "agents.chips.dialect", "agents.chips.vision",
 ];
 
 export function HomeBelowFold() {
@@ -223,7 +225,7 @@ export function HomeBelowFold() {
               Ready to explore Saudi Arabia?
             </h2>
             <p className="text-muted-foreground mb-10 text-lg">
-              Let eight AI agents plan every detail of your perfect journey.
+              Let 14 AI agents plan every detail of your perfect journey.
             </p>
             <Link
               href="/onboarding"
