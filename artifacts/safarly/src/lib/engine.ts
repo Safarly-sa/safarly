@@ -83,6 +83,58 @@ export interface ItineraryMeal {
   estimatedTime: string;
 }
 
+/**
+ * A single transport hop — either the one-time trip into the city (see
+ * ItineraryResult.arrival) or one of a day's intracity hops between stops.
+ * "uncertain" and costSar being an estimate (not a quote) are load-bearing:
+ * this is model-generated guidance, not a booking, and the UI must not present
+ * it as more certain than that.
+ */
+export interface TransportLeg {
+  from: string;
+  to: string;
+  mode: "flight" | "train" | "bus" | "taxi" | "ride_hail" | "walk" | "car_rental";
+  durationMinutes: number;
+  costSar: number;
+  notes?: string;
+  uncertain: boolean;
+}
+
+export interface ArrivalTransport {
+  legs: TransportLeg[];
+  summary: string;
+}
+
+/** A festival, exhibition, or seasonal event that may overlap the trip dates. */
+export interface TripEvent {
+  name: string;
+  nameTranslated?: string;
+  description: string;
+  category: string;
+  dateRange: string;
+  venue?: string;
+  overlapsTrip: boolean;
+  /**
+   * True whenever the model isn't confident this event is real/current for the
+   * chosen dates — the model has no live calendar to check against, so this is
+   * the load-bearing flag, not a nice-to-have. The UI must never render an
+   * event as confirmed without checking it.
+   */
+  uncertain: boolean;
+  sourceHint?: string;
+}
+
+/** Recommends an area + hotel type; never a specific bookable property. */
+export interface AccommodationOption {
+  area: string;
+  areaTranslated?: string;
+  whyThisArea: string;
+  hotelType: string;
+  nightlyCostSarLow: number;
+  nightlyCostSarHigh: number;
+  goodFor: string;
+}
+
 export interface ItineraryDay {
   date: string;
   dayNumber: number;
@@ -91,6 +143,8 @@ export interface ItineraryDay {
   dailyCostSar: number;
   overBudget: boolean;
   prayerGaps: string[];
+  /** Populated by the Transportation agent; absent until trip/generate's enrichment step runs. */
+  transportLegs?: TransportLeg[];
 }
 
 export interface ItineraryResult {
@@ -106,6 +160,17 @@ export interface ItineraryResult {
   resolvedCity: string;   // actual city key used (important when trip.city === "ai")
   budgetStatus: "ok" | "over";
   estimatedDailyAvg: number;
+  /**
+   * Everything below is populated by POST /api/trip/generate's enrichment
+   * step (Events, Transportation, Accommodation agents), layered onto the
+   * itinerary this engine already produced — never present on a freshly
+   * client-generated result. All optional and absent, not empty arrays, until
+   * that call has actually completed; render "not yet available" rather than
+   * "confirmed none" when undefined.
+   */
+  events?: TripEvent[];
+  arrival?: ArrivalTransport;
+  accommodation?: AccommodationOption[];
 }
 
 /* ── City → POI dataset mapping ─────────────────────────────────────── */
