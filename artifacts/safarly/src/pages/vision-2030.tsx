@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import vision2030Light from "@assets/vision2030-light.png";
 import vision2030Dark from "@assets/vision2030-dark.png";
+import vision2030Hero from "@assets/vision2030-riyadh-hero.jpg";
 
 /**
  * Accent rhythm sampled from the official Vision 2030 emblem's mosaic
@@ -40,20 +41,6 @@ function useVisionStyles() {
     const s = document.createElement("style");
     s.id = id;
     s.textContent = `
-      @keyframes sf-v30-glow {
-        0%, 100% { opacity: 0.55; transform: scale(1); }
-        50%      { opacity: 0.85; transform: scale(1.04); }
-      }
-      .sf-v30-emblem-glow {
-        position: absolute; inset: -18%;
-        border-radius: 50%;
-        background: conic-gradient(from 0deg,
-          ${MOSAIC[0]}33, ${MOSAIC[1]}33, ${MOSAIC[2]}33, ${MOSAIC[3]}33, ${MOSAIC[0]}33);
-        filter: blur(36px);
-        animation: sf-v30-glow 6s ease-in-out infinite;
-        pointer-events: none;
-        z-index: 0;
-      }
       .sf-v30-pillar {
         background: var(--sf-surface);
         border: 1px solid var(--sf-border);
@@ -107,57 +94,77 @@ export function Vision2030() {
   return (
     <div style={{ paddingTop: 68, paddingBottom: 88, background: "var(--sf-bg)", minHeight: "100dvh", overflowX: "hidden" }}>
 
-      {/* ── Hero ──────────────────────────────────────────────────────── */}
+      {/* ── Hero — full-bleed Riyadh skyline photo ───────────────────────
+          Breaks out to the viewport edge regardless of where this page's
+          content column sits, then folds back via a bottom gradient scrim
+          that lands exactly on --sf-bg, so the photo reads as part of the
+          page rather than a banner dropped on top of it. Text is pinned to
+          white regardless of theme — the photo's own tone is dark enough at
+          the scrim line that light-mode text would fail contrast otherwise. */}
       <section style={{
-        textAlign: "center",
-        padding: "clamp(48px, 8vw, 96px) 20px 40px",
-        maxWidth: 760,
-        margin: "0 auto",
+        position: "relative",
+        width: "100vw",
+        insetInlineStart: "calc(-50vw + 50%)",
       }}>
-        <span style={{
-          display: "inline-block",
-          padding: "4px 14px",
-          borderRadius: 999,
-          background: "color-mix(in srgb, var(--sf-accent) 12%, var(--sf-surface))",
-          border: "1px solid color-mix(in srgb, var(--sf-accent) 28%, transparent)",
-          color: "var(--sf-text-accent)",
-          fontSize: "0.75rem",
-          fontWeight: 700,
-          letterSpacing: "0.08em",
-          textTransform: "uppercase",
-          marginBottom: 28,
-        }}>
-          {t("vision2030.badge")}
-        </span>
-
-        <div style={{ position: "relative", width: "fit-content", margin: "0 auto 32px" }}>
-          <div className="sf-v30-emblem-glow" aria-hidden />
+        <div style={{ position: "relative", height: "clamp(420px, 58vw, 620px)", overflow: "hidden" }}>
           <img
-            src={theme === "dark" ? vision2030Dark : vision2030Light}
-            alt="Saudi Vision 2030 — Kingdom of Saudi Arabia official emblem"
-            style={{ position: "relative", zIndex: 1, height: "clamp(120px, 18vw, 176px)", width: "auto", objectFit: "contain" }}
+            src={vision2030Hero}
+            alt="Riyadh's skyline at night, with the Kingdom Centre tower and the Saudi Vision 2030 emblem"
+            style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "center 60%" }}
           />
-        </div>
+          <div
+            aria-hidden
+            style={{
+              position: "absolute", inset: 0,
+              background: "linear-gradient(to bottom, rgba(10,14,22,0.05) 0%, rgba(10,14,22,0.5) 60%, var(--sf-bg) 100%)",
+            }}
+          />
+          <div style={{
+            position: "absolute", inset: 0,
+            display: "flex", flexDirection: "column",
+            alignItems: "center", justifyContent: "flex-end",
+            textAlign: "center",
+            padding: "20px clamp(20px, 6vw, 60px) clamp(28px, 6vw, 52px)",
+          }}>
+            <span style={{
+              display: "inline-block",
+              padding: "4px 14px",
+              borderRadius: 999,
+              background: "rgba(255,255,255,0.12)",
+              border: "1px solid rgba(255,255,255,0.32)",
+              backdropFilter: "blur(6px)",
+              color: "#fff",
+              fontSize: "0.75rem",
+              fontWeight: 700,
+              letterSpacing: "0.08em",
+              textTransform: "uppercase",
+              marginBottom: 20,
+            }}>
+              {t("vision2030.badge")}
+            </span>
 
-        <h1 style={{
-          fontSize: "clamp(2rem, 6vw, 3.5rem)",
-          fontWeight: 900,
-          color: "var(--sf-text)",
-          letterSpacing: "-0.03em",
-          lineHeight: 1.1,
-          marginBottom: 20,
-        }}>
-          {t("vision2030.title")}
-        </h1>
-        <p style={{
-          fontSize: "clamp(1rem, 2.5vw, 1.1875rem)",
-          color: "var(--sf-text-muted)",
-          lineHeight: 1.7,
-          maxWidth: 640,
-          margin: "0 auto",
-        }}>
-          {t("vision2030.subtitle")}
-        </p>
+            <h1 style={{
+              fontSize: "clamp(1.75rem, 5.5vw, 3.25rem)",
+              fontWeight: 900,
+              color: "#fff",
+              letterSpacing: "-0.03em",
+              lineHeight: 1.1,
+              marginBottom: 14,
+              textShadow: "0 2px 20px rgba(0,0,0,0.35)",
+            }}>
+              {t("vision2030.title")}
+            </h1>
+            <p style={{
+              fontSize: "clamp(0.9375rem, 2.2vw, 1.125rem)",
+              color: "rgba(255,255,255,0.88)",
+              lineHeight: 1.7,
+              maxWidth: 640,
+              margin: 0,
+            }}>
+              {t("vision2030.subtitle")}
+            </p>
+          </div>
+        </div>
       </section>
 
       {/* ── Divider ───────────────────────────────────────────────────── */}
