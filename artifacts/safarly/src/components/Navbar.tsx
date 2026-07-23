@@ -5,7 +5,7 @@ import { useTranslation } from "@/providers/translation-context";
 import { useTheme } from "@/providers/ThemeProvider";
 import { getAuth, signOut } from "@/lib/auth";
 import { SignOutDialog } from "@/components/SignOutDialog";
-import safarlyLogo from "@assets/safarly-lockup-light_1784459757614.png";
+import safarlyLogo from "@assets/safarly-logo-new.png";
 import { Sun, Moon, UserCircle, LogIn, LogOut, Globe, ChevronDown } from "lucide-react";
 import clsx from "clsx";
 import type { Language } from "@/providers/translation-context";

@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { Link } from "wouter";
-import safarlyLogo from "@assets/safarly-transparent_1784408718766.png";
+import safarlyLogo from "@assets/safarly-logo-new.png";
 import { usePageMeta } from "@/lib/usePageMeta";
 
 export default function NotFound() {
