@@ -13,6 +13,7 @@ import {
 import { useTranslation } from "@/providers/translation-context";
 import type { Language } from "@/providers/translation-context";
 import { usePageMeta } from "@/lib/usePageMeta";
+import { AuroraHero } from "@/components/AuroraHero";
 import { getAuth, setAuth } from "@/lib/auth";
 import { poiName, poiCulture } from "@/lib/poi-i18n";
 import { dishName, mealVenue, mealArea } from "@/lib/dish-i18n";
@@ -924,28 +925,30 @@ export function Dashboard() {
     <div style={{ paddingTop: 68, paddingBottom: 88, background: "var(--sf-bg)", minHeight: "100dvh" }}>
 
       {/* Page header */}
-      <div style={{ borderBottom: "1px solid var(--sf-border)", padding: "20px 20px 0" }}>
-        <div style={{ maxWidth: 900, margin: "0 auto" }}>
-          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, marginBottom: 16 }}>
-            <div>
-              <h1 style={{ fontSize: "clamp(1.25rem,4vw,1.625rem)", fontWeight: 800, color: "var(--sf-text)", letterSpacing: "-0.02em", marginBottom: 4 }}>
-                {t("page.dashboard.title")}
-              </h1>
-              <p style={{ color: "var(--sf-text-muted)", fontSize: "0.9375rem" }}>
-                {t("dash.welcome")}{auth?.name ? `, ${auth.name}` : ""}
-                {cn && ` — ${t("dash.city").replace("{city}", cn)}`}
-              </p>
+      <AuroraHero minHeight="auto" className="sf-aurora-band">
+        <div style={{ borderBottom: "1px solid var(--sf-border)", padding: "20px 20px 0" }}>
+          <div style={{ maxWidth: 900, margin: "0 auto" }}>
+            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, marginBottom: 16 }}>
+              <div>
+                <h1 style={{ fontSize: "clamp(1.25rem,4vw,1.625rem)", fontWeight: 800, color: "var(--sf-text)", letterSpacing: "-0.02em", marginBottom: 4 }}>
+                  {t("page.dashboard.title")}
+                </h1>
+                <p style={{ color: "var(--sf-text-muted)", fontSize: "0.9375rem" }}>
+                  {t("dash.welcome")}{auth?.name ? `, ${auth.name}` : ""}
+                  {cn && ` — ${t("dash.city").replace("{city}", cn)}`}
+                </p>
+              </div>
+            </div>
+
+            {/* Tab bar */}
+            <div style={{ display: "flex", gap: 4, overflowX: "auto", paddingBottom: 1 }}>
+              <TabPill label={t("dash.tab.ongoing")} active={tab === "ongoing"} badge={ongoingTrip ? 1 : 0} onClick={() => setTab("ongoing")} />
+              <TabPill label={t("dash.tab.trips")}   active={tab === "trips"}   badge={pastTrips.length} onClick={() => setTab("trips")} />
+              <TabPill label={t("dash.tab.profile")} active={tab === "profile"} onClick={() => setTab("profile")} />
             </div>
           </div>
-
-          {/* Tab bar */}
-          <div style={{ display: "flex", gap: 4, overflowX: "auto", paddingBottom: 1 }}>
-            <TabPill label={t("dash.tab.ongoing")} active={tab === "ongoing"} badge={ongoingTrip ? 1 : 0} onClick={() => setTab("ongoing")} />
-            <TabPill label={t("dash.tab.trips")}   active={tab === "trips"}   badge={pastTrips.length} onClick={() => setTab("trips")} />
-            <TabPill label={t("dash.tab.profile")} active={tab === "profile"} onClick={() => setTab("profile")} />
-          </div>
         </div>
-      </div>
+      </AuroraHero>
 
       {/* Tab content */}
       <div style={{ maxWidth: 900, margin: "0 auto", padding: "24px 16px" }}>

@@ -42,7 +42,7 @@ export interface Objectives {
   photography: number;
 }
 
-interface POI {
+export interface POI {
   id: string;
   name: string;
   city: string;
@@ -58,6 +58,16 @@ interface POI {
   best_slot: string;
   map_url: string;
   culture_note?: string;
+  /**
+   * Whether this entry's coordinates and entry price come from the researched
+   * dataset (true) or were authored to fill out the pool (false).
+   *
+   * Authored entries are real, well-known places, but their lat/lng is
+   * approximate and their price is an estimate — so they must not carry the
+   * "Verified" badge. Absent is treated as verified: the original 50 rows
+   * predate this field.
+   */
+  verified?: boolean;
 }
 
 interface Dish {
@@ -564,6 +574,74 @@ function buildDays(
   return days;
 }
 
+/**
+ * A stop counts as verified only if its location is researched AND it has a
+ * working map link. Both halves matter: an authored entry has an approximate
+ * pin, and an entry with no map link can't be checked at all.
+ *
+ * `verified` absent means the row predates the flag, which only the original
+ * researched set does — hence the `!== false` rather than a truthiness test.
+ */
+export function isVerified(poi: POI): boolean {
+  return poi.verified !== false && !!poi.map_url;
+}
+
+/* ── Post-generation editing ────────────────────────────────────────── */
+/**
+ * Primitives for changing an itinerary AFTER the engine produced it — used by
+ * the Concierge, which edits an existing trip rather than building a new one.
+ *
+ * These live here, not in the caller, because scheduling and cost are engine
+ * rules. A stop added by the Concierge has to sit on the same slot clock and
+ * count toward budget the same way as one the generator placed, or the two
+ * halves of the itinerary quietly disagree about what a day costs.
+ */
+
+/** Places a POI in a slot using the generator's own slot clock and prayer gaps. */
+export function scheduleStop(poi: POI, slot: ItineraryStop["slot"]): ItineraryStop {
+  const startTime = SLOT_START[slot];
+  return {
+    slot,
+    startTime,
+    endTime: addMinutes(startTime, Math.round(poi.duration_hrs * 60)),
+    poi,
+    prayerGapBefore: PRAYER_GAP_BEFORE[slot],
+  };
+}
+
+/** Re-derives a day's cost and budget flag from its current stops and meals. */
+export function recalcDay(day: ItineraryDay, budgetPerDay: number): ItineraryDay {
+  const stopsCost = day.stops.reduce((s, stop) => s + stop.poi.price_range, 0);
+  const mealsCost = day.meals.reduce((s, meal) => s + meal.dish.price_sar, 0);
+  const dailyCostSar = stopsCost + mealsCost;
+  return { ...day, dailyCostSar, overBudget: dailyCostSar > budgetPerDay };
+}
+
+/**
+ * Re-derives the result-level roll-ups after any day's stops changed.
+ * Mirrors the tail of generateItinerary exactly — if that changes, change this.
+ * `objectives`, `candidateCount`, and `allergenSafeDishCount` are inputs to
+ * generation rather than functions of the stops, so they carry through as-is.
+ */
+export function recalcTotals(result: ItineraryResult, budgetPerDay: number): ItineraryResult {
+  const days      = result.days.map((day) => recalcDay(day, budgetPerDay));
+  const allStops  = days.flatMap((d) => d.stops);
+  const totalCostSar = days.reduce((s, d) => s + d.dailyCostSar, 0);
+  const hiddenGemCount = allStops.filter((s) => s.poi.hidden_gem).length;
+  const estimatedDailyAvg = days.length > 0 ? totalCostSar / days.length : 0;
+
+  return {
+    ...result,
+    days,
+    totalCostSar,
+    verifiedCount:    allStops.filter((s) => isVerified(s.poi)).length,
+    hiddenGemShare:   allStops.length > 0 ? hiddenGemCount / allStops.length : 0,
+    cultureNoteCount: allStops.filter((s) => !!s.poi.culture_note).length,
+    budgetStatus:     estimatedDailyAvg > budgetPerDay ? "over" : "ok",
+    estimatedDailyAvg,
+  };
+}
+
 /* ── Public API ─────────────────────────────────────────────────────── */
 
 export function generateItinerary(
@@ -588,7 +666,7 @@ export function generateItinerary(
 
   const allStops         = days.flatMap(d => d.stops);
   const totalCostSar     = days.reduce((s, d) => s + d.dailyCostSar, 0);
-  const verifiedCount    = allStops.filter(s => !!s.poi.map_url).length;
+  const verifiedCount    = allStops.filter(s => isVerified(s.poi)).length;
   const hiddenGemCount   = allStops.filter(s => s.poi.hidden_gem).length;
   const hiddenGemShare   = allStops.length > 0 ? hiddenGemCount / allStops.length : 0;
   const cultureNoteCount = allStops.filter(s => !!s.poi.culture_note).length;

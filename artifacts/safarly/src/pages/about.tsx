@@ -1,7 +1,9 @@
 import { Link } from "wouter";
+import { motion, useReducedMotion } from "framer-motion";
 import { useTranslation } from "@/providers/translation-context";
 import { usePageMeta } from "@/lib/usePageMeta";
-import { ArrowRight, Compass, Utensils, Wallet, ShieldCheck, Leaf, CheckCircle2, Camera, Languages, Map, LayoutDashboard } from "lucide-react";
+import { AuroraHero } from "@/components/AuroraHero";
+import { ArrowRight, ArrowDown, Camera, Languages, Map, LayoutDashboard } from "lucide-react";
 
 const AGENTS = [
   { icon: "🎯", title: "Goal Analyzer",        desc: "Reads your travel goals and builds a weighted preference model to guide every downstream decision." },
@@ -29,79 +31,126 @@ const FEATURES = [
 
 export function About() {
   const { t } = useTranslation();
+  const reduce = useReducedMotion();
   usePageMeta("About Safarly", "Learn how 14 AI agents work together to craft your perfect Saudi journey.");
+
+  /* Staggered entrance. Reduced motion keeps the fade but drops the rise, so
+     the reveal still reads as sequential without any spatial movement. */
+  const container = {
+    hidden: {},
+    show: { transition: { staggerChildren: 0.11, delayChildren: 0.04 } },
+  };
+  const item = {
+    hidden: { opacity: 0, y: reduce ? 0 : 22 },
+    show: { opacity: 1, y: 0, transition: { duration: 0.55, ease: [0.22, 1, 0.36, 1] as const } },
+  };
+
+  function scrollToAgents() {
+    document.getElementById("agents")?.scrollIntoView({
+      behavior: reduce ? "auto" : "smooth",
+      block: "start",
+    });
+  }
 
   return (
     <div style={{ paddingTop: 68, paddingBottom: 88, background: "var(--sf-bg)", minHeight: "100dvh" }}>
 
       {/* ── Hero ──────────────────────────────────────────────────────── */}
-      <section style={{
-        textAlign: "center",
-        padding: "clamp(48px, 8vw, 96px) 20px 48px",
-        maxWidth: 760,
-        margin: "0 auto",
-      }}>
-        <span style={{
-          display: "inline-block",
-          padding: "4px 14px",
-          borderRadius: 999,
-          background: "color-mix(in srgb, var(--sf-accent) 12%, var(--sf-surface))",
-          border: "1px solid color-mix(in srgb, var(--sf-accent) 28%, transparent)",
-          color: "var(--sf-text-accent)",
-          fontSize: "0.75rem",
-          fontWeight: 700,
-          letterSpacing: "0.08em",
-          textTransform: "uppercase",
-          marginBottom: 20,
-        }}>
-          How Safarly works
-        </span>
-        <h1 style={{
-          fontSize: "clamp(2rem, 6vw, 3.5rem)",
-          fontWeight: 900,
-          color: "var(--sf-text)",
-          letterSpacing: "-0.03em",
-          lineHeight: 1.1,
-          marginBottom: 20,
-        }}>
-          Your Saudi journey,<br />
-          <span style={{ color: "var(--sf-accent)" }}>intelligently crafted</span>
-        </h1>
-        <p style={{
-          fontSize: "clamp(1rem, 2.5vw, 1.1875rem)",
-          color: "var(--sf-text-muted)",
-          lineHeight: 1.7,
-          maxWidth: 600,
-          margin: "0 auto 36px",
-        }}>
-          Safarly is Saudi Arabia's first multi-agent AI travel companion. 14 specialised agents
-          collaborate behind the scenes — each one an expert — to plan, guide, translate, and enrich
-          every moment of your journey.
-        </p>
-        <Link
-          href="/trip"
-          style={{
-            display: "inline-flex", alignItems: "center", gap: 8,
-            padding: "14px 32px", borderRadius: 12,
-            background: "var(--sf-accent)", color: "#0A0E16",
-            fontWeight: 700, fontSize: "1rem",
-            textDecoration: "none",
-            boxShadow: "0 0 24px rgba(0,216,164,0.35)",
-            transition: "box-shadow 0.2s, opacity 0.2s",
-          }}
-          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.opacity = "0.88"; }}
-          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.opacity = "1"; }}
+      <AuroraHero minHeight="clamp(520px, 80vh, 780px)">
+        <motion.div
+          variants={container}
+          initial="hidden"
+          animate="show"
+          style={{ textAlign: "center", maxWidth: 780, margin: "0 auto", padding: "88px 20px 56px" }}
         >
-          {t("cta.start")}
-          <ArrowRight size={18} />
-        </Link>
-      </section>
+          <motion.span variants={item} style={{
+            display: "inline-block",
+            padding: "5px 15px",
+            borderRadius: 999,
+            background: "color-mix(in srgb, var(--sf-accent) 12%, var(--sf-surface))",
+            border: "1px solid color-mix(in srgb, var(--sf-accent) 30%, transparent)",
+            color: "var(--sf-text-accent)",
+            fontSize: "0.75rem",
+            fontWeight: 700,
+            letterSpacing: "0.08em",
+            textTransform: "uppercase",
+            marginBottom: 22,
+            backdropFilter: "blur(6px)",
+          }}>
+            How Safarly works
+          </motion.span>
 
-      {/* ── Divider ───────────────────────────────────────────────────── */}
-      <div style={{ height: 1, background: "var(--sf-border)", maxWidth: 900, margin: "0 auto 64px" }} />
+          <motion.h1 variants={item} style={{
+            fontSize: "clamp(2.1rem, 6.5vw, 3.75rem)",
+            fontWeight: 900,
+            color: "var(--sf-text)",
+            letterSpacing: "-0.03em",
+            lineHeight: 1.08,
+            marginBottom: 22,
+          }}>
+            Your Saudi journey,<br />
+            <span style={{
+              background: "linear-gradient(100deg, var(--sf-accent), var(--sf-indigo))",
+              WebkitBackgroundClip: "text",
+              backgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              color: "transparent",
+            }}>
+              intelligently crafted
+            </span>
+          </motion.h1>
+
+          <motion.p variants={item} style={{
+            fontSize: "clamp(1rem, 2.5vw, 1.1875rem)",
+            color: "var(--sf-text-muted)",
+            lineHeight: 1.7,
+            maxWidth: 600,
+            margin: "0 auto 36px",
+          }}>
+            Safarly is Saudi Arabia's first multi-agent AI travel companion. 14 specialised agents
+            collaborate behind the scenes — each one an expert — to plan, guide, translate, and enrich
+            every moment of your journey.
+          </motion.p>
+
+          <motion.div variants={item} style={{
+            display: "flex", flexWrap: "wrap", gap: 12, justifyContent: "center",
+          }}>
+            <Link
+              href="/trip"
+              className="sf-hero-cta-primary"
+              style={{
+                display: "inline-flex", alignItems: "center", gap: 8,
+                padding: "14px 30px", borderRadius: 12,
+                background: "var(--sf-accent)", color: "#0A0E16",
+                fontWeight: 700, fontSize: "1rem", textDecoration: "none",
+                boxShadow: "0 8px 28px rgba(0,216,164,0.32)",
+              }}
+            >
+              {t("cta.start")}
+              <ArrowRight size={18} className="rtl:rotate-180" />
+            </Link>
+            <button
+              type="button"
+              onClick={scrollToAgents}
+              className="sf-hero-cta-secondary"
+              style={{
+                display: "inline-flex", alignItems: "center", gap: 8,
+                padding: "14px 26px", borderRadius: 12,
+                background: "color-mix(in srgb, var(--sf-surface) 70%, transparent)",
+                border: "1px solid var(--sf-border)",
+                color: "var(--sf-text)", fontWeight: 700, fontSize: "1rem",
+                cursor: "pointer", backdropFilter: "blur(8px)",
+              }}
+            >
+              Meet the agents
+              <ArrowDown size={17} />
+            </button>
+          </motion.div>
+        </motion.div>
+      </AuroraHero>
 
       {/* ── 14 Agents ─────────────────────────────────────────────────── */}
-      <section style={{ maxWidth: 960, margin: "0 auto", padding: "0 20px 72px" }}>
+      <section id="agents" style={{ maxWidth: 960, margin: "0 auto", padding: "64px 20px 72px", scrollMarginTop: 76 }}>
         <h2 style={{
           textAlign: "center",
           fontSize: "clamp(1.5rem, 4vw, 2.25rem)",

@@ -1,5 +1,6 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { Link } from "wouter";
+import { motion, useReducedMotion } from "framer-motion";
 import { useTranslation } from "@/providers/translation-context";
 import { useTheme } from "@/providers/ThemeProvider";
 import { usePageMeta } from "@/lib/usePageMeta";
@@ -79,6 +80,48 @@ function useVisionStyles() {
 export function Vision2030() {
   const { t } = useTranslation();
   const { theme } = useTheme();
+  const reduce = useReducedMotion();
+  const heroRef = useRef<HTMLDivElement>(null);
+
+  /* Pointer-reactive light sweep across the photo — a soft glow that tracks the
+     cursor, layered ABOVE the existing scrim so the carefully-tuned legibility
+     (rgba(10,14,22,...) wash + bottom gradient) is untouched. Off entirely under
+     reduced-motion; a still hero is still a complete hero. */
+  useEffect(() => {
+    const el = heroRef.current;
+    if (!el || reduce) return;
+    let raf = 0;
+    function onMove(e: PointerEvent) {
+      if (e.pointerType === "touch") return;
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => {
+        const r = el!.getBoundingClientRect();
+        const x = ((e.clientX - r.left) / r.width) * 100;
+        const y = ((e.clientY - r.top) / r.height) * 100;
+        el!.style.setProperty("--sf-sweep-x", `${x}%`);
+        el!.style.setProperty("--sf-sweep-y", `${y}%`);
+        el!.style.setProperty("--sf-sweep-o", "1");
+      });
+    }
+    function onLeave() { el!.style.setProperty("--sf-sweep-o", "0"); }
+    el.addEventListener("pointermove", onMove);
+    el.addEventListener("pointerleave", onLeave);
+    return () => {
+      el.removeEventListener("pointermove", onMove);
+      el.removeEventListener("pointerleave", onLeave);
+      cancelAnimationFrame(raf);
+    };
+  }, [reduce]);
+
+  /* Staggered entrance for the hero text — same rhythm as About's hero. */
+  const container = {
+    hidden: {},
+    show: { transition: { staggerChildren: 0.11, delayChildren: 0.05 } },
+  };
+  const item = {
+    hidden: { opacity: 0, y: reduce ? 0 : 20 },
+    show: { opacity: 1, y: 0, transition: { duration: 0.55, ease: [0.22, 1, 0.36, 1] as const } },
+  };
   useVisionStyles();
   usePageMeta(
     "2030 Vision",
@@ -106,11 +149,16 @@ export function Vision2030() {
         width: "100vw",
         insetInlineStart: "calc(-50vw + 50%)",
       }}>
-        <div style={{ position: "relative", height: "clamp(460px, 60vw, 640px)", overflow: "hidden" }}>
+        <div ref={heroRef} style={{ position: "relative", height: "clamp(460px, 60vw, 640px)", overflow: "hidden" }}>
           <img
             src={vision2030Hero}
             alt="Riyadh's skyline at night, with the Kingdom Centre tower and the Saudi Vision 2030 emblem"
-            style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "center 25%" }}
+            style={{
+              position: "absolute", inset: 0, width: "100%", height: "100%",
+              objectFit: "cover", objectPosition: "center 25%",
+              transformOrigin: "center 25%",
+              animation: reduce ? "none" : "sf-v2030-kenburns 26s ease-out forwards",
+            }}
           />
           <div
             aria-hidden
@@ -126,14 +174,36 @@ export function Vision2030() {
               background: "linear-gradient(to bottom, rgba(10,14,22,0.05) 0%, rgba(10,14,22,0.45) 70%, #0A0E16 100%)",
             }}
           />
-          <div style={{
-            position: "absolute", inset: 0,
-            display: "flex", flexDirection: "column",
-            alignItems: "center", justifyContent: "center",
-            textAlign: "center",
-            padding: "20px clamp(20px, 6vw, 60px)",
-          }}>
-            <span style={{
+          {/* Pointer light sweep — layered above the scrim, driven by the
+              --sf-sweep-* custom properties the effect above sets. A soft glow
+              only; never relied on for legibility, which the scrim above
+              already guarantees on its own. */}
+          {!reduce && (
+            <div
+              aria-hidden
+              style={{
+                position: "absolute", inset: 0,
+                opacity: "var(--sf-sweep-o, 0)",
+                transition: "opacity 0.3s ease",
+                background:
+                  "radial-gradient(420px circle at var(--sf-sweep-x, 50%) var(--sf-sweep-y, 50%), rgba(0,216,164,0.16), transparent 68%)",
+                mixBlendMode: "screen",
+              }}
+            />
+          )}
+          <motion.div
+            variants={container}
+            initial="hidden"
+            animate="show"
+            style={{
+              position: "absolute", inset: 0,
+              display: "flex", flexDirection: "column",
+              alignItems: "center", justifyContent: "center",
+              textAlign: "center",
+              padding: "20px clamp(20px, 6vw, 60px)",
+            }}
+          >
+            <motion.span variants={item} style={{
               display: "inline-block",
               padding: "4px 14px",
               borderRadius: 999,
@@ -148,9 +218,9 @@ export function Vision2030() {
               marginBottom: 20,
             }}>
               {t("vision2030.badge")}
-            </span>
+            </motion.span>
 
-            <h1 style={{
+            <motion.h1 variants={item} style={{
               fontSize: "clamp(1.75rem, 5.5vw, 3.25rem)",
               fontWeight: 900,
               color: "#fff",
@@ -160,8 +230,8 @@ export function Vision2030() {
               textShadow: "0 2px 20px rgba(0,0,0,0.35)",
             }}>
               {t("vision2030.title")}
-            </h1>
-            <p style={{
+            </motion.h1>
+            <motion.p variants={item} style={{
               fontSize: "clamp(0.9375rem, 2.2vw, 1.125rem)",
               color: "rgba(255,255,255,0.88)",
               lineHeight: 1.7,
@@ -169,8 +239,8 @@ export function Vision2030() {
               margin: 0,
             }}>
               {t("vision2030.subtitle")}
-            </p>
-          </div>
+            </motion.p>
+          </motion.div>
         </div>
       </section>
 

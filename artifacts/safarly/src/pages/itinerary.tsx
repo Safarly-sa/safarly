@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -6,14 +6,16 @@ import {
   CheckCircle2, ExternalLink, MapPin, Utensils,
   Wrench, RotateCcw, ArrowLeft, Moon, Gem,
   AlertTriangle, ShieldAlert, Compass, Navigation, Wallet, X, Camera,
-  ZoomIn, ZoomOut,
+  ZoomIn, ZoomOut, Plane, CalendarDays, BedDouble,
 } from "lucide-react";
 import { useTranslation } from "@/providers/translation-context";
 import { usePageMeta } from "@/lib/usePageMeta";
+import { AuroraHero } from "@/components/AuroraHero";
 import { poiName, poiCulture, resolve } from "@/lib/poi-i18n";
 import { dishName, dishDesc, mealVenue, mealArea } from "@/lib/dish-i18n";
 import { localeTag } from "@/lib/locale-format";
-import { generateItinerary, type ItineraryResult, type ItineraryDay, type ItineraryStop, type ItineraryMeal, type TripSpec, type TravelerProfile, type Objectives } from "@/lib/engine";
+import { generateItinerary, isVerified, type ItineraryResult, type ItineraryDay, type ItineraryStop, type ItineraryMeal, type TripSpec, type TravelerProfile, type Objectives, type TransportLeg, type TripEvent, type AccommodationOption, type POI } from "@/lib/engine";
+import { ConciergeChat } from "@/components/ConciergeChat";
 import poisRaw from "@/data/pois.json";
 
 /* ── POI type (mirrors pois.json shape) ────────────────────────────── */
@@ -694,6 +696,35 @@ function VerifiedBadge({ t }: { t: (k: string) => string }) {
   );
 }
 
+/**
+ * Shown instead of VerifiedBadge for authored entries. The place is real, but
+ * its pin and price are estimates, and saying nothing at all would let the
+ * absence of a badge read as an oversight rather than a statement.
+ */
+function EstimatedBadge({ t }: { t: (k: string) => string }) {
+  return (
+    <span
+      title={t("itin.estimated.hint")}
+      style={{
+        display:       "inline-flex",
+        alignItems:    "center",
+        gap:           "4px",
+        padding:       "3px 8px",
+        borderRadius:  "999px",
+        fontSize:      "0.6875rem",
+        fontWeight:    700,
+        color:         "var(--sf-text-muted)",
+        background:    "var(--sf-surface-alt)",
+        border:        "1px solid var(--sf-border)",
+        flexShrink:    0,
+      }}
+    >
+      <AlertTriangle size={11} aria-hidden />
+      {t("itin.estimated")}
+    </span>
+  );
+}
+
 function SafeBadge({ t }: { t: (k: string) => string }) {
   return (
     <span style={{
@@ -829,7 +860,9 @@ function StopCard({
           <CategoryChip category={poi.category} t={t} />
           {isClosed      && <ErrorChip label={t("cascade.closed_chip")} />}
           {isReplacement && <ReplanBadge label={t("cascade.replanned_badge")} />}
-          {!isClosed && !isReplacement && <VerifiedBadge t={t} />}
+          {!isClosed && !isReplacement && (
+            isVerified(stop.poi) ? <VerifiedBadge t={t} /> : <EstimatedBadge t={t} />
+          )}
           {poi.hidden_gem && !isClosed && <HiddenGemPip t={t} />}
         </div>
 
@@ -1940,6 +1973,233 @@ function PhotoModal({ subject, onClose }: { subject: PhotoSubject; onClose: () =
   );
 }
 
+/* ── Trip enrichment (Events / Transportation / Accommodation agents) ──
+ *
+ * Every section here is absent-by-default. `undefined` means the enrichment
+ * call never ran or didn't finish — which is NOT the same as "there are none",
+ * so the section renders nothing at all. Only an empty array (the agent ran and
+ * genuinely found nothing) earns an explicit empty state. Telling someone "no
+ * events during your trip" because a request timed out would be a confident lie
+ * about the real world.
+ *
+ * The second rule these components exist to enforce: none of this is booked or
+ * confirmed. Costs are model estimates rather than quotes, event dates come
+ * from a model with no live calendar, and accommodation names areas rather than
+ * properties. `uncertain` is load-bearing, not decorative — see engine.ts.
+ */
+
+const TRANSPORT_MODE_KEYS: Record<TransportLeg["mode"], string> = {
+  flight:      "itin.enrich.mode.flight",
+  train:       "itin.enrich.mode.train",
+  bus:         "itin.enrich.mode.bus",
+  taxi:        "itin.enrich.mode.taxi",
+  ride_hail:   "itin.enrich.mode.ride_hail",
+  walk:        "itin.enrich.mode.walk",
+  car_rental:  "itin.enrich.mode.car_rental",
+};
+
+/** Units come from the locale rather than a hardcoded "h"/"m" — not every
+ *  language abbreviates duration the same way, and these sit inline in prose. */
+function formatDuration(minutes: number, t: (k: string) => string): string {
+  if (!Number.isFinite(minutes) || minutes <= 0) return "";
+  if (minutes < 60) return `${Math.round(minutes)} ${t("itin.enrich.min")}`;
+
+  const hours = Math.floor(minutes / 60);
+  const rest  = Math.round(minutes % 60);
+  const hourPart = `${hours} ${t("itin.enrich.hour")}`;
+  return rest === 0 ? hourPart : `${hourPart} ${rest} ${t("itin.enrich.min")}`;
+}
+
+/** "Don't treat this as confirmed." Shown wherever the model flagged uncertainty. */
+function UncertainChip({ t }: { t: (k: string) => string }) {
+  return (
+    <span style={{
+      display:       "inline-flex",
+      alignItems:    "center",
+      gap:           "4px",
+      fontSize:      "0.6875rem",
+      fontWeight:    700,
+      color:         "var(--sf-warning)",
+      background:    "color-mix(in srgb, var(--sf-warning) 12%, var(--sf-surface))",
+      padding:       "2px 8px",
+      borderRadius:  "999px",
+      lineHeight:    1.5,
+    }}>
+      <AlertTriangle size={11} aria-hidden />
+      {t("itin.enrich.unverified")}
+    </span>
+  );
+}
+
+function EnrichSection({
+  icon: Icon, title, note, children,
+}: {
+  icon: typeof MapPin;
+  title: string;
+  note?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section style={{
+      background:   "var(--sf-surface)",
+      border:       "1px solid var(--sf-border)",
+      borderRadius: "14px",
+      padding:      "20px",
+      marginTop:    "20px",
+    }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: note ? "4px" : "14px" }}>
+        <Icon size={16} aria-hidden style={{ color: "var(--sf-indigo)", flexShrink: 0 }} />
+        <h2 style={{ fontSize: "0.9375rem", fontWeight: 800, color: "var(--sf-text)" }}>
+          {title}
+        </h2>
+      </div>
+      {note && (
+        <p style={{ fontSize: "0.75rem", color: "var(--sf-text-muted)", marginBottom: "14px" }}>
+          {note}
+        </p>
+      )}
+      {children}
+    </section>
+  );
+}
+
+function TransportLegRow({ leg, t }: { leg: TransportLeg; t: (k: string) => string }) {
+  const duration = formatDuration(leg.durationMinutes, t);
+  return (
+    <li style={{
+      display:       "flex",
+      flexDirection: "column",
+      gap:           "6px",
+      padding:       "12px 0",
+      borderTop:     "1px solid var(--sf-border)",
+    }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+        <span style={{
+          fontSize:      "0.6875rem",
+          fontWeight:    700,
+          textTransform: "uppercase",
+          letterSpacing: "0.05em",
+          color:         "var(--sf-indigo)",
+        }}>
+          {t(TRANSPORT_MODE_KEYS[leg.mode] ?? "itin.enrich.mode.taxi")}
+        </span>
+        <span style={{ fontSize: "0.875rem", fontWeight: 600, color: "var(--sf-text)" }}>
+          {leg.from} → {leg.to}
+        </span>
+      </div>
+
+      <div style={{
+        display:    "flex",
+        alignItems: "center",
+        gap:        "10px",
+        flexWrap:   "wrap",
+        fontSize:   "0.8125rem",
+        color:      "var(--sf-text-muted)",
+      }}>
+        {duration && <span>{duration}</span>}
+        {leg.costSar > 0 && (
+          <span>
+            ≈ {t("itin.summary.sar")} {Math.round(leg.costSar)}
+            <span style={{ opacity: 0.75 }}> ({t("itin.enrich.estimate")})</span>
+          </span>
+        )}
+        {leg.uncertain && <UncertainChip t={t} />}
+      </div>
+
+      {leg.notes && (
+        <p style={{ fontSize: "0.8125rem", color: "var(--sf-text-muted)", lineHeight: 1.6 }}>
+          {leg.notes}
+        </p>
+      )}
+    </li>
+  );
+}
+
+function EventCard({ event, t }: { event: TripEvent; t: (k: string) => string }) {
+  return (
+    <li style={{
+      padding:   "12px 0",
+      borderTop: "1px solid var(--sf-border)",
+    }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap", marginBottom: "4px" }}>
+        <span style={{ fontSize: "0.875rem", fontWeight: 700, color: "var(--sf-text)" }}>
+          {event.nameTranslated || event.name}
+        </span>
+        {event.overlapsTrip && (
+          <span style={{
+            fontSize:     "0.6875rem",
+            fontWeight:   700,
+            color:        "var(--sf-success)",
+            background:   "color-mix(in srgb, var(--sf-success) 12%, var(--sf-surface))",
+            padding:      "2px 8px",
+            borderRadius: "999px",
+          }}>
+            {t("itin.enrich.events.overlaps")}
+          </span>
+        )}
+        {event.uncertain && <UncertainChip t={t} />}
+      </div>
+
+      <p style={{ fontSize: "0.8125rem", color: "var(--sf-text-muted)", lineHeight: 1.6, marginBottom: "6px" }}>
+        {event.description}
+      </p>
+
+      <div style={{
+        display:  "flex",
+        gap:      "10px",
+        flexWrap: "wrap",
+        fontSize: "0.75rem",
+        color:    "var(--sf-text-muted)",
+      }}>
+        <span style={{ fontWeight: 600 }}>{event.dateRange}</span>
+        {event.venue && <span>· {event.venue}</span>}
+        {event.sourceHint && <span>· {event.sourceHint}</span>}
+      </div>
+    </li>
+  );
+}
+
+function StayCard({ option, t }: { option: AccommodationOption; t: (k: string) => string }) {
+  return (
+    <li style={{
+      padding:   "12px 0",
+      borderTop: "1px solid var(--sf-border)",
+    }}>
+      <div style={{ display: "flex", alignItems: "baseline", gap: "8px", flexWrap: "wrap", marginBottom: "4px" }}>
+        <span style={{ fontSize: "0.875rem", fontWeight: 700, color: "var(--sf-text)" }}>
+          {option.areaTranslated || option.area}
+        </span>
+        <span style={{
+          fontSize:      "0.6875rem",
+          fontWeight:    700,
+          textTransform: "uppercase",
+          letterSpacing: "0.05em",
+          color:         "var(--sf-indigo)",
+        }}>
+          {option.hotelType}
+        </span>
+      </div>
+
+      <p style={{ fontSize: "0.8125rem", color: "var(--sf-text-muted)", lineHeight: 1.6, marginBottom: "6px" }}>
+        {option.whyThisArea}
+      </p>
+
+      <div style={{ fontSize: "0.8125rem", color: "var(--sf-text)", fontWeight: 600 }}>
+        {t("itin.summary.sar")} {Math.round(option.nightlyCostSarLow)}–{Math.round(option.nightlyCostSarHigh)}
+        <span style={{ color: "var(--sf-text-muted)", fontWeight: 400 }}> {t("itin.enrich.night")}</span>
+      </div>
+
+      {option.goodFor && (
+        <p style={{ fontSize: "0.75rem", color: "var(--sf-text-muted)", marginTop: "4px" }}>
+          {t("itin.enrich.goodfor")}: {option.goodFor}
+        </p>
+      )}
+    </li>
+  );
+}
+
+const ENRICH_LIST_STYLE: React.CSSProperties = { listStyle: "none", margin: 0, padding: 0 };
+
 /* ── Main page ──────────────────────────────────────────────────────── */
 export function Itinerary() {
   const [, navigate]    = useLocation();
@@ -1973,6 +2233,28 @@ export function Itinerary() {
       navigate("/trip");
     }
   }, []);
+
+  /**
+   * The POI dataset the engine actually drew from — read off the scheduled
+   * stops rather than `trip.city`, because a trip planned with city "ai" (or
+   * one of the cities that falls back to another's dataset via CITY_POI_MAP)
+   * has a POI city that `trip.city` doesn't name. Anything the Concierge is
+   * allowed to add has to come from this same set.
+   */
+  const cityPois = useMemo<POI[]>(() => {
+    const poiCity = result?.days.flatMap(d => d.stops)[0]?.poi.city
+      ?? result?.resolvedCity;
+    if (!poiCity) return [];
+    return ALL_POIS
+      .filter(p => p.city === poiCity)
+      .map(p => ({ ...p, map_url: p.map_url ?? "" }));
+  }, [result]);
+
+  /** The Concierge proposes; the page is what actually persists a change. */
+  function handleConciergeChange(next: ItineraryResult) {
+    setResult(next);
+    localStorage.setItem("safarly_itinerary", JSON.stringify(next));
+  }
 
   function handleRegen() {
     localStorage.removeItem("safarly_itinerary");
@@ -2194,26 +2476,27 @@ export function Itinerary() {
       minHeight:     "100dvh",
     }}>
       {/* ── Page header ─────────────────────────────────────────────── */}
-      <div style={{
-        borderBottom: "1px solid var(--sf-border)",
-        background:   "var(--sf-bg)",
-        padding:      "20px 20px 16px",
-      }}>
-        <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
-          <h1 style={{
-            fontSize:      "clamp(1.25rem, 4vw, 1.625rem)",
-            fontWeight:    800,
-            color:         "var(--sf-text)",
-            letterSpacing: "-0.02em",
-            marginBottom:  "4px",
-          }}>
-            {t("page.itinerary.title")}
-          </h1>
-          <p style={{ color: "var(--sf-text-muted)", fontSize: "0.875rem" }}>
-            {t("page.itinerary.desc")}
-          </p>
+      <AuroraHero minHeight="auto" className="sf-aurora-band">
+        <div style={{
+          borderBottom: "1px solid var(--sf-border)",
+          padding:      "20px 20px 16px",
+        }}>
+          <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
+            <h1 style={{
+              fontSize:      "clamp(1.25rem, 4vw, 1.625rem)",
+              fontWeight:    800,
+              color:         "var(--sf-text)",
+              letterSpacing: "-0.02em",
+              marginBottom:  "4px",
+            }}>
+              {t("page.itinerary.title")}
+            </h1>
+            <p style={{ color: "var(--sf-text-muted)", fontSize: "0.875rem" }}>
+              {t("page.itinerary.desc")}
+            </p>
+          </div>
         </div>
-      </div>
+      </AuroraHero>
 
       {/* ── Main layout ─────────────────────────────────────────────── */}
       <div style={{ maxWidth: "1100px", margin: "0 auto", padding: "0 16px" }}>
@@ -2323,11 +2606,72 @@ export function Itinerary() {
                 onMealPhotoClick={(meal) => setPhotoSubject(dishPhotoSubject(t, meal, language))}
               />
             )}
+
+            {/* Getting around on this day — Transportation agent, per-day legs */}
+            {currentDay?.transportLegs && currentDay.transportLegs.length > 0 && (
+              <EnrichSection icon={Navigation} title={t("itin.enrich.transport.title")}>
+                <ul style={ENRICH_LIST_STYLE}>
+                  {currentDay.transportLegs.map((leg, idx) => (
+                    <TransportLegRow key={`${leg.from}-${leg.to}-${idx}`} leg={leg} t={t} />
+                  ))}
+                </ul>
+              </EnrichSection>
+            )}
           </div>
         </div>
 
         {/* ── Destination map ──────────────────────────────────────────── */}
         <DestinationMap day={currentDay} city={result.resolvedCity || trip.city} />
+
+        {/* ── Trip-wide enrichment ─────────────────────────────────────── */}
+
+        {/* Getting there — Transportation agent, one-time arrival */}
+        {result.arrival && result.arrival.legs.length > 0 && (
+          <EnrichSection
+            icon={Plane}
+            title={t("itin.enrich.arrival.title")}
+            note={result.arrival.summary || undefined}
+          >
+            <ul style={ENRICH_LIST_STYLE}>
+              {result.arrival.legs.map((leg, idx) => (
+                <TransportLegRow key={`arrival-${idx}`} leg={leg} t={t} />
+              ))}
+            </ul>
+          </EnrichSection>
+        )}
+
+        {/* While you're there — Events agent. `undefined` renders nothing at
+            all; only a genuinely empty result gets the "none found" line. */}
+        {result.events && (
+          <EnrichSection icon={CalendarDays} title={t("itin.enrich.events.title")}>
+            {result.events.length === 0 ? (
+              <p style={{ fontSize: "0.8125rem", color: "var(--sf-text-muted)" }}>
+                {t("itin.enrich.events.empty")}
+              </p>
+            ) : (
+              <ul style={ENRICH_LIST_STYLE}>
+                {result.events.map((event, idx) => (
+                  <EventCard key={`event-${idx}`} event={event} t={t} />
+                ))}
+              </ul>
+            )}
+          </EnrichSection>
+        )}
+
+        {/* Where to stay — Accommodation agent (areas, never bookings) */}
+        {result.accommodation && result.accommodation.length > 0 && (
+          <EnrichSection
+            icon={BedDouble}
+            title={t("itin.enrich.stay.title")}
+            note={t("itin.enrich.stay.note")}
+          >
+            <ul style={ENRICH_LIST_STYLE}>
+              {result.accommodation.map((option, idx) => (
+                <StayCard key={`stay-${idx}`} option={option} t={t} />
+              ))}
+            </ul>
+          </EnrichSection>
+        )}
 
       </div>
 
@@ -2346,6 +2690,14 @@ export function Itinerary() {
       >
         <Wrench size={17} aria-hidden />
       </button>
+
+      {/* ── Personal Concierge ───────────────────────────────────────── */}
+      <ConciergeChat
+        itinerary={result}
+        trip={trip}
+        cityPois={cityPois}
+        onItineraryChange={handleConciergeChange}
+      />
 
       {/* ── Agent feed panel (closed + feeding phases) ───────────────── */}
       {(cascade.phase === "closed" || cascade.phase === "feeding") && (
