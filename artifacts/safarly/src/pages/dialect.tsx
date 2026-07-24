@@ -2,6 +2,9 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Volume2, Mic, CheckCircle2, VolumeX } from "lucide-react";
 import { useTranslation } from "@/providers/translation-context";
 import { usePageMeta } from "@/lib/usePageMeta";
+import { languageNameOf } from "@/lib/language-names";
+import { AuroraHero } from "@/components/AuroraHero";
+import { evaluateAttempt } from "@/lib/dialect-api";
 import phrasesRaw from "@/data/phrases.json";
 
 /* ── Types ──────────────────────────────────────────────────────────── */
@@ -17,6 +20,22 @@ type PracticePhase = "idle" | "playing" | "listening" | "recording" | "result" |
 
 // Why practice fell back to manual "I said it" confirmation instead of live recognition.
 type MicErrorReason = "unsupported" | "denied" | "no-device" | "insecure" | "generic";
+
+/**
+ * The outcome of one practice attempt.
+ *
+ * `passed` and `heard` come from the offline arabicMatch() check and are always
+ * present immediately. `coaching` is the Dialect Coach's tip, which arrives
+ * later or not at all — the verdict never waits on the network, so practice
+ * still works exactly as before when the API is unreachable.
+ */
+interface PracticeResult {
+  passed: boolean;
+  heard?: string;
+  coachingState?: "loading" | "ready";
+  coaching?: string;
+  correctedTransliteration?: string;
+}
 
 /* ── Static data ────────────────────────────────────────────────────── */
 const ALL_PHRASES = phrasesRaw as Phrase[];
@@ -227,7 +246,7 @@ function PhraseCard({ phrase, practicePhase, hasAudio, t, language, onPlay, onPr
   t: (k: string) => string; language: string;
   onPlay: () => void; onPractice: () => void; onConfirm: () => void;
   onRetry: () => void; onSkip: () => void;
-  practiceResult: { passed: boolean; heard?: string } | null;
+  practiceResult: PracticeResult | null;
   micError: MicErrorReason | null;
 }) {
   const isLearned    = practicePhase === "done";
@@ -316,6 +335,43 @@ function PhraseCard({ phrase, practicePhase, hasAudio, t, language, onPlay, onPr
           <p style={{ fontSize: "0.8125rem", color: "var(--sf-text-muted)", marginBottom: 14 }}>
             {t("dialect.expected")} <span style={{ color: "var(--sf-text-accent)", fontStyle: "italic" }}>{phrase.transliteration}</span>
           </p>
+
+          {/* Coach's tip — arrives after the verdict, or not at all. Absent
+              silently when the API is unreachable, so nothing here is load-bearing. */}
+          {practiceResult.coachingState === "loading" && (
+            <p style={{ fontSize: "0.75rem", color: "var(--sf-text-muted)", marginBottom: 14, fontStyle: "italic" }}>
+              {t("dialect.coach.loading")}
+            </p>
+          )}
+          {practiceResult.coachingState === "ready" && practiceResult.coaching && (
+            <div
+              aria-live="polite"
+              style={{
+                background:   "color-mix(in srgb, var(--sf-indigo) 8%, var(--sf-surface))",
+                border:       "1px solid color-mix(in srgb, var(--sf-indigo) 22%, var(--sf-border))",
+                borderRadius: 10,
+                padding:      "10px 12px",
+                marginBottom: 14,
+                textAlign:    "start",
+              }}
+            >
+              <p style={{
+                fontSize: "0.6875rem", fontWeight: 700, letterSpacing: "0.05em",
+                textTransform: "uppercase", color: "var(--sf-indigo)", marginBottom: 4,
+              }}>
+                {t("dialect.coach.title")}
+              </p>
+              <p style={{ fontSize: "0.8125rem", lineHeight: 1.6, color: "var(--sf-text)" }}>
+                {practiceResult.coaching}
+              </p>
+              {practiceResult.correctedTransliteration && (
+                <p style={{ fontSize: "0.75rem", color: "var(--sf-text-muted)", marginTop: 6, fontStyle: "italic" }}>
+                  {practiceResult.correctedTransliteration}
+                </p>
+              )}
+            </div>
+          )}
+
           <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap" }}>
             <button className="sf-play-btn" onClick={onPlay} disabled={!hasAudio} style={{ minWidth: 90 }}>
               <Volume2 size={13} aria-hidden /> {t("dialect.listen_first")}
@@ -409,8 +465,9 @@ export function Dialect() {
     try { return JSON.parse(localStorage.getItem("safarly_learned") ?? "[]"); } catch { return []; }
   });
   const [practiceMap,  setPMap]      = useState<Record<string, PracticePhase>>({});
-  const [resultMap,    setResultMap] = useState<Record<string, { passed: boolean; heard?: string }>>({});
+  const [resultMap,    setResultMap] = useState<Record<string, PracticeResult>>({});
   const [micErrorMap,  setMicErrorMap] = useState<Record<string, MicErrorReason>>({});
+  const coachAborts = useRef<Record<string, AbortController>>({});
   const [hasAudio,     setHasAudio]  = useState(false);
   const timerRefs = useRef<Record<string, ReturnType<typeof setTimeout>>>({}); 
 
@@ -496,6 +553,56 @@ export function Dialect() {
     });
   }
 
+  /**
+   * Asks the Dialect Coach for a tip on a failed attempt.
+   *
+   * Fire-and-forget and entirely optional: the verdict is already on screen, so
+   * every failure path here just leaves the panel as it was before the coach
+   * existed. Aborted when the learner retries or skips, so a stale tip can't
+   * land on a fresh attempt.
+   */
+  function requestCoaching(phrase: Phrase, heard: string) {
+    if (!heard.trim()) return;   // nothing to evaluate — the mic caught nothing
+
+    coachAborts.current[phrase.id]?.abort();
+    const controller = new AbortController();
+    coachAborts.current[phrase.id] = controller;
+
+    setResultMap(prev => prev[phrase.id]
+      ? { ...prev, [phrase.id]: { ...prev[phrase.id], coachingState: "loading" } }
+      : prev);
+
+    void evaluateAttempt({
+      dialect,
+      targetArabic: phrase.arabic,
+      targetTransliteration: phrase.transliteration,
+      targetEnglish: phrase.english,
+      userAttempt: heard,
+      languageName: languageNameOf(language),
+    }, controller.signal).then(outcome => {
+      if (controller.signal.aborted) return;
+      setResultMap(prev => {
+        const current = prev[phrase.id];
+        // The learner moved on, or this reply belongs to a superseded attempt.
+        if (!current || current.heard !== heard) return prev;
+        if (!outcome.ok) {
+          const { coachingState, ...rest } = current;   // drop the spinner, say nothing
+          void coachingState;
+          return { ...prev, [phrase.id]: rest };
+        }
+        return {
+          ...prev,
+          [phrase.id]: {
+            ...current,
+            coachingState: "ready",
+            coaching: outcome.data.feedback,
+            correctedTransliteration: outcome.data.correctedTransliteration,
+          },
+        };
+      });
+    });
+  }
+
   function fallbackToManual(phraseId: string, reason: MicErrorReason) {
     setMicErrorMap(m => ({ ...m, [phraseId]: reason }));
     setPMap(m => ({ ...m, [phraseId]: "listening" }));
@@ -532,8 +639,10 @@ export function Dialect() {
         // Auto-mark as learned on correct pronunciation
         handleConfirm(phrase.id);
       } else {
-        setResultMap(prev => ({ ...prev, [phrase.id]: { passed: false, heard: alternatives[0] ?? "" } }));
+        const heard = alternatives[0] ?? "";
+        setResultMap(prev => ({ ...prev, [phrase.id]: { passed: false, heard } }));
         setPMap(m => ({ ...m, [phrase.id]: "result" }));
+        requestCoaching(phrase, heard);
       }
     };
 
@@ -576,12 +685,14 @@ export function Dialect() {
   }
 
   function handleRetry(phraseId: string) {
+    coachAborts.current[phraseId]?.abort();
     setResultMap(prev => { const next = { ...prev }; delete next[phraseId]; return next; });
     setPMap(m => ({ ...m, [phraseId]: "idle" }));
   }
 
   // Skip only exits the retry loop — it must not fake progress by marking the phrase learned.
   function handleSkip(phraseId: string) {
+    coachAborts.current[phraseId]?.abort();
     setResultMap(prev => { const next = { ...prev }; delete next[phraseId]; return next; });
     setMicErrorMap(prev => { const next = { ...prev }; delete next[phraseId]; return next; });
     setPMap(m => ({ ...m, [phraseId]: "idle" }));
@@ -609,62 +720,64 @@ export function Dialect() {
     <div style={{ paddingTop: 68, paddingBottom: 88, background: "var(--sf-bg)", minHeight: "100dvh" }}>
 
       {/* Header */}
-      <div style={{ borderBottom: "1px solid var(--sf-border)", padding: "20px 20px 16px", background: "var(--sf-bg)" }}>
-        <div style={{ maxWidth: 680, margin: "0 auto" }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <h1 style={{ fontSize: "clamp(1.25rem,4vw,1.625rem)", fontWeight: 800, color: "var(--sf-text)", letterSpacing: "-0.02em", marginBottom: 4 }}>
-                {t("page.dialect.title")}
-              </h1>
-              <p style={{ fontSize: "0.875rem", color: "var(--sf-text-muted)", lineHeight: 1.5 }}>
-                {dialectDesc}
-              </p>
-            </div>
+      <AuroraHero minHeight="auto" className="sf-aurora-band">
+        <div style={{ borderBottom: "1px solid var(--sf-border)", padding: "20px 20px 16px" }}>
+          <div style={{ maxWidth: 680, margin: "0 auto" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <h1 style={{ fontSize: "clamp(1.25rem,4vw,1.625rem)", fontWeight: 800, color: "var(--sf-text)", letterSpacing: "-0.02em", marginBottom: 4 }}>
+                  {t("page.dialect.title")}
+                </h1>
+                <p style={{ fontSize: "0.875rem", color: "var(--sf-text-muted)", lineHeight: 1.5 }}>
+                  {dialectDesc}
+                </p>
+              </div>
 
-            {/* Progress ring */}
-            <div style={{ flexShrink: 0, display: "flex", alignItems: "center", gap: 10 }}>
-              <div style={{ position: "relative" }}>
-                <ProgressRing learned={learnedCount} total={phrases.length} />
-                <div style={{
-                  position: "absolute", inset: 0, display: "flex",
-                  alignItems: "center", justifyContent: "center",
-                  fontSize: "0.6875rem", fontWeight: 800, color: "var(--sf-text)",
-                }}>
-                  {learnedCount}
+              {/* Progress ring */}
+              <div style={{ flexShrink: 0, display: "flex", alignItems: "center", gap: 10 }}>
+                <div style={{ position: "relative" }}>
+                  <ProgressRing learned={learnedCount} total={phrases.length} />
+                  <div style={{
+                    position: "absolute", inset: 0, display: "flex",
+                    alignItems: "center", justifyContent: "center",
+                    fontSize: "0.6875rem", fontWeight: 800, color: "var(--sf-text)",
+                  }}>
+                    {learnedCount}
+                  </div>
+                </div>
+                <div>
+                  <div style={{ fontSize: "0.6875rem", fontWeight: 700, color: "var(--sf-text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                    {t("dialect.progress").replace("{n}", String(learnedCount)).replace("{total}", String(phrases.length))}
+                  </div>
+                  <div style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--sf-indigo)" }}>
+                    {dialectName}
+                  </div>
                 </div>
               </div>
-              <div>
-                <div style={{ fontSize: "0.6875rem", fontWeight: 700, color: "var(--sf-text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                  {t("dialect.progress").replace("{n}", String(learnedCount)).replace("{total}", String(phrases.length))}
-                </div>
-                <div style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--sf-indigo)" }}>
-                  {dialectName}
-                </div>
-              </div>
             </div>
-          </div>
 
-          {/* Dialect switcher */}
-          <div style={{ display: "flex", gap: 8, marginTop: 14, flexWrap: "wrap" }}>
-            {(["najdi","hijazi","janubi","shamali","sharqi"] as const).map(d => (
-              <button
-                key={d}
-                onClick={() => setDialect(d)}
-                style={{
-                  padding: "7px 16px", borderRadius: 999, border: "1px solid",
-                  fontSize: "0.8125rem", fontWeight: 700, cursor: "pointer", minHeight: 36,
-                  transition: "background 0.15s, color 0.15s, border-color 0.15s",
-                  background: dialect === d ? "var(--sf-indigo)" : "var(--sf-surface)",
-                  color:      dialect === d ? "#fff" : "var(--sf-text-muted)",
-                  borderColor:dialect === d ? "var(--sf-indigo)" : "var(--sf-border)",
-                }}
-              >
-                {t(DIALECT_I18N[d].name)}
-              </button>
-            ))}
+            {/* Dialect switcher */}
+            <div style={{ display: "flex", gap: 8, marginTop: 14, flexWrap: "wrap" }}>
+              {(["najdi","hijazi","janubi","shamali","sharqi"] as const).map(d => (
+                <button
+                  key={d}
+                  onClick={() => setDialect(d)}
+                  style={{
+                    padding: "7px 16px", borderRadius: 999, border: "1px solid",
+                    fontSize: "0.8125rem", fontWeight: 700, cursor: "pointer", minHeight: 36,
+                    transition: "background 0.15s, color 0.15s, border-color 0.15s",
+                    background: dialect === d ? "var(--sf-indigo)" : "var(--sf-surface)",
+                    color:      dialect === d ? "#fff" : "var(--sf-text-muted)",
+                    borderColor:dialect === d ? "var(--sf-indigo)" : "var(--sf-border)",
+                  }}
+                >
+                  {t(DIALECT_I18N[d].name)}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
-      </div>
+      </AuroraHero>
 
       {/* Phrase groups */}
       <div style={{ maxWidth: 680, margin: "0 auto", padding: "20px 16px" }}>

@@ -42,7 +42,7 @@ export interface Objectives {
   photography: number;
 }
 
-interface POI {
+export interface POI {
   id: string;
   name: string;
   city: string;
@@ -58,6 +58,16 @@ interface POI {
   best_slot: string;
   map_url: string;
   culture_note?: string;
+  /**
+   * Whether this entry's coordinates and entry price come from the researched
+   * dataset (true) or were authored to fill out the pool (false).
+   *
+   * Authored entries are real, well-known places, but their lat/lng is
+   * approximate and their price is an estimate — so they must not carry the
+   * "Verified" badge. Absent is treated as verified: the original 50 rows
+   * predate this field.
+   */
+  verified?: boolean;
 }
 
 interface Dish {
@@ -196,25 +206,73 @@ export interface ItineraryResult {
 }
 
 /* ── City → POI dataset mapping ─────────────────────────────────────── */
-// New cities without dedicated POI data fall back to the nearest dataset city.
+// Every city now has its own researched POIs — see docs/notes/safarly-engine-cities.md
+// for the incident that used to make this a fallback map (Abha borrowing AlUla's
+// desert/archaeology data, mislabelled as "Abha" content). al_khobar is the one
+// deliberate exception: it's a genuine Riyadh-adjacent modern city without its
+// own dataset yet, kept as an honest documented fallback rather than removed.
 const CITY_POI_MAP: Record<string, string> = {
-  riyadh:    "riyadh",
-  jeddah:    "jeddah",
-  alula:     "alula",
-  al_khobar: "riyadh",  // Eastern Province — modern Saudi city, similar vibe
-  abha:      "alula",   // Nature-heavy highlands destination
-  taif:      "jeddah",  // Hejaz region
-  madinah:   "jeddah",  // Hejaz region, spiritual character similar to Jeddah data
+  riyadh:         "riyadh",
+  jeddah:         "jeddah",
+  alula:          "alula",
+  al_khobar:      "riyadh",  // Eastern Province — modern Saudi city, similar vibe; no dedicated dataset yet
+  abha:           "abha",
+  taif:           "taif",
+  madinah:        "madinah",
+  mecca:          "mecca",
+  dammam:         "dammam",
+  dhahran:        "dhahran",
+  khamis_mushait: "khamis_mushait",
+  jazan:          "jazan",
+  najran:         "najran",
+  tabuk:          "tabuk",
+  hail:           "hail",
+  yanbu:          "yanbu",
 };
 
 const CITY_NAMES: Record<string, string> = {
-  riyadh:    "Riyadh",
-  jeddah:    "Jeddah",
-  alula:     "AlUla",
-  al_khobar: "Al Khobar",
-  abha:      "Abha",
-  taif:      "Taif",
-  madinah:   "Madinah",
+  riyadh:         "Riyadh",
+  jeddah:         "Jeddah",
+  alula:          "AlUla",
+  al_khobar:      "Al Khobar",
+  abha:           "Abha",
+  taif:           "Taif",
+  madinah:        "Madinah",
+  mecca:          "Mecca",
+  dammam:         "Dammam",
+  dhahran:        "Dhahran",
+  khamis_mushait: "Khamis Mushait",
+  jazan:          "Jazan",
+  najran:         "Najran",
+  tabuk:          "Tabuk",
+  hail:           "Hail",
+  yanbu:          "Yanbu",
+};
+
+/**
+ * Exported so every page needing an Arabic city display name (dashboard,
+ * itinerary, generating) reads the same map instead of hand-copying it —
+ * a hand-copied version of this once silently omitted 13 of 16 cities in
+ * itinerary.tsx, falling back to the English name in Arabic mode.
+ */
+export const CITY_NAMES_EN: Record<string, string> = CITY_NAMES;
+export const CITY_NAMES_AR: Record<string, string> = {
+  riyadh:         "الرياض",
+  jeddah:         "جدة",
+  alula:          "العُلا",
+  al_khobar:      "الخبر",
+  abha:           "أبها",
+  taif:           "الطائف",
+  madinah:        "المدينة المنورة",
+  mecca:          "مكة المكرمة",
+  dammam:         "الدمام",
+  dhahran:        "الظهران",
+  khamis_mushait: "خميس مشيط",
+  jazan:          "جازان",
+  najran:         "نجران",
+  tabuk:          "تبوك",
+  hail:           "حائل",
+  yanbu:          "ينبع",
 };
 
 /** Resolve "ai" city key to an actual city based on profile + trip context. */
@@ -564,6 +622,74 @@ function buildDays(
   return days;
 }
 
+/**
+ * A stop counts as verified only if its location is researched AND it has a
+ * working map link. Both halves matter: an authored entry has an approximate
+ * pin, and an entry with no map link can't be checked at all.
+ *
+ * `verified` absent means the row predates the flag, which only the original
+ * researched set does — hence the `!== false` rather than a truthiness test.
+ */
+export function isVerified(poi: POI): boolean {
+  return poi.verified !== false && !!poi.map_url;
+}
+
+/* ── Post-generation editing ────────────────────────────────────────── */
+/**
+ * Primitives for changing an itinerary AFTER the engine produced it — used by
+ * the Concierge, which edits an existing trip rather than building a new one.
+ *
+ * These live here, not in the caller, because scheduling and cost are engine
+ * rules. A stop added by the Concierge has to sit on the same slot clock and
+ * count toward budget the same way as one the generator placed, or the two
+ * halves of the itinerary quietly disagree about what a day costs.
+ */
+
+/** Places a POI in a slot using the generator's own slot clock and prayer gaps. */
+export function scheduleStop(poi: POI, slot: ItineraryStop["slot"]): ItineraryStop {
+  const startTime = SLOT_START[slot];
+  return {
+    slot,
+    startTime,
+    endTime: addMinutes(startTime, Math.round(poi.duration_hrs * 60)),
+    poi,
+    prayerGapBefore: PRAYER_GAP_BEFORE[slot],
+  };
+}
+
+/** Re-derives a day's cost and budget flag from its current stops and meals. */
+export function recalcDay(day: ItineraryDay, budgetPerDay: number): ItineraryDay {
+  const stopsCost = day.stops.reduce((s, stop) => s + stop.poi.price_range, 0);
+  const mealsCost = day.meals.reduce((s, meal) => s + meal.dish.price_sar, 0);
+  const dailyCostSar = stopsCost + mealsCost;
+  return { ...day, dailyCostSar, overBudget: dailyCostSar > budgetPerDay };
+}
+
+/**
+ * Re-derives the result-level roll-ups after any day's stops changed.
+ * Mirrors the tail of generateItinerary exactly — if that changes, change this.
+ * `objectives`, `candidateCount`, and `allergenSafeDishCount` are inputs to
+ * generation rather than functions of the stops, so they carry through as-is.
+ */
+export function recalcTotals(result: ItineraryResult, budgetPerDay: number): ItineraryResult {
+  const days      = result.days.map((day) => recalcDay(day, budgetPerDay));
+  const allStops  = days.flatMap((d) => d.stops);
+  const totalCostSar = days.reduce((s, d) => s + d.dailyCostSar, 0);
+  const hiddenGemCount = allStops.filter((s) => s.poi.hidden_gem).length;
+  const estimatedDailyAvg = days.length > 0 ? totalCostSar / days.length : 0;
+
+  return {
+    ...result,
+    days,
+    totalCostSar,
+    verifiedCount:    allStops.filter((s) => isVerified(s.poi)).length,
+    hiddenGemShare:   allStops.length > 0 ? hiddenGemCount / allStops.length : 0,
+    cultureNoteCount: allStops.filter((s) => !!s.poi.culture_note).length,
+    budgetStatus:     estimatedDailyAvg > budgetPerDay ? "over" : "ok",
+    estimatedDailyAvg,
+  };
+}
+
 /* ── Public API ─────────────────────────────────────────────────────── */
 
 export function generateItinerary(
@@ -588,7 +714,7 @@ export function generateItinerary(
 
   const allStops         = days.flatMap(d => d.stops);
   const totalCostSar     = days.reduce((s, d) => s + d.dailyCostSar, 0);
-  const verifiedCount    = allStops.filter(s => !!s.poi.map_url).length;
+  const verifiedCount    = allStops.filter(s => isVerified(s.poi)).length;
   const hiddenGemCount   = allStops.filter(s => s.poi.hidden_gem).length;
   const hiddenGemShare   = allStops.length > 0 ? hiddenGemCount / allStops.length : 0;
   const cultureNoteCount = allStops.filter(s => !!s.poi.culture_note).length;

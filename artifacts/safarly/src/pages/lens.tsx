@@ -2,11 +2,13 @@ import { useEffect, useRef, useState } from "react";
 import { Link } from "wouter";
 import { Camera, CheckCircle2, AlertTriangle, X, Plus, ScanLine, RotateCcw, ChevronRight, MapPin, ExternalLink, Copy, Check, Sparkles } from "lucide-react";
 import { useTranslation } from "@/providers/translation-context";
-import type { Language } from "@/providers/translation-context";
 import { usePageMeta } from "@/lib/usePageMeta";
+import { AuroraHero } from "@/components/AuroraHero";
 import { getAuth } from "@/lib/auth";
 import { ALLERGEN_LABEL_KEYS, readStoredAllergens } from "@/lib/allergens";
 import { prepareImageForUpload } from "@/lib/image";
+import { LANGUAGE_NAMES } from "@/lib/language-names";
+import { isFavorite as isFavoriteRef, addFavorite as addFavoriteRef } from "@/lib/favorites";
 import {
   scanMenuImage, scanPlaceImage, scanSignImage,
   type VisionDish, type VisionPlace, type VisionSign, type VisionErrorCode,
@@ -39,11 +41,10 @@ interface DisplayDish {
   originStory?: string;  // demo only — hand-written, doesn't exist for a photographed dish
   uncertain?: boolean;    // live only — the model flagged the read as unreliable
   /**
-   * Only demo dishes have one: favorites are stored as dataset ids
-   * (`safarly_favorites`) and looked up later via DISHES_MAP on the
-   * dashboard. A live-scanned dish has no such id — "favoriting" it would
-   * silently do nothing on the dashboard, so the button is hidden instead of
-   * built to look like it works.
+   * Only demo dishes have one: favorites are stored via lib/favorites.ts as
+   * dataset ids and looked up later via DISHES_MAP on the profile page. A
+   * live-scanned dish has no such id — "favoriting" it would silently do
+   * nothing there, so the button is hidden instead of built to look like it works.
    */
   favoriteId?: string;
 }
@@ -111,13 +112,6 @@ const ORIGIN_STORIES: Record<string, string> = {
 // Re-exported name kept so the render code below reads unchanged; the
 // vocabulary itself lives in lib/allergens.ts.
 const ALLERGEN_KEYS: Record<string, string> = ALLERGEN_LABEL_KEYS;
-
-/** English name Gemini is asked to translate into — must be a real language name, not a code. */
-const LANGUAGE_NAMES: Record<Language, string> = {
-  en: "English", ar: "Arabic", de: "German", fr: "French",
-  it: "Italian", ru: "Russian", ur: "Urdu", zh: "Chinese",
-  tr: "Turkish", es: "Spanish", pt: "Portuguese",
-};
 
 const ARABIC_RE = /[؀-ۿ]/;
 
@@ -771,9 +765,9 @@ export function Lens() {
   // Menu-mode state
   const [displayDishes, setDisplayDishes] = useState<DisplayDish[]>([]);
   const [selected,    setSelected]    = useState<DisplayDish | null>(null);
-  const [favorites,   setFavorites]   = useState<string[]>(() => {
-    try { return JSON.parse(localStorage.getItem("safarly_favorites") ?? "[]"); } catch { return []; }
-  });
+  const [favorites,   setFavorites]   = useState<string[]>(() =>
+    ALL_DISHES.map(d => d.id).filter(id => isFavoriteRef("dish", id))
+  );
   // Place-mode state
   const [displayPlace, setDisplayPlace] = useState<DisplayPlace | null>(null);
   // Signage-mode state
@@ -857,9 +851,8 @@ export function Lens() {
   }
 
   function addFavorite(dishId: string) {
-    const next = [...new Set([...favorites, dishId])];
-    setFavorites(next);
-    localStorage.setItem("safarly_favorites", JSON.stringify(next));
+    addFavoriteRef("dish", dishId);
+    setFavorites(prev => [...new Set([...prev, dishId])]);
   }
 
   function reset() {
@@ -884,15 +877,17 @@ export function Lens() {
   return (
     <div style={{ paddingTop: 68, paddingBottom: 88, background: "var(--sf-bg)", minHeight: "100dvh" }}>
       {/* Header */}
-      <div style={{ borderBottom: "1px solid var(--sf-border)", padding: "20px 20px 0" }}>
-        <div style={{ maxWidth: 680, margin: "0 auto" }}>
-          <h1 style={{ fontSize: "clamp(1.25rem,4vw,1.625rem)", fontWeight: 800, color: "var(--sf-text)", letterSpacing: "-0.02em", marginBottom: 4 }}>
-            {t("page.lens.title")}
-          </h1>
-          <p style={{ color: "var(--sf-text-muted)", fontSize: "0.875rem", marginBottom: 16 }}>{t("lens.subtitle")}</p>
-          <ModeTabs mode={mode} onSwitch={switchMode} t={t} />
+      <AuroraHero minHeight="auto" className="sf-aurora-band">
+        <div style={{ borderBottom: "1px solid var(--sf-border)", padding: "20px 20px 0" }}>
+          <div style={{ maxWidth: 680, margin: "0 auto" }}>
+            <h1 style={{ fontSize: "clamp(1.25rem,4vw,1.625rem)", fontWeight: 800, color: "var(--sf-text)", letterSpacing: "-0.02em", marginBottom: 4 }}>
+              {t("page.lens.title")}
+            </h1>
+            <p style={{ color: "var(--sf-text-muted)", fontSize: "0.875rem", marginBottom: 16 }}>{t("lens.subtitle")}</p>
+            <ModeTabs mode={mode} onSwitch={switchMode} t={t} />
+          </div>
         </div>
-      </div>
+      </AuroraHero>
 
       <div style={{ maxWidth: 680, margin: "0 auto", padding: "24px 16px" }}>
 

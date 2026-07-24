@@ -14,6 +14,29 @@ import {
   currencyForNationality, convertFromSAR, formatCurrencyAmount,
   getCurrencyDisplayPref, setCurrencyDisplayPref,
 } from "@/lib/currency";
+import poisData from "@/data/pois.json";
+
+/**
+ * "Famous for" line on each destination card — the single most recognisable
+ * real POI per city, so travellers can place an unfamiliar city (Najran,
+ * Khamis Mushait) at a glance instead of picking blind. Takes the first POI
+ * listed for that city in pois.json, preferring a verified one — every city's
+ * data was authored with its single best-known landmark listed first.
+ */
+const FAMOUS_POI: Record<string, string> = (() => {
+  const byCity = new Map<string, { name: string; verified?: boolean }[]>();
+  for (const p of poisData as { city: string; name: string; verified?: boolean }[]) {
+    const list = byCity.get(p.city) ?? [];
+    list.push(p);
+    byCity.set(p.city, list);
+  }
+  const out: Record<string, string> = {};
+  for (const [city, list] of byCity) {
+    const best = list.find(p => p.verified) ?? list[0];
+    if (best) out[city] = best.name;
+  }
+  return out;
+})();
 
 /* ──────────────────────────────────────────────────────────────────────
    Style injection
@@ -139,8 +162,8 @@ function AlUlaSkyline() {
 type FeaturedCityId = "riyadh" | "jeddah" | "alula";
 const SKYLINES: Record<FeaturedCityId, React.ComponentType> = { riyadh: RiyadhSkyline, jeddah: JeddahSkyline, alula: AlUlaSkyline };
 
-function FeaturedCityCard({ id, title, sub, desc, selected, onClick }: {
-  id: FeaturedCityId; title: string; sub: string; desc: string; selected: boolean; onClick: () => void;
+function FeaturedCityCard({ id, title, sub, desc, famousFor, selected, onClick }: {
+  id: FeaturedCityId; title: string; sub: string; desc: string; famousFor?: string; selected: boolean; onClick: () => void;
 }) {
   const Skyline = SKYLINES[id];
   return (
@@ -161,7 +184,12 @@ function FeaturedCityCard({ id, title, sub, desc, selected, onClick }: {
           <div>
             <p style={{ fontSize: "1.0625rem", fontWeight: 800, color: "var(--sf-text)", lineHeight: 1.2, marginBottom: "2px" }}>{title}</p>
             <p style={{ fontSize: "0.6875rem", fontWeight: 700, color: "var(--sf-accent)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "5px" }}>{sub}</p>
-            <p style={{ fontSize: "0.8rem", color: "var(--sf-text-muted)", lineHeight: 1.4 }}>{desc}</p>
+            <p style={{ fontSize: "0.8rem", color: "var(--sf-text-muted)", lineHeight: 1.4, marginBottom: famousFor ? 4 : 0 }}>{desc}</p>
+            {famousFor && (
+              <p style={{ fontSize: "0.75rem", color: "var(--sf-text-muted)", lineHeight: 1.3, display: "flex", alignItems: "center", gap: 4 }}>
+                <span aria-hidden>📍</span><span style={{ fontWeight: 600 }}>{famousFor}</span>
+              </p>
+            )}
           </div>
           {selected && (
             <div style={{ width: 20, height: 20, borderRadius: "50%", background: "var(--sf-indigo)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginInlineStart: 8 }}>
@@ -177,16 +205,25 @@ function FeaturedCityCard({ id, title, sub, desc, selected, onClick }: {
   );
 }
 
-// Compact city data with emoji icon
+// Compact city data with emoji icon — every city besides the 3 featured ones
 const COMPACT_CITIES = [
-  { id: "al_khobar", icon: "🌊", region: "Eastern Province" },
-  { id: "abha",      icon: "⛰️", region: "Aseer Region"     },
-  { id: "taif",      icon: "🌹", region: "Hejaz Region"     },
-  { id: "madinah",   icon: "🕌", region: "Hejaz Region"     },
+  { id: "al_khobar",      icon: "🌊", region: "Eastern Province" },
+  { id: "abha",           icon: "⛰️", region: "Aseer Region"     },
+  { id: "taif",           icon: "🌹", region: "Hejaz Region"     },
+  { id: "madinah",        icon: "🕌", region: "Hejaz Region"     },
+  { id: "mecca",          icon: "🕋", region: "Makkah Region"    },
+  { id: "dammam",         icon: "🌊", region: "Eastern Province" },
+  { id: "dhahran",        icon: "🏛️", region: "Eastern Province" },
+  { id: "khamis_mushait", icon: "🏔️", region: "Aseer Region"     },
+  { id: "jazan",          icon: "🏝️", region: "Jazan Region"     },
+  { id: "najran",         icon: "🏜️", region: "Najran Region"    },
+  { id: "tabuk",          icon: "🏰", region: "Tabuk Region"     },
+  { id: "hail",           icon: "🐫", region: "Hail Region"      },
+  { id: "yanbu",          icon: "🐠", region: "Madinah Region"   },
 ] as const;
 
-function CompactCityCard({ id, icon, title, sub, desc, selected, onClick }: {
-  id: string; icon: string; title: string; sub: string; desc: string; selected: boolean; onClick: () => void;
+function CompactCityCard({ id, icon, title, sub, desc, famousFor, selected, onClick }: {
+  id: string; icon: string; title: string; sub: string; desc: string; famousFor?: string; selected: boolean; onClick: () => void;
 }) {
   return (
     <button
@@ -203,7 +240,12 @@ function CompactCityCard({ id, icon, title, sub, desc, selected, onClick }: {
       </div>
       <p style={{ fontWeight: 800, color: "var(--sf-text)", fontSize: "0.9375rem", lineHeight: 1.2, marginBottom: 2 }}>{title}</p>
       <p style={{ fontSize: "0.6875rem", fontWeight: 700, color: "var(--sf-accent)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 4 }}>{sub}</p>
-      <p style={{ fontSize: "0.75rem", color: "var(--sf-text-muted)", lineHeight: 1.35 }}>{desc}</p>
+      <p style={{ fontSize: "0.75rem", color: "var(--sf-text-muted)", lineHeight: 1.35, marginBottom: famousFor ? 4 : 0 }}>{desc}</p>
+      {famousFor && (
+        <p style={{ fontSize: "0.6875rem", color: "var(--sf-text-muted)", lineHeight: 1.3, display: "flex", alignItems: "center", gap: 4 }}>
+          <span aria-hidden>📍</span><span style={{ fontWeight: 600 }}>{famousFor}</span>
+        </p>
+      )}
     </button>
   );
 }
@@ -905,6 +947,7 @@ export function Trip() {
                     title={t(`trip.city.${id}.title`)}
                     sub={t(`trip.city.${id}.sub`)}
                     desc={t(`trip.city.${id}.desc`)}
+                    famousFor={FAMOUS_POI[id]}
                     selected={city === id}
                     onClick={() => setCity(city === id ? "" : id)}
                   />
@@ -916,14 +959,15 @@ export function Trip() {
                 {t("trip.city.more")}
               </p>
 
-              {/* Compact 4 */}
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 10 }}>
+              {/* Every other city — all 16 Saudi destinations are now selectable */}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))", gap: 10 }}>
                 {COMPACT_CITIES.map(({ id, icon }) => (
                   <CompactCityCard
                     key={id} id={id} icon={icon}
                     title={t(`trip.city.${id}.title`)}
                     sub={t(`trip.city.${id}.sub`)}
                     desc={t(`trip.city.${id}.desc`)}
+                    famousFor={FAMOUS_POI[id]}
                     selected={city === id}
                     onClick={() => setCity(city === id ? "" : id)}
                   />

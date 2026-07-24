@@ -13,7 +13,7 @@ import { useTranslation } from "@/providers/translation-context";
 import { getAuth, setAuth, isProfileComplete, sanitizeReturnTo } from "@/lib/auth";
 import { isValidEmail, assessPassword } from "@/lib/validation";
 import { signUp, logIn } from "@/lib/auth-api";
-import safarlyLogo from "@assets/safarly-lockup-light_1784459757614.png";
+import safarlyLogo from "@assets/safarly-logo-new.png";
 
 export function Login() {
   usePageMeta("Sign In — Safarly", "Log in or create your Safarly account.");

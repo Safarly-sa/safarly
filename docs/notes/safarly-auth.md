@@ -1,10 +1,16 @@
 ---
 name: Safarly auth layer
-description: localStorage-only auth approach, key names, event system, and shared utility
+description: Real backend auth (httpOnly session cookie) mirrored into a localStorage cache for synchronous UI reads — key names, event system, and shared utility
 ---
 
 ## Rule
-All auth reads/writes go through `src/lib/auth.ts`. Never read localStorage keys directly.
+`src/lib/auth-api.ts` calls the real API (`POST /api/auth/*`) and is the source of truth —
+the server sets an httpOnly session cookie, so there is no token to store. `src/lib/auth.ts`
+mirrors `{ name, email }` into localStorage purely so the Navbar and profile-complete checks
+can read synchronously without an API round trip. All local reads/writes of that mirror go
+through `src/lib/auth.ts`. Never read its localStorage keys directly, and never treat the
+mirror as authoritative for anything session-guarded — routes like `/api/concierge/chat` or
+`/api/trip/generate` check the real cookie, not this cache.
 
 ## Keys
 - `safarly_auth` — `{ name: string; email: string }` JSON

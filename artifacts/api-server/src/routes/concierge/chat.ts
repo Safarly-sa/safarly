@@ -30,17 +30,37 @@ import { SseWriter } from "../../lib/sse";
 import { logger } from "../../lib/logger";
 import { CONCIERGE_TOOLS, buildPatch, runEventsSearch } from "./concierge-tools";
 import { validateChatRequest } from "./chat-validate";
-import type { ConciergeChatRequest, ConciergePatch } from "./concierge-types";
+import type { ConciergeChatRequest, ConciergePatch, ConciergePoi } from "./concierge-types";
 import { runDemoChat } from "./chat-demo";
 
 const router: IRouter = Router();
 
 const MAX_TOOL_ROUNDS = 4;
 
+/** One line per stop/candidate, "id — name" — the exact vocabulary edit_itinerary's poiId/addPoiId/stopOrder must be drawn from. */
+function poiLine(poi: ConciergePoi): string {
+  return `${poi.id} — ${poi.name}`;
+}
+
+function itineraryContext(req: ConciergeChatRequest): string {
+  const days = req.days
+    .map((d) => `Day ${d.dayNumber}:\n${d.stops.map((s) => `  - ${poiLine(s)}`).join("\n") || "  (no stops)"}`)
+    .join("\n");
+  const candidates = req.candidatePois.map((p) => `  - ${poiLine(p)}`).join("\n") || "  (none)";
+
+  return `Current itinerary (use these exact ids for poiId/removePoiId/stopOrder — never invent one from a name):
+${days}
+
+Candidate POIs available to add (use these exact ids for addPoiId — the only valid targets for add_stop/swap_stop):
+${candidates}`;
+}
+
 function systemPrompt(req: ConciergeChatRequest): string {
   return `You are Safarly's travel concierge for a trip to ${req.cityDisplayName}, Saudi Arabia, ${req.dateStart} to ${req.dateEnd}.
 
 You can change the traveller's itinerary with the edit_itinerary tool, and look up events with search_events. Only call edit_itinerary when they've actually asked for a change — answering a question is not a change. When you do call it, keep changes proportionate to what they asked for (a request to make one day lighter should remove or swap one or two stops on that day, not restructure the whole trip).
+
+${itineraryContext(req)}
 
 You have no live access to current prices, exact travel times, or confirmed event dates — be genuinely helpful but honest about that uncertainty rather than inventing precision you don't have. Keep replies conversational and brief. Respond in ${req.languageName}.`;
 }

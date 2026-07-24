@@ -9,7 +9,7 @@ import { Lock, Eye, EyeOff, ArrowRight, Check, X } from "lucide-react";
 import { usePageMeta } from "@/lib/usePageMeta";
 import { assessPassword } from "@/lib/validation";
 import { resetPassword } from "@/lib/auth-api";
-import safarlyLogo from "@assets/safarly-lockup-light_1784459757614.png";
+import safarlyLogo from "@assets/safarly-logo-new.png";
 
 export function ResetPassword() {
   usePageMeta("Reset Password — Safarly", "Set a new password for your Safarly account.");

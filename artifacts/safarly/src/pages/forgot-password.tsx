@@ -14,7 +14,7 @@ import { Mail, ArrowRight, Copy, Check } from "lucide-react";
 import { usePageMeta } from "@/lib/usePageMeta";
 import { isValidEmail } from "@/lib/validation";
 import { forgotPassword } from "@/lib/auth-api";
-import safarlyLogo from "@assets/safarly-lockup-light_1784459757614.png";
+import safarlyLogo from "@assets/safarly-logo-new.png";
 
 export function ForgotPassword() {
   usePageMeta("Forgot Password — Safarly", "Request a password reset link for your Safarly account.");

@@ -13,6 +13,7 @@ import {
 import { useTranslation } from "@/providers/translation-context";
 import type { Language } from "@/providers/translation-context";
 import { usePageMeta } from "@/lib/usePageMeta";
+import { AuroraHero } from "@/components/AuroraHero";
 import { getAuth, setAuth } from "@/lib/auth";
 import { poiName, poiCulture } from "@/lib/poi-i18n";
 import { dishName, mealVenue, mealArea } from "@/lib/dish-i18n";
@@ -22,14 +23,12 @@ import { NationalityDropdown } from "@/components/NationalityDropdown";
 import {
   Chip, SectionLabel, Toggle, AccessibilityNotesField,
 } from "./profile-setup";
+import { CITY_NAMES_EN, CITY_NAMES_AR } from "@/lib/engine";
 import type { ItineraryResult, ItineraryDay, ItineraryStop, ItineraryMeal, TripSpec, Objectives } from "@/lib/engine";
 
 /* ── Types ──────────────────────────────────────────────────────────── */
 interface ProfileData { name: string; nationality: string; language: string; ageRange: string; dietary: string[]; allergies: string[]; accessibility: boolean; accessibilityNotes: string; interests: string[]; }
 interface ConfirmedTrip { trip: TripSpec; itinerary: ItineraryResult; confirmedAt: string; }
-
-const CITY_NAMES_EN: Record<string, string> = { riyadh: "Riyadh", jeddah: "Jeddah", alula: "AlUla", al_khobar: "Al Khobar", abha: "Abha", taif: "Taif", madinah: "Madinah" };
-const CITY_NAMES_AR: Record<string, string> = { riyadh: "الرياض", jeddah: "جدة", alula: "العُلا", al_khobar: "الخبر", abha: "أبها", taif: "الطائف", madinah: "المدينة المنورة" };
 
 const ALLERGY_KEY: Record<string, string>  = { nuts: "ob.allergy.nuts", dairy: "ob.allergy.dairy", gluten: "ob.allergy.gluten", sesame: "ob.allergy.sesame", eggs: "ob.allergy.eggs", shellfish: "ob.allergy.shellfish" };
 const INTEREST_KEY: Record<string, string> = { history: "ob.interest.history", food: "ob.interest.food", adventure: "ob.interest.adventure", shopping: "ob.interest.shopping", arts: "ob.interest.arts", nature: "ob.interest.nature", photography: "ob.interest.photography" };
@@ -924,28 +923,30 @@ export function Dashboard() {
     <div style={{ paddingTop: 68, paddingBottom: 88, background: "var(--sf-bg)", minHeight: "100dvh" }}>
 
       {/* Page header */}
-      <div style={{ borderBottom: "1px solid var(--sf-border)", padding: "20px 20px 0" }}>
-        <div style={{ maxWidth: 900, margin: "0 auto" }}>
-          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, marginBottom: 16 }}>
-            <div>
-              <h1 style={{ fontSize: "clamp(1.25rem,4vw,1.625rem)", fontWeight: 800, color: "var(--sf-text)", letterSpacing: "-0.02em", marginBottom: 4 }}>
-                {t("page.dashboard.title")}
-              </h1>
-              <p style={{ color: "var(--sf-text-muted)", fontSize: "0.9375rem" }}>
-                {t("dash.welcome")}{auth?.name ? `, ${auth.name}` : ""}
-                {cn && ` — ${t("dash.city").replace("{city}", cn)}`}
-              </p>
+      <AuroraHero minHeight="auto" className="sf-aurora-band">
+        <div style={{ borderBottom: "1px solid var(--sf-border)", padding: "20px 20px 0" }}>
+          <div style={{ maxWidth: 900, margin: "0 auto" }}>
+            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, marginBottom: 16 }}>
+              <div>
+                <h1 style={{ fontSize: "clamp(1.25rem,4vw,1.625rem)", fontWeight: 800, color: "var(--sf-text)", letterSpacing: "-0.02em", marginBottom: 4 }}>
+                  {t("page.dashboard.title")}
+                </h1>
+                <p style={{ color: "var(--sf-text-muted)", fontSize: "0.9375rem" }}>
+                  {t("dash.welcome")}{auth?.name ? `, ${auth.name}` : ""}
+                  {cn && ` — ${t("dash.city").replace("{city}", cn)}`}
+                </p>
+              </div>
+            </div>
+
+            {/* Tab bar */}
+            <div style={{ display: "flex", gap: 4, overflowX: "auto", paddingBottom: 1 }}>
+              <TabPill label={t("dash.tab.ongoing")} active={tab === "ongoing"} badge={ongoingTrip ? 1 : 0} onClick={() => setTab("ongoing")} />
+              <TabPill label={t("dash.tab.trips")}   active={tab === "trips"}   badge={pastTrips.length} onClick={() => setTab("trips")} />
+              <TabPill label={t("dash.tab.profile")} active={tab === "profile"} onClick={() => setTab("profile")} />
             </div>
           </div>
-
-          {/* Tab bar */}
-          <div style={{ display: "flex", gap: 4, overflowX: "auto", paddingBottom: 1 }}>
-            <TabPill label={t("dash.tab.ongoing")} active={tab === "ongoing"} badge={ongoingTrip ? 1 : 0} onClick={() => setTab("ongoing")} />
-            <TabPill label={t("dash.tab.trips")}   active={tab === "trips"}   badge={pastTrips.length} onClick={() => setTab("trips")} />
-            <TabPill label={t("dash.tab.profile")} active={tab === "profile"} onClick={() => setTab("profile")} />
-          </div>
         </div>
-      </div>
+      </AuroraHero>
 
       {/* Tab content */}
       <div style={{ maxWidth: 900, margin: "0 auto", padding: "24px 16px" }}>

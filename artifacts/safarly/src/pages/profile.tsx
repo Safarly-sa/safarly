@@ -21,6 +21,20 @@ import {
 } from "./profile-setup";
 import phrasesRaw from "@/data/phrases.json";
 import dishesRaw from "@/data/dishes.json";
+import poisRaw from "@/data/pois.json";
+import { poiName as poiI18nName } from "@/lib/poi-i18n";
+import {
+  DEFAULT_COLLECTION_ID,
+  getFavoritesState,
+  createCollection,
+  renameCollection,
+  deleteCollection,
+  setNote,
+  moveToCollection,
+  removeItem,
+  type FavoriteCollection,
+  type FavoriteItem,
+} from "@/lib/favorites";
 
 /* ── Style injection ────────────────────────────────────────────────── */
 function useProfileStyles() {
@@ -98,17 +112,20 @@ function useProfileStyles() {
   }, []);
 }
 
-/* ── Learned phrases / food list data ─────────────────────────────────
-   Both `safarly_learned` and `safarly_favorites` were never trip-scoped, so
-   they already persist across trips, and (like the rest of the profile) also
-   survive sign-out — see lib/auth.ts's signOut(). */
+/* ── Learned phrases / favourites data ─────────────────────────────────
+   `safarly_learned` and the favourites store (lib/favorites.ts) were never
+   trip-scoped, so they already persist across trips, and (like the rest of
+   the profile) also survive sign-out — see lib/auth.ts's signOut(). */
 interface Phrase { id: string; dialect: string; situation: string; arabic: string; transliteration: string; english: string; }
 interface Dish { id: string; name: string; name_ar: string; price_sar: number; description: string; common_allergens: string[]; meal_type: string; }
+interface POI { id: string; name: string; city: string; category: string; culture_note?: string }
 
 const ALL_PHRASES = phrasesRaw as Phrase[];
 const ALL_DISHES  = dishesRaw  as Dish[];
+const ALL_POIS    = poisRaw    as POI[];
 const PHRASES_MAP = Object.fromEntries(ALL_PHRASES.map(p => [p.id, p]));
 const DISHES_MAP  = Object.fromEntries(ALL_DISHES.map(d => [d.id, d]));
+const POIS_MAP    = Object.fromEntries(ALL_POIS.map(p => [p.id, p]));
 
 const DIALECT_ORDER = ["najdi", "hijazi", "janubi", "shamali", "sharqi"] as const;
 const DIALECT_NAME_KEY: Record<string, string> = {
@@ -178,16 +195,25 @@ export function Profile() {
   const [confirmSignOut, setConfirmSignOut] = useState(false);
 
   const [learnedIds, setLearnedIds] = useState<string[]>([]);
-  const [favorites, setFavorites] = useState<string[]>([]);
+  const [collections, setCollections] = useState<FavoriteCollection[]>([]);
+  const [favItems, setFavItems] = useState<FavoriteItem[]>([]);
+  const [newCollectionName, setNewCollectionName] = useState("");
+  const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
 
   /* Redirect to login if not authenticated */
   useEffect(() => {
     if (!getAuth()) navigate("/login");
   }, [navigate]);
 
+  function reloadFavorites() {
+    const state = getFavoritesState();
+    setCollections(state.collections);
+    setFavItems(state.items);
+  }
+
   useEffect(() => {
     try { setLearnedIds(JSON.parse(localStorage.getItem("safarly_learned") ?? "[]")); } catch { /* */ }
-    try { setFavorites(JSON.parse(localStorage.getItem("safarly_favorites") ?? "[]")); } catch { /* */ }
+    reloadFavorites();
   }, []);
 
   const learnedByDialect = useMemo(() => (
@@ -199,15 +225,48 @@ export function Profile() {
       .filter(g => g.phrases.length > 0)
   ), [learnedIds]);
 
-  const favDishes = useMemo(
-    () => favorites.map(id => DISHES_MAP[id]).filter(Boolean) as Dish[],
-    [favorites]
-  );
+  /** Items grouped by collection, each resolved to a dish or POI for display; unresolvable ids (deleted from the dataset) are dropped. */
+  const favByCollection = useMemo(() => {
+    return collections.map(collection => ({
+      collection,
+      items: favItems
+        .filter(i => i.collectionId === collection.id)
+        .map(item => {
+          const ref = item.refType === "dish" ? DISHES_MAP[item.refId] : POIS_MAP[item.refId];
+          return ref ? { item, ref } : null;
+        })
+        .filter((x): x is { item: FavoriteItem; ref: Dish | POI } => !!x),
+    }));
+  }, [collections, favItems]);
 
-  function removeFav(id: string) {
-    const next = favorites.filter(f => f !== id);
-    setFavorites(next);
-    localStorage.setItem("safarly_favorites", JSON.stringify(next));
+  const totalFavCount = favItems.length;
+
+  function handleRemoveFavItem(itemId: string) {
+    removeItem(itemId);
+    reloadFavorites();
+  }
+
+  function handleCreateCollection() {
+    if (!newCollectionName.trim()) return;
+    createCollection(newCollectionName);
+    setNewCollectionName("");
+    reloadFavorites();
+  }
+
+  function handleDeleteCollection(collectionId: string) {
+    deleteCollection(collectionId);
+    reloadFavorites();
+  }
+
+  function handleMoveItem(itemId: string, collectionId: string) {
+    moveToCollection(itemId, collectionId);
+    reloadFavorites();
+  }
+
+  function handleSaveNote(itemId: string, note: string) {
+    setNote(itemId, note);
+    setEditingNoteId(null);
+    reloadFavorites();
   }
 
   function handleSignOut() {
@@ -472,33 +531,131 @@ export function Profile() {
           )}
         </section>
 
-        {/* ── Food List ── */}
-        <section className="sf-profile-section" aria-labelledby="section-food-list">
-          <h2 id="section-food-list" className="sf-profile-section-title">{t("dash.food.title")}</h2>
-          {favDishes.length === 0 ? (
+        {/* ── Favourites ── */}
+        <section className="sf-profile-section" aria-labelledby="section-favorites">
+          <h2 id="section-favorites" className="sf-profile-section-title">{t("profile.favorites.title")}</h2>
+
+          {totalFavCount === 0 ? (
             <div style={{ textAlign: "center", padding: "6px 4px 4px" }}>
               <p style={{ color: "var(--sf-text-muted)", fontSize: "0.9375rem", lineHeight: 1.6 }}>
-                {t("dash.food.empty")}
+                {t("profile.favorites.empty")}
               </p>
               <Link href="/lens" className="sf-profile-empty-link">
                 {t("nav.lens")} <ArrowRight size={14} aria-hidden />
               </Link>
             </div>
           ) : (
-            favDishes.map(d => (
-              <div key={d.id} className="sf-fav-row">
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
-                    <span style={{ fontSize: "1rem", fontWeight: 700, color: "var(--sf-text)", direction: "rtl" }}>{d.name_ar}</span>
-                    <span style={{ fontSize: "0.8125rem", color: "var(--sf-text-muted)" }}>{d.name}</span>
+            favByCollection.map(({ collection, items }) => {
+              if (items.length === 0 && collection.id !== DEFAULT_COLLECTION_ID) return null;
+              const isDefault = collection.id === DEFAULT_COLLECTION_ID;
+              return (
+                <div key={collection.id} style={{ marginBottom: 22 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                    <p className="sf-profile-group-title">
+                      {isDefault ? t("profile.favorites.default_collection") : collection.name} ({items.length})
+                    </p>
+                    {!isDefault && (
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteCollection(collection.id)}
+                        aria-label={t("profile.favorites.delete_collection")}
+                        style={{ background: "none", border: "none", cursor: "pointer", color: "var(--sf-text-muted)", fontSize: "0.75rem", fontWeight: 600 }}
+                      >
+                        {t("profile.favorites.delete_collection")}
+                      </button>
+                    )}
                   </div>
-                  <div style={{ fontSize: "0.75rem", color: "var(--sf-text-muted)", marginTop: 2 }}>SAR {d.price_sar}</div>
+
+                  {items.length === 0 ? (
+                    <p style={{ fontSize: "0.8125rem", color: "var(--sf-text-muted)" }}>{t("profile.favorites.collection_empty")}</p>
+                  ) : items.map(({ item, ref }) => {
+                    const dish = item.refType === "dish" ? (ref as Dish) : null;
+                    const poi  = item.refType === "poi"  ? (ref as POI)  : null;
+                    return (
+                      <div key={item.id} className="sf-fav-row" style={{ flexDirection: "column", alignItems: "stretch", gap: 6 }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8, width: "100%" }}>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            {dish ? (
+                              <div style={{ display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
+                                <span style={{ fontSize: "1rem", fontWeight: 700, color: "var(--sf-text)", direction: "rtl" }}>{dish.name_ar}</span>
+                                <span style={{ fontSize: "0.8125rem", color: "var(--sf-text-muted)" }}>{dish.name}</span>
+                              </div>
+                            ) : poi ? (
+                              <span style={{ fontSize: "1rem", fontWeight: 700, color: "var(--sf-text)" }}>{poiI18nName(t, poi)}</span>
+                            ) : null}
+                            <div style={{ fontSize: "0.75rem", color: "var(--sf-text-muted)", marginTop: 2 }}>
+                              {dish ? `SAR ${dish.price_sar}` : poi?.city}
+                            </div>
+                          </div>
+                          <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+                            {collections.length > 1 && (
+                              <select
+                                value={item.collectionId}
+                                onChange={e => handleMoveItem(item.id, e.target.value)}
+                                aria-label={t("profile.favorites.move_to")}
+                                style={{ fontSize: "0.75rem", padding: "4px 6px", borderRadius: 6, border: "1px solid var(--sf-border)", background: "var(--sf-surface)", color: "var(--sf-text)" }}
+                              >
+                                {collections.map(c => (
+                                  <option key={c.id} value={c.id}>
+                                    {c.id === DEFAULT_COLLECTION_ID ? t("profile.favorites.default_collection") : c.name}
+                                  </option>
+                                ))}
+                              </select>
+                            )}
+                            <button
+                              onClick={() => handleRemoveFavItem(item.id)}
+                              style={{ flexShrink: 0, width: 36, height: 36, borderRadius: "50%", border: "1px solid var(--sf-border)", background: "var(--sf-surface-alt)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+                              aria-label={t("dash.food.remove")}
+                            >
+                              <X size={14} style={{ color: "var(--sf-text-muted)" }} aria-hidden />
+                            </button>
+                          </div>
+                        </div>
+
+                        {editingNoteId === item.id ? (
+                          <input
+                            autoFocus
+                            defaultValue={item.note}
+                            onBlur={e => handleSaveNote(item.id, e.target.value)}
+                            onKeyDown={e => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}
+                            placeholder={t("profile.favorites.note_placeholder")}
+                            style={{ fontSize: "0.8125rem", padding: "6px 8px", borderRadius: 6, border: "1px solid var(--sf-border)", background: "var(--sf-surface)", color: "var(--sf-text)", width: "100%" }}
+                          />
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => setEditingNoteId(item.id)}
+                            style={{ textAlign: "start", background: "none", border: "none", cursor: "pointer", fontSize: "0.75rem", color: item.note ? "var(--sf-text)" : "var(--sf-text-muted)", padding: 0, fontStyle: item.note ? "normal" : "italic" }}
+                          >
+                            {item.note || t("profile.favorites.note_placeholder")}
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
-                <button onClick={() => removeFav(d.id)} style={{ flexShrink: 0, width: 36, height: 36, borderRadius: "50%", border: "1px solid var(--sf-border)", background: "var(--sf-surface-alt)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }} aria-label={t("dash.food.remove")}>
-                  <X size={14} style={{ color: "var(--sf-text-muted)" }} aria-hidden />
-                </button>
-              </div>
-            ))
+              );
+            })
+          )}
+
+          {totalFavCount > 0 && (
+            <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+              <input
+                value={newCollectionName}
+                onChange={e => setNewCollectionName(e.target.value)}
+                onKeyDown={e => { if (e.key === "Enter") handleCreateCollection(); }}
+                placeholder={t("profile.favorites.new_collection_placeholder")}
+                style={{ flex: 1, fontSize: "0.875rem", padding: "8px 10px", borderRadius: 8, border: "1px solid var(--sf-border)", background: "var(--sf-surface)", color: "var(--sf-text)" }}
+              />
+              <button
+                type="button"
+                onClick={handleCreateCollection}
+                disabled={!newCollectionName.trim()}
+                style={{ padding: "8px 16px", borderRadius: 8, border: "1px solid var(--sf-indigo)", background: "var(--sf-surface)", color: "var(--sf-indigo)", fontWeight: 700, fontSize: "0.875rem", cursor: newCollectionName.trim() ? "pointer" : "default", opacity: newCollectionName.trim() ? 1 : 0.5 }}
+              >
+                {t("profile.favorites.create")}
+              </button>
+            </div>
           )}
         </section>
 

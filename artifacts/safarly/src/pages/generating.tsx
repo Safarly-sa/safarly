@@ -4,15 +4,44 @@ import { useTranslation } from "@/providers/translation-context";
 import { usePageMeta } from "@/lib/usePageMeta";
 import {
   generateItinerary,
+  CITY_NAMES_AR,
   type ItineraryResult,
   type TravelerProfile,
   type TripSpec,
 } from "@/lib/engine";
+import {
+  applyEnrichment,
+  buildEnrichRequest,
+  enrichTrip,
+  type TripEnrichment,
+} from "@/lib/trip-api";
+import { languageNameOf } from "@/lib/language-names";
 
 /* ── Animation constants ────────────────────────────────────────────── */
 const TYPING_MS   = 14;  // ms per character
 const PAUSE_TICKS = 13;  // ticks between consecutive lines (~182 ms)
 const DONE_TICKS  = 30;  // ticks after final line before isComplete
+
+/* ── Enrichment constants ───────────────────────────────────────────── */
+/**
+ * How long to wait on the enrichment trio before showing the itinerary anyway.
+ * Enrichment is additive: a slow or wedged agent must never strand someone on a
+ * loading screen when their itinerary is already built and sitting in memory.
+ */
+const ENRICH_TIMEOUT_MS = 25_000;
+
+/**
+ * The line appended when an enrichment agent finishes. Text is deliberately
+ * count-free — the three agents run concurrently server-side and report
+ * completion individually, but the payload itself only arrives once all three
+ * are done, so a count here would either be a lie or force the line to wait for
+ * data it doesn't need. The actual numbers show on the itinerary.
+ */
+const ENRICH_LINES: Record<string, { nameKey: string; msgKey: string }> = {
+  events:        { nameKey: "gen.agent.events",        msgKey: "gen.msg.events" },
+  transport:     { nameKey: "gen.agent.transport",     msgKey: "gen.msg.transport" },
+  accommodation: { nameKey: "gen.agent.accommodation", msgKey: "gen.msg.accommodation" },
+};
 
 /* ── Text-part types ────────────────────────────────────────────────── */
 interface TextPart  { text: string; accent?: boolean }
@@ -102,19 +131,10 @@ function buildAgentLines(
     .sort(([, a], [, b]) => b - a)
     .slice(0, 3);
 
-  const cityNamesAr: Record<string, string> = {
-    riyadh:    "الرياض",
-    jeddah:    "جدة",
-    alula:     "العُلا",
-    al_khobar: "الخبر",
-    abha:      "أبها",
-    taif:      "الطائف",
-    madinah:   "المدينة المنورة",
-  };
   // For AI-chosen city, use the resolved city from the engine result
   const effectiveCity = trip.city === "ai" ? (result.resolvedCity ?? "riyadh") : trip.city;
   const cityDisplay =
-    language === "ar" ? (cityNamesAr[effectiveCity] ?? effectiveCity) : result.cityName;
+    language === "ar" ? (CITY_NAMES_AR[effectiveCity] ?? effectiveCity) : result.cityName;
 
   const totalStops  = result.days.reduce((s, d) => s + d.stops.length, 0);
   const hiddenCount = Math.round(result.hiddenGemShare * totalStops);
@@ -305,17 +325,34 @@ function AgentLineRow({
 export function Generating() {
   const [, navigate]    = useLocation();
   const { t, language } = useTranslation();
-  usePageMeta("Crafting Your Itinerary", "Eight AI agents are building your personalised Saudi journey.");
+  usePageMeta("Crafting Your Itinerary", "Safarly's AI agents are building your personalised Saudi journey.");
   useGenStyles();
 
   const [tick, setTick]         = useState(0);
   const [agentLines, setLines]  = useState<AgentLine[]>([]);
   const [engineReady, setReady] = useState(false);
+  /**
+   * Whether the enrichment call has finished, one way or the other. Navigation
+   * waits on this as well as the animation, so a fast typing pass can't sail
+   * past a still-running agent and persist an itinerary missing its events.
+   */
+  const [enrichSettled, setEnrichSettled] = useState(false);
 
-  const resultRef    = useRef<ItineraryResult | null>(null);
-  const completedRef = useRef(false);
-  const navigateRef  = useRef(navigate);
+  const resultRef     = useRef<ItineraryResult | null>(null);
+  const profileRef    = useRef<TravelerProfile | null>(null);
+  const tripRef       = useRef<TripSpec | null>(null);
+  const enrichmentRef = useRef<TripEnrichment | null>(null);
+  const completedRef  = useRef(false);
+  const navigateRef   = useRef(navigate);
   navigateRef.current = navigate;
+
+  // Read through refs inside the enrichment effect so it can depend on
+  // `engineReady` alone — re-running it because a translation function changed
+  // identity would fire a second billable round of agent calls.
+  const tRef = useRef(t);
+  tRef.current = t;
+  const languageRef = useRef(language);
+  languageRef.current = language;
 
   /* ── Run engine once on mount ─────────────────────────────────────── */
   useEffect(() => {
@@ -327,30 +364,101 @@ export function Generating() {
       return;
     }
 
-    let result: ItineraryResult;
-    let trip:   TripSpec;
+    let result:  ItineraryResult;
+    let trip:    TripSpec;
+    let profile: TravelerProfile;
 
     try {
-      const profile = JSON.parse(profileRaw) as TravelerProfile;
-      trip          = JSON.parse(tripRaw)    as TripSpec;
-      result        = generateItinerary(profile, trip);
+      profile = JSON.parse(profileRaw) as TravelerProfile;
+      trip    = JSON.parse(tripRaw)    as TripSpec;
+      result  = generateItinerary(profile, trip);
     } catch {
       navigateRef.current("/trip");
       return;
     }
 
-    resultRef.current = result;
+    resultRef.current  = result;
+    profileRef.current = profile;
+    tripRef.current    = trip;
     setLines(buildAgentLines(result, trip, t, language));
     setReady(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  /* ── Enrich the itinerary while the local lines type out ──────────── */
+  useEffect(() => {
+    if (!engineReady) return undefined;
+
+    const itinerary = resultRef.current;
+    const trip      = tripRef.current;
+    const profile   = profileRef.current;
+
+    if (!itinerary || !trip || !profile) {
+      setEnrichSettled(true);
+      return undefined;
+    }
+
+    const controller = new AbortController();
+    const timeout    = setTimeout(() => controller.abort(), ENRICH_TIMEOUT_MS);
+    let cancelled    = false;
+
+    const request = buildEnrichRequest({
+      itinerary,
+      dateStart:       trip.dateStart,
+      dateEnd:         trip.dateEnd,
+      budgetSarPerDay: trip.budget,
+      travelType:      profile.travelType || trip.travelContext || "solo",
+      languageName:    languageNameOf(languageRef.current),
+    });
+
+    void enrichTrip(request, {
+      signal: controller.signal,
+      onStage: (event) => {
+        // "planning" is the server acknowledging the request, and "start" only
+        // says an agent began — neither is a result worth a line of its own.
+        if (cancelled || event.status === "start") return;
+
+        const line = ENRICH_LINES[event.stage];
+        if (!line) return;
+
+        // A failed agent still gets a line: silently dropping it would leave
+        // the traveller wondering why the screen promised something it skipped.
+        const message = event.status === "done"
+          ? tRef.current(line.msgKey)
+          : tRef.current("gen.msg.unavailable");
+
+        setLines(prev => [...prev, { nameKey: line.nameKey, parts: [{ text: message }] }]);
+      },
+    }).then((outcome) => {
+      if (cancelled) return;
+      if (outcome.ok) enrichmentRef.current = outcome.data;
+      setEnrichSettled(true);
+    });
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timeout);
+      controller.abort();
+    };
+  }, [engineReady]);
+
+  /**
+   * Ticks needed to type everything currently queued. The timer clamps to this
+   * so `tick` can't race ahead of the content: enrichment lines are appended
+   * mid-animation, and an unclamped counter would have already "spent" the
+   * ticks that should have typed them, making them appear fully-formed instead.
+   */
+  const maxTick = useMemo(
+    () => agentLines.reduce((sum, line) => sum + totalChars(line.parts) + PAUSE_TICKS, 0) + DONE_TICKS,
+    [agentLines],
+  );
+
   /* ── Tick timer — starts only after engine is ready ──────────────── */
   useEffect(() => {
     if (!engineReady) return;
-    const id = setInterval(() => setTick(prev => prev + 1), TYPING_MS);
+    const id = setInterval(() => setTick(prev => (prev >= maxTick ? prev : prev + 1)), TYPING_MS);
     return () => clearInterval(id);
-  }, [engineReady]);
+  }, [engineReady, maxTick]);
 
   /* ── Derive per-tick animation state ─────────────────────────────── */
   const anim = useMemo(() => {
@@ -386,14 +494,22 @@ export function Generating() {
 
   /* ── Save result + navigate when animation completes ─────────────── */
   useEffect(() => {
-    if (anim.isComplete && !completedRef.current && resultRef.current) {
+    if (anim.isComplete && enrichSettled && !completedRef.current && resultRef.current) {
       completedRef.current = true;
-      localStorage.setItem("safarly_itinerary", JSON.stringify(resultRef.current));
+
+      // Enrichment is layered on only if it actually arrived. Every failure
+      // path — offline, signed out, quota, timeout — persists the itinerary the
+      // engine already built, so the traveller still gets their full trip.
+      const enriched = enrichmentRef.current
+        ? applyEnrichment(resultRef.current, enrichmentRef.current)
+        : resultRef.current;
+
+      localStorage.setItem("safarly_itinerary", JSON.stringify(enriched));
       const timer = setTimeout(() => navigateRef.current("/itinerary"), 900);
       return () => clearTimeout(timer);
     }
     return undefined;
-  }, [anim.isComplete]);
+  }, [anim.isComplete, enrichSettled]);
 
   /* ── Progress 0–1 ────────────────────────────────────────────────── */
   const progress = useMemo(() => {
