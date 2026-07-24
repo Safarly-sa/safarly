@@ -23,14 +23,12 @@ import { NationalityDropdown } from "@/components/NationalityDropdown";
 import {
   Chip, SectionLabel, Toggle, AccessibilityNotesField,
 } from "./profile-setup";
+import { CITY_NAMES_EN, CITY_NAMES_AR } from "@/lib/engine";
 import type { ItineraryResult, ItineraryDay, ItineraryStop, ItineraryMeal, TripSpec, Objectives } from "@/lib/engine";
 
 /* ── Types ──────────────────────────────────────────────────────────── */
 interface ProfileData { name: string; nationality: string; language: string; ageRange: string; dietary: string[]; allergies: string[]; accessibility: boolean; accessibilityNotes: string; interests: string[]; }
 interface ConfirmedTrip { trip: TripSpec; itinerary: ItineraryResult; confirmedAt: string; }
-
-const CITY_NAMES_EN: Record<string, string> = { riyadh: "Riyadh", jeddah: "Jeddah", alula: "AlUla", al_khobar: "Al Khobar", abha: "Abha", taif: "Taif", madinah: "Madinah" };
-const CITY_NAMES_AR: Record<string, string> = { riyadh: "الرياض", jeddah: "جدة", alula: "العُلا", al_khobar: "الخبر", abha: "أبها", taif: "الطائف", madinah: "المدينة المنورة" };
 
 const ALLERGY_KEY: Record<string, string>  = { nuts: "ob.allergy.nuts", dairy: "ob.allergy.dairy", gluten: "ob.allergy.gluten", sesame: "ob.allergy.sesame", eggs: "ob.allergy.eggs", shellfish: "ob.allergy.shellfish" };
 const INTEREST_KEY: Record<string, string> = { history: "ob.interest.history", food: "ob.interest.food", adventure: "ob.interest.adventure", shopping: "ob.interest.shopping", arts: "ob.interest.arts", nature: "ob.interest.nature", photography: "ob.interest.photography" };

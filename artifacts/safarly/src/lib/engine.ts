@@ -206,25 +206,73 @@ export interface ItineraryResult {
 }
 
 /* ── City → POI dataset mapping ─────────────────────────────────────── */
-// New cities without dedicated POI data fall back to the nearest dataset city.
+// Every city now has its own researched POIs — see docs/notes/safarly-engine-cities.md
+// for the incident that used to make this a fallback map (Abha borrowing AlUla's
+// desert/archaeology data, mislabelled as "Abha" content). al_khobar is the one
+// deliberate exception: it's a genuine Riyadh-adjacent modern city without its
+// own dataset yet, kept as an honest documented fallback rather than removed.
 const CITY_POI_MAP: Record<string, string> = {
-  riyadh:    "riyadh",
-  jeddah:    "jeddah",
-  alula:     "alula",
-  al_khobar: "riyadh",  // Eastern Province — modern Saudi city, similar vibe
-  abha:      "alula",   // Nature-heavy highlands destination
-  taif:      "jeddah",  // Hejaz region
-  madinah:   "jeddah",  // Hejaz region, spiritual character similar to Jeddah data
+  riyadh:         "riyadh",
+  jeddah:         "jeddah",
+  alula:          "alula",
+  al_khobar:      "riyadh",  // Eastern Province — modern Saudi city, similar vibe; no dedicated dataset yet
+  abha:           "abha",
+  taif:           "taif",
+  madinah:        "madinah",
+  mecca:          "mecca",
+  dammam:         "dammam",
+  dhahran:        "dhahran",
+  khamis_mushait: "khamis_mushait",
+  jazan:          "jazan",
+  najran:         "najran",
+  tabuk:          "tabuk",
+  hail:           "hail",
+  yanbu:          "yanbu",
 };
 
 const CITY_NAMES: Record<string, string> = {
-  riyadh:    "Riyadh",
-  jeddah:    "Jeddah",
-  alula:     "AlUla",
-  al_khobar: "Al Khobar",
-  abha:      "Abha",
-  taif:      "Taif",
-  madinah:   "Madinah",
+  riyadh:         "Riyadh",
+  jeddah:         "Jeddah",
+  alula:          "AlUla",
+  al_khobar:      "Al Khobar",
+  abha:           "Abha",
+  taif:           "Taif",
+  madinah:        "Madinah",
+  mecca:          "Mecca",
+  dammam:         "Dammam",
+  dhahran:        "Dhahran",
+  khamis_mushait: "Khamis Mushait",
+  jazan:          "Jazan",
+  najran:         "Najran",
+  tabuk:          "Tabuk",
+  hail:           "Hail",
+  yanbu:          "Yanbu",
+};
+
+/**
+ * Exported so every page needing an Arabic city display name (dashboard,
+ * itinerary, generating) reads the same map instead of hand-copying it —
+ * a hand-copied version of this once silently omitted 13 of 16 cities in
+ * itinerary.tsx, falling back to the English name in Arabic mode.
+ */
+export const CITY_NAMES_EN: Record<string, string> = CITY_NAMES;
+export const CITY_NAMES_AR: Record<string, string> = {
+  riyadh:         "الرياض",
+  jeddah:         "جدة",
+  alula:          "العُلا",
+  al_khobar:      "الخبر",
+  abha:           "أبها",
+  taif:           "الطائف",
+  madinah:        "المدينة المنورة",
+  mecca:          "مكة المكرمة",
+  dammam:         "الدمام",
+  dhahran:        "الظهران",
+  khamis_mushait: "خميس مشيط",
+  jazan:          "جازان",
+  najran:         "نجران",
+  tabuk:          "تبوك",
+  hail:           "حائل",
+  yanbu:          "ينبع",
 };
 
 /** Resolve "ai" city key to an actual city based on profile + trip context. */

@@ -8,6 +8,7 @@ import { getAuth } from "@/lib/auth";
 import { ALLERGEN_LABEL_KEYS, readStoredAllergens } from "@/lib/allergens";
 import { prepareImageForUpload } from "@/lib/image";
 import { LANGUAGE_NAMES } from "@/lib/language-names";
+import { isFavorite as isFavoriteRef, addFavorite as addFavoriteRef } from "@/lib/favorites";
 import {
   scanMenuImage, scanPlaceImage, scanSignImage,
   type VisionDish, type VisionPlace, type VisionSign, type VisionErrorCode,
@@ -40,11 +41,10 @@ interface DisplayDish {
   originStory?: string;  // demo only — hand-written, doesn't exist for a photographed dish
   uncertain?: boolean;    // live only — the model flagged the read as unreliable
   /**
-   * Only demo dishes have one: favorites are stored as dataset ids
-   * (`safarly_favorites`) and looked up later via DISHES_MAP on the
-   * dashboard. A live-scanned dish has no such id — "favoriting" it would
-   * silently do nothing on the dashboard, so the button is hidden instead of
-   * built to look like it works.
+   * Only demo dishes have one: favorites are stored via lib/favorites.ts as
+   * dataset ids and looked up later via DISHES_MAP on the profile page. A
+   * live-scanned dish has no such id — "favoriting" it would silently do
+   * nothing there, so the button is hidden instead of built to look like it works.
    */
   favoriteId?: string;
 }
@@ -765,9 +765,9 @@ export function Lens() {
   // Menu-mode state
   const [displayDishes, setDisplayDishes] = useState<DisplayDish[]>([]);
   const [selected,    setSelected]    = useState<DisplayDish | null>(null);
-  const [favorites,   setFavorites]   = useState<string[]>(() => {
-    try { return JSON.parse(localStorage.getItem("safarly_favorites") ?? "[]"); } catch { return []; }
-  });
+  const [favorites,   setFavorites]   = useState<string[]>(() =>
+    ALL_DISHES.map(d => d.id).filter(id => isFavoriteRef("dish", id))
+  );
   // Place-mode state
   const [displayPlace, setDisplayPlace] = useState<DisplayPlace | null>(null);
   // Signage-mode state
@@ -851,9 +851,8 @@ export function Lens() {
   }
 
   function addFavorite(dishId: string) {
-    const next = [...new Set([...favorites, dishId])];
-    setFavorites(next);
-    localStorage.setItem("safarly_favorites", JSON.stringify(next));
+    addFavoriteRef("dish", dishId);
+    setFavorites(prev => [...new Set([...prev, dishId])]);
   }
 
   function reset() {

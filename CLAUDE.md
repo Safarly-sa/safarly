@@ -89,8 +89,10 @@ Routes are declared in `artifacts/safarly/src/App.tsx`.
 - **Maps use Leaflet + raster OSM tiles** (no API key) to draw the active
   day's numbered stop route on the itinerary page. See
   `docs/notes/itinerary-map.md`.
-- **Cities without their own POI data fall back to a backing city's dataset** via
-  `CITY_POI_MAP`, while still displaying their real name. See
+- **16 cities are selectable, 15 have their own real POI data.** `al_khobar` is the
+  one deliberate, disclosed exception, falling back to `riyadh`'s dataset via
+  `CITY_POI_MAP`. Abha/Taif/Madinah used to silently borrow other cities' data too
+  (most visibly Abha showing AlUla's desert content) — fixed, see
   `docs/notes/safarly-engine-cities.md`.
 - **Dialect practice uses the Web Speech API** for real mic input (Chrome/Edge
   only) with a graceful "I said it" fallback. See `docs/notes/dialect-practice-flow.md`.
@@ -142,7 +144,11 @@ narrow and high-value rather than exhaustive: pure logic only, no DOM, no bootin
   known-bad coordinates were found and fixed this way: the original data placed
   "Edge of the World" southwest of Riyadh (it's northwest, on the Tuwaiq
   escarpment) and mislabelled a Riyadh public-art row as "(Ithra)" — Ithra is in
-  Dhahran, ~400km away. Verify before trusting any single POI's exact pin.
+  Dhahran, ~400km away, and now has its own real POI entry there (`dhahran_ithra`).
+  The Riyadh entry was renamed again to "(JAX District)" when the "(Ithra)"
+  parenthetical resurfaced during the 16-city data expansion — if it comes back a
+  third time, check whether something is auto-generating that name. Verify before
+  trusting any single POI's exact pin.
 - `lib/api-client-react/` and `lib/api-zod/` are **generated**. Change
   `lib/api-spec/openapi.yaml` and re-run codegen instead of editing them.
 - `pnpm-workspace.yaml` sets `minimumReleaseAge: 1440` — a brand-new npm release

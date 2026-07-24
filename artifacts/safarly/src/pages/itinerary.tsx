@@ -6,7 +6,7 @@ import {
   CheckCircle2, ExternalLink, MapPin, Utensils,
   Wrench, RotateCcw, ArrowLeft, Moon, Gem,
   AlertTriangle, ShieldAlert, Compass, Navigation, Wallet, X, Camera,
-  ZoomIn, ZoomOut, Plane, CalendarDays, BedDouble,
+  ZoomIn, ZoomOut, Plane, CalendarDays, BedDouble, Heart,
 } from "lucide-react";
 import { useTranslation } from "@/providers/translation-context";
 import { usePageMeta } from "@/lib/usePageMeta";
@@ -14,7 +14,8 @@ import { AuroraHero } from "@/components/AuroraHero";
 import { poiName, poiCulture, resolve } from "@/lib/poi-i18n";
 import { dishName, dishDesc, mealVenue, mealArea } from "@/lib/dish-i18n";
 import { localeTag } from "@/lib/locale-format";
-import { generateItinerary, isVerified, type ItineraryResult, type ItineraryDay, type ItineraryStop, type ItineraryMeal, type TripSpec, type TravelerProfile, type Objectives, type TransportLeg, type TripEvent, type AccommodationOption, type POI } from "@/lib/engine";
+import { generateItinerary, isVerified, CITY_NAMES_AR, type ItineraryResult, type ItineraryDay, type ItineraryStop, type ItineraryMeal, type TripSpec, type TravelerProfile, type Objectives, type TransportLeg, type TripEvent, type AccommodationOption, type POI } from "@/lib/engine";
+import { isFavorite as isFavoritePoi, toggleFavorite as toggleFavoritePoi } from "@/lib/favorites";
 import { ConciergeChat } from "@/components/ConciergeChat";
 import poisRaw from "@/data/pois.json";
 
@@ -801,6 +802,7 @@ function StopCard({
   onPhotoClick?: () => void;
 }) {
   const { poi } = stop;
+  const [isFav, setIsFav] = useState(() => isFavoritePoi("poi", poi.id));
 
   const isClosed      = !!closedPoiId && poi.id === closedPoiId &&
                         (cascadePhase === "closed" || cascadePhase === "feeding");
@@ -838,16 +840,31 @@ function StopCard({
         </div>
 
         {/* Name */}
-        <div style={{ marginBottom: "8px" }}>
+        <div style={{ marginBottom: "8px", display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8 }}>
           <span style={{
             fontSize:   "1rem",
             fontWeight: 700,
             color:      isClosed ? "var(--sf-warning)" : "var(--sf-text)",
             lineHeight: 1.3,
-            display:    "block",
           }}>
             {poiName(t, poi)}
           </span>
+          {!isClosed && (
+            <button
+              type="button"
+              aria-label={t(isFav ? "itinerary.stop.unfavorite" : "itinerary.stop.favorite")}
+              aria-pressed={isFav}
+              onClick={() => setIsFav(toggleFavoritePoi("poi", poi.id))}
+              style={{
+                display: "flex", alignItems: "center", justifyContent: "center",
+                width: 32, height: 32, flexShrink: 0, borderRadius: 8,
+                border: "none", background: "transparent", cursor: "pointer",
+                color: isFav ? "var(--sf-warning)" : "var(--sf-text-muted)",
+              }}
+            >
+              <Heart size={18} fill={isFav ? "currentColor" : "none"} aria-hidden />
+            </button>
+          )}
         </div>
 
         {/* Badges row */}
@@ -1588,11 +1605,8 @@ function TripSummary({
     .map(k => ({ key: k, val: result.objectives[k] }))
     .sort((a, b) => b.val - a.val);
 
-  const cityNamesAr: Record<string, string> = {
-    riyadh: "الرياض", jeddah: "جدة", alula: "العُلا",
-  };
   const cityDisplay = language === "ar"
-    ? (cityNamesAr[trip.city] ?? result.cityName)
+    ? (CITY_NAMES_AR[trip.city] ?? result.cityName)
     : result.cityName;
 
   const daysLabel = t("itin.days_summary")

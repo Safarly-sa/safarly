@@ -4,6 +4,7 @@ import { useTranslation } from "@/providers/translation-context";
 import { usePageMeta } from "@/lib/usePageMeta";
 import {
   generateItinerary,
+  CITY_NAMES_AR,
   type ItineraryResult,
   type TravelerProfile,
   type TripSpec,
@@ -130,19 +131,10 @@ function buildAgentLines(
     .sort(([, a], [, b]) => b - a)
     .slice(0, 3);
 
-  const cityNamesAr: Record<string, string> = {
-    riyadh:    "الرياض",
-    jeddah:    "جدة",
-    alula:     "العُلا",
-    al_khobar: "الخبر",
-    abha:      "أبها",
-    taif:      "الطائف",
-    madinah:   "المدينة المنورة",
-  };
   // For AI-chosen city, use the resolved city from the engine result
   const effectiveCity = trip.city === "ai" ? (result.resolvedCity ?? "riyadh") : trip.city;
   const cityDisplay =
-    language === "ar" ? (cityNamesAr[effectiveCity] ?? effectiveCity) : result.cityName;
+    language === "ar" ? (CITY_NAMES_AR[effectiveCity] ?? effectiveCity) : result.cityName;
 
   const totalStops  = result.days.reduce((s, d) => s + d.stops.length, 0);
   const hiddenCount = Math.round(result.hiddenGemShare * totalStops);
