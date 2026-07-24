@@ -10,35 +10,40 @@
  */
 import { useState } from "react";
 import { Link } from "wouter";
-import { Mail, ArrowRight, Copy, Check } from "lucide-react";
+import { Mail, ArrowRight, Copy, Check, Loader2 } from "lucide-react";
 import { usePageMeta } from "@/lib/usePageMeta";
+import { useTranslation } from "@/providers/translation-context";
 import { isValidEmail } from "@/lib/validation";
 import { forgotPassword } from "@/lib/auth-api";
+import { authErrorKey } from "@/lib/auth-errors";
 import safarlyLogo from "@assets/safarly-logo-new.png";
 
 export function ForgotPassword() {
   usePageMeta("Forgot Password — Safarly", "Request a password reset link for your Safarly account.");
+  const { t } = useTranslation();
   const [email, setEmail] = useState("");
-  const [error, setError] = useState("");
+  const [fieldError, setFieldError] = useState("");
+  const [formError, setFormError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [resetUrl, setResetUrl] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setError("");
+    setFieldError("");
+    setFormError("");
     const trimEmail = email.trim();
 
-    if (!trimEmail) { setError("Please enter your email address."); return; }
+    if (!trimEmail) { setFieldError(t("login.error.email.required")); return; }
     if (!isValidEmail(trimEmail)) {
-      setError("Please enter a valid email address, like you@example.com.");
+      setFieldError(t("login.error.email.invalid"));
       return;
     }
 
     setSubmitting(true);
     try {
       const result = await forgotPassword(trimEmail);
-      if (!result.ok) { setError(result.error); return; }
+      if (!result.ok) { setFormError(t(authErrorKey(result.error))); return; }
       const url = new URL("/reset-password", window.location.origin);
       url.searchParams.set("token", result.resetToken);
       setResetUrl(url.toString());
@@ -75,9 +80,8 @@ export function ForgotPassword() {
   };
 
   return (
-    <div style={{
+    <div className="sf-auth-glow" style={{
       minHeight: "100dvh",
-      background: "var(--sf-bg)",
       display: "flex",
       flexDirection: "column",
       alignItems: "center",
@@ -89,7 +93,7 @@ export function ForgotPassword() {
         <div style={{ textAlign: "center", marginBottom: "40px" }}>
           <img src={safarlyLogo} alt="Safarly" style={{ height: "52px", width: "auto" }} />
           <p style={{ color: "var(--sf-text-muted)", fontSize: "0.9375rem", marginTop: "10px" }}>
-            Reset your password
+            {t("forgot.title")}
           </p>
         </div>
 
@@ -101,7 +105,7 @@ export function ForgotPassword() {
             padding: "20px",
           }}>
             <p style={{ fontSize: "0.875rem", color: "var(--sf-text)", lineHeight: 1.6, marginBottom: 14 }}>
-              Email sending isn't set up yet, so here's your reset link directly — it expires in 1 hour.
+              {t("forgot.result.notice")}
             </p>
             <div style={{
               display: "flex", alignItems: "center", gap: 8,
@@ -118,7 +122,7 @@ export function ForgotPassword() {
               <button
                 type="button"
                 onClick={copyLink}
-                aria-label="Copy reset link"
+                aria-label={t("forgot.result.copy")}
                 style={{
                   background: "none", border: "none", cursor: "pointer",
                   color: "var(--sf-text-muted)", padding: 4, display: "flex", flexShrink: 0,
@@ -126,6 +130,9 @@ export function ForgotPassword() {
               >
                 {copied ? <Check size={16} aria-hidden style={{ color: "var(--sf-accent)" }} /> : <Copy size={16} aria-hidden />}
               </button>
+              {copied && (
+                <span className="sf-sr-only" role="status">{t("forgot.result.copied")}</span>
+              )}
             </div>
             <Link
               href={resetUrl.replace(window.location.origin, "")}
@@ -136,14 +143,14 @@ export function ForgotPassword() {
                 fontWeight: 700, fontSize: "0.9375rem", textDecoration: "none",
               }}
             >
-              Continue to reset password
+              {t("forgot.result.continue")}
               <ArrowRight size={16} className="rtl:hidden" aria-hidden />
             </Link>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+          <form onSubmit={handleSubmit} aria-busy={submitting} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
             <p style={{ fontSize: "0.875rem", color: "var(--sf-text-muted)", lineHeight: 1.6, margin: 0 }}>
-              Enter the email address on your account and we'll give you a link to reset your password.
+              {t("forgot.intro")}
             </p>
 
             <div>
@@ -151,7 +158,7 @@ export function ForgotPassword() {
                 fontSize: "0.75rem", fontWeight: 700, textTransform: "uppercase",
                 letterSpacing: "0.08em", color: "var(--sf-text-muted)", marginBottom: "8px",
               }}>
-                Email Address
+                {t("login.field.email.label")}
               </p>
               <div style={{ position: "relative" }}>
                 <Mail
@@ -164,21 +171,26 @@ export function ForgotPassword() {
                 <input
                   type="email"
                   value={email}
-                  onChange={e => setEmail(e.target.value)}
-                  placeholder="you@example.com"
+                  onChange={e => { setEmail(e.target.value); setFieldError(""); }}
+                  placeholder={t("login.field.email.placeholder")}
                   autoComplete="email"
+                  aria-invalid={Boolean(fieldError)}
+                  aria-describedby={fieldError ? "forgot-email-error" : undefined}
                   style={inputStyle}
                   onFocus={e => (e.currentTarget.style.borderColor = "var(--sf-indigo)")}
                   onBlur={e => (e.currentTarget.style.borderColor = "var(--sf-border)")}
                 />
               </div>
+              {fieldError && (
+                <p id="forgot-email-error" role="alert" style={{ fontSize: "0.75rem", color: "var(--sf-error)", fontWeight: 600, margin: "6px 0 0" }}>
+                  {fieldError}
+                </p>
+              )}
             </div>
 
-            {error && (
-              <p style={{ fontSize: "0.8125rem", color: "var(--sf-error)", fontWeight: 600, margin: 0 }}>
-                {error}
-              </p>
-            )}
+            <p role="alert" aria-live="assertive" style={{ fontSize: "0.8125rem", color: "var(--sf-error)", fontWeight: 600, margin: 0 }}>
+              {formError}
+            </p>
 
             <button
               type="submit"
@@ -195,15 +207,17 @@ export function ForgotPassword() {
               onMouseEnter={e => { if (!submitting) e.currentTarget.style.background = "var(--sf-accent-hover)"; }}
               onMouseLeave={e => (e.currentTarget.style.background = "var(--sf-accent)")}
             >
-              {submitting ? "Sending…" : "Send reset link"}
-              {!submitting && <ArrowRight size={18} className="rtl:hidden" aria-hidden />}
+              {submitting ? t("forgot.submit.pending") : t("forgot.submit")}
+              {submitting
+                ? <Loader2 size={18} className="sf-spin" aria-hidden />
+                : <ArrowRight size={18} className="rtl:hidden" aria-hidden />}
             </button>
           </form>
         )}
 
         <p style={{ textAlign: "center", marginTop: "24px", fontSize: "0.8125rem", color: "var(--sf-text-muted)" }}>
           <Link href="/login" style={{ color: "var(--sf-indigo)", fontWeight: 700, textDecoration: "none" }}>
-            Back to log in
+            {t("forgot.back_to_login")}
           </Link>
         </p>
 

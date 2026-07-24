@@ -5,14 +5,18 @@
  */
 import { useState } from "react";
 import { useLocation, useSearchParams, Link } from "wouter";
-import { Lock, Eye, EyeOff, ArrowRight, Check, X } from "lucide-react";
+import { Lock, Eye, EyeOff, ArrowRight, Loader2 } from "lucide-react";
 import { usePageMeta } from "@/lib/usePageMeta";
-import { assessPassword } from "@/lib/validation";
+import { useTranslation } from "@/providers/translation-context";
+import { assessPassword, PASSWORD_MIN_LENGTH } from "@/lib/validation";
 import { resetPassword } from "@/lib/auth-api";
+import { authErrorKey } from "@/lib/auth-errors";
+import { PasswordStrengthMeter, RULE_KEY } from "@/components/PasswordStrengthMeter";
 import safarlyLogo from "@assets/safarly-logo-new.png";
 
 export function ResetPassword() {
   usePageMeta("Reset Password — Safarly", "Set a new password for your Safarly account.");
+  const { t } = useTranslation();
   const [, navigate] = useLocation();
   const [searchParams] = useSearchParams();
   const token = searchParams.get("token") ?? "";
@@ -29,14 +33,18 @@ export function ResetPassword() {
     setError("");
 
     if (!assessment.valid) {
-      setError(assessment.firstFailure ?? "Please choose a stronger password.");
+      setError(
+        assessment.firstFailureId
+          ? t(RULE_KEY[assessment.firstFailureId]).replace("{min}", String(PASSWORD_MIN_LENGTH))
+          : t("password.error.generic")
+      );
       return;
     }
 
     setSubmitting(true);
     try {
       const result = await resetPassword({ token, password });
-      if (!result.ok) { setError(result.error); return; }
+      if (!result.ok) { setError(t(authErrorKey(result.error))); return; }
       navigate("/login");
     } finally {
       setSubmitting(false);
@@ -61,18 +69,18 @@ export function ResetPassword() {
 
   if (!token) {
     return (
-      <div style={{
-        minHeight: "100dvh", background: "var(--sf-bg)",
+      <div className="sf-auth-glow" style={{
+        minHeight: "100dvh",
         display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
         padding: "24px 20px", textAlign: "center",
       }}>
         <div style={{ width: "100%", maxWidth: "400px" }}>
           <img src={safarlyLogo} alt="Safarly" style={{ height: "52px", width: "auto", marginBottom: 20 }} />
           <p style={{ color: "var(--sf-text)", fontSize: "1rem", fontWeight: 700, marginBottom: 8 }}>
-            Missing reset link
+            {t("reset.missing.title")}
           </p>
           <p style={{ color: "var(--sf-text-muted)", fontSize: "0.875rem", marginBottom: 20, lineHeight: 1.6 }}>
-            This page needs a reset link to work. Request a new one below.
+            {t("reset.missing.body")}
           </p>
           <Link
             href="/forgot-password"
@@ -81,7 +89,7 @@ export function ResetPassword() {
               color: "var(--sf-indigo)", fontWeight: 700, textDecoration: "none", fontSize: "0.9375rem",
             }}
           >
-            Request a reset link
+            {t("reset.missing.cta")}
             <ArrowRight size={16} className="rtl:hidden" aria-hidden />
           </Link>
         </div>
@@ -90,9 +98,8 @@ export function ResetPassword() {
   }
 
   return (
-    <div style={{
+    <div className="sf-auth-glow" style={{
       minHeight: "100dvh",
-      background: "var(--sf-bg)",
       display: "flex",
       flexDirection: "column",
       alignItems: "center",
@@ -104,17 +111,17 @@ export function ResetPassword() {
         <div style={{ textAlign: "center", marginBottom: "40px" }}>
           <img src={safarlyLogo} alt="Safarly" style={{ height: "52px", width: "auto" }} />
           <p style={{ color: "var(--sf-text-muted)", fontSize: "0.9375rem", marginTop: "10px" }}>
-            Choose a new password
+            {t("reset.title")}
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+        <form onSubmit={handleSubmit} aria-busy={submitting} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
           <div>
             <p style={{
               fontSize: "0.75rem", fontWeight: 700, textTransform: "uppercase",
               letterSpacing: "0.08em", color: "var(--sf-text-muted)", marginBottom: "8px",
             }}>
-              New Password
+              {t("reset.field.password.label")}
             </p>
             <div style={{ position: "relative" }}>
               <Lock
@@ -128,8 +135,9 @@ export function ResetPassword() {
                 type={showPassword ? "text" : "password"}
                 value={password}
                 onChange={e => setPassword(e.target.value)}
-                placeholder="At least 10 characters"
+                placeholder={t("reset.field.password.placeholder").replace("{min}", String(PASSWORD_MIN_LENGTH))}
                 autoComplete="new-password"
+                aria-describedby={password.length > 0 ? "reset-password-strength" : undefined}
                 style={inputStyle}
                 onFocus={e => (e.currentTarget.style.borderColor = "var(--sf-indigo)")}
                 onBlur={e => (e.currentTarget.style.borderColor = "var(--sf-border)")}
@@ -137,7 +145,7 @@ export function ResetPassword() {
               <button
                 type="button"
                 onClick={() => setShowPassword(s => !s)}
-                aria-label={showPassword ? "Hide password" : "Show password"}
+                aria-label={showPassword ? t("password.hide") : t("password.show")}
                 aria-pressed={showPassword}
                 style={{
                   position: "absolute", top: "50%", insetInlineEnd: "6px",
@@ -150,54 +158,16 @@ export function ResetPassword() {
               </button>
             </div>
 
-            {password.length > 0 && (
-              <div style={{ marginTop: 12 }}>
-                <div
-                  style={{ display: "flex", gap: 4, marginBottom: 10 }}
-                  role="img"
-                  aria-label={`Password strength: ${assessment.score} of 4`}
-                >
-                  {[0, 1, 2, 3].map(i => (
-                    <div
-                      key={i}
-                      style={{
-                        flex: 1, height: 4, borderRadius: 2,
-                        background: i < assessment.score
-                          ? (assessment.score <= 1 ? "#DC2626"
-                            : assessment.score === 2 ? "#F59E0B"
-                            : assessment.score === 3 ? "#84CC16" : "var(--sf-accent)")
-                          : "var(--sf-border)",
-                        transition: "background 200ms ease",
-                      }}
-                    />
-                  ))}
-                </div>
-                <ul style={{ display: "flex", flexDirection: "column", gap: 5, listStyle: "none", padding: 0, margin: 0 }}>
-                  {assessment.rules.map(rule => (
-                    <li
-                      key={rule.id}
-                      style={{
-                        display: "flex", alignItems: "center", gap: 7,
-                        fontSize: "0.78rem",
-                        color: rule.passed ? "var(--sf-accent)" : "var(--sf-text-muted)",
-                      }}
-                    >
-                      {rule.passed
-                        ? <Check size={13} aria-hidden style={{ flexShrink: 0 }} />
-                        : <X size={13} aria-hidden style={{ flexShrink: 0, opacity: 0.5 }} />}
-                      <span>{rule.label}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
+            <PasswordStrengthMeter
+              id="reset-password-strength"
+              assessment={assessment}
+              visible={password.length > 0}
+            />
           </div>
 
-          {error && (
-            <p style={{ fontSize: "0.8125rem", color: "var(--sf-error)", fontWeight: 600, margin: 0 }}>
-              {error}
-            </p>
-          )}
+          <p role="alert" aria-live="assertive" style={{ fontSize: "0.8125rem", color: "var(--sf-error)", fontWeight: 600, margin: 0 }}>
+            {error}
+          </p>
 
           <button
             type="submit"
@@ -214,14 +184,16 @@ export function ResetPassword() {
             onMouseEnter={e => { if (!submitting) e.currentTarget.style.background = "var(--sf-accent-hover)"; }}
             onMouseLeave={e => (e.currentTarget.style.background = "var(--sf-accent)")}
           >
-            {submitting ? "Resetting…" : "Reset password"}
-            {!submitting && <ArrowRight size={18} className="rtl:hidden" aria-hidden />}
+            {submitting ? t("reset.submit.pending") : t("reset.submit")}
+            {submitting
+              ? <Loader2 size={18} className="sf-spin" aria-hidden />
+              : <ArrowRight size={18} className="rtl:hidden" aria-hidden />}
           </button>
         </form>
 
         <p style={{ textAlign: "center", marginTop: "24px", fontSize: "0.8125rem", color: "var(--sf-text-muted)" }}>
           <Link href="/login" style={{ color: "var(--sf-indigo)", fontWeight: 700, textDecoration: "none" }}>
-            Back to log in
+            {t("reset.back_to_login")}
           </Link>
         </p>
 
