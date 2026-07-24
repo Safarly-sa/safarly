@@ -11,12 +11,16 @@ import { GoogleGenAI } from "@google/genai";
 import { logger } from "./logger";
 
 /**
- * Gemini 2.5 Flash on the free tier: 10 RPM / 250 RPD, vision included.
- * Flash rather than Pro because Pro's free tier is 5 RPM / 100 RPD, which is
- * too tight for six agents; Flash rather than Flash-Lite because menu OCR and
+ * Flash rather than Pro because Pro's free tier is far tighter, which is too
+ * thin for six agents; Flash rather than Flash-Lite because menu OCR and
  * Arabic dialect work are the two jobs where model quality shows most.
+ *
+ * Pinned version numbers go stale — "gemini-2.5-flash" started 404ing for new
+ * API keys once Google moved the free tier forward (see git history for the
+ * incident). "-latest" is a rolling alias Google keeps pointed at its current
+ * recommended Flash model, so this shouldn't need another manual bump.
  */
-export const GEMINI_MODEL = "gemini-2.5-flash";
+export const GEMINI_MODEL = "gemini-flash-latest";
 
 let client: GoogleGenAI | null = null;
 

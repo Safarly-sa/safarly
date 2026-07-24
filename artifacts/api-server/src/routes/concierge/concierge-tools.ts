@@ -108,12 +108,15 @@ export function validateItineraryActions(
         break;
       }
       case "add_stop": {
+        // The tool schema (EDIT_ITINERARY_TOOL) names this field "addPoiId" for
+        // both add_stop and swap_stop — the model sends that name, not "poiId".
+        const addPoiId = (a as Partial<ConciergeAction> & { addPoiId?: unknown }).addPoiId;
         if (
-          typeof a.poiId === "string" &&
-          candidateIds.has(a.poiId) &&
+          typeof addPoiId === "string" &&
+          candidateIds.has(addPoiId) &&
           isValidSlot(a.slot)
         ) {
-          valid.push({ type: "add_stop", dayNumber: a.dayNumber, poiId: a.poiId, slot: a.slot });
+          valid.push({ type: "add_stop", dayNumber: a.dayNumber, poiId: addPoiId, slot: a.slot });
         }
         break;
       }

@@ -29,16 +29,22 @@ describe("validateItineraryActions", () => {
   });
 
   it("keeps an add only for a candidate id with a valid slot", () => {
-    const out = validateItineraryActions([{ type: "add_stop", dayNumber: 1, poiId: "x", slot: "evening" }], days, candidates);
-    expect(out).toHaveLength(1);
+    // The wire shape from EDIT_ITINERARY_TOOL names this field "addPoiId" for
+    // add_stop, same as swap_stop — not "poiId".
+    const out = validateItineraryActions([{ type: "add_stop", dayNumber: 1, addPoiId: "x", slot: "evening" }], days, candidates);
+    expect(out).toEqual([{ type: "add_stop", dayNumber: 1, poiId: "x", slot: "evening" }]);
   });
 
   it("drops an add whose id is not in the candidate list (the invented-place guard)", () => {
-    expect(validateItineraryActions([{ type: "add_stop", dayNumber: 1, poiId: "zzz", slot: "evening" }], days, candidates)).toEqual([]);
+    expect(validateItineraryActions([{ type: "add_stop", dayNumber: 1, addPoiId: "zzz", slot: "evening" }], days, candidates)).toEqual([]);
   });
 
   it("drops an add with an invalid slot", () => {
-    expect(validateItineraryActions([{ type: "add_stop", dayNumber: 1, poiId: "x", slot: "midnight" as never }], days, candidates)).toEqual([]);
+    expect(validateItineraryActions([{ type: "add_stop", dayNumber: 1, addPoiId: "x", slot: "midnight" as never }], days, candidates)).toEqual([]);
+  });
+
+  it("drops an add sent with the wrong field name (poiId instead of addPoiId)", () => {
+    expect(validateItineraryActions([{ type: "add_stop", dayNumber: 1, poiId: "x", slot: "evening" }], days, candidates)).toEqual([]);
   });
 
   it("keeps a swap when the removed id exists and the added id is a candidate", () => {
@@ -71,7 +77,7 @@ describe("validateItineraryActions", () => {
   it("keeps valid actions while dropping invalid ones in the same batch", () => {
     const out = validateItineraryActions([
       { type: "remove_stop", dayNumber: 1, poiId: "a" }, // valid
-      { type: "add_stop", dayNumber: 1, poiId: "zzz", slot: "evening" }, // invalid
+      { type: "add_stop", dayNumber: 1, addPoiId: "zzz", slot: "evening" }, // invalid
     ], days, candidates);
     expect(out).toHaveLength(1);
   });
