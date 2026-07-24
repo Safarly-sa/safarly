@@ -226,6 +226,16 @@ router.post("/auth/forgot-password", async (req, res) => {
 
   const [user] = await db.select().from(usersTable).where(eq(usersTable.email, email)).limit(1);
   if (!user) {
+    // SECURITY: this 404 is an account-enumeration leak — it lets anyone test
+    // whether an email address has a Safarly account, which is exactly what
+    // login's generic "Incorrect email or password" error is designed to
+    // prevent. Accepted for now, not fixed, because it's a direct consequence
+    // of not having an email provider wired up: without one, the only way to
+    // return the reset link at all is to already know the request succeeded
+    // (see the file-level comment above). Once real email delivery exists,
+    // change this to always return 201 with a neutral "if that address has an
+    // account, a reset link was sent" response, regardless of whether `user`
+    // was found.
     return res.status(404).json({ error: "No account found with that email address." });
   }
 

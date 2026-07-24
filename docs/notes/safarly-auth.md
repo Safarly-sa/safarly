@@ -26,4 +26,7 @@ mirror as authoritative for anything session-guarded — routes like `/api/conci
 - `/profile-setup` redirects to `/` if profile already complete
 - `/login` redirects to `/` if already auth + profile complete
 
-**Why:** No real backend auth; this is a demo/prototype. Intentional decision documented to avoid unnecessary complexity.
+**Why:** Real backend auth exists (`artifacts/api-server/src/routes/auth.ts` — Express + Drizzle,
+password hashing, httpOnly session cookie). The localStorage mirror above is purely a
+synchronous-read cache for UI checks that can't await a network round trip; it is never
+authoritative.
