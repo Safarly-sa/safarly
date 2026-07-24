@@ -392,3 +392,39 @@ html[dir="rtl"] {
   width: clamp(200px, 34vw, 380px);
 }
 .sf-aurora-band .sf-aurora-grid { opacity: 0.32; }
+
+/* ── Auth pages: quiet Aurora echo ─────────────────────────────────────
+   The auth screens sit outside the app shell (no Navbar, no BottomNav), so
+   they lose the Aurora visual language the rest of the app carries. This is
+   a static, JS-free echo of it: two soft radial pools behind a centred
+   400px form. Full AuroraHero was rejected here — its animated blobs and
+   pointer-parallax are sized for a hero and fight a login form for
+   attention on the first screen a user ever sees. */
+.sf-auth-glow {
+  position: relative;
+  isolation: isolate;
+  background:
+    radial-gradient(60% 45% at 50% 0%,
+      color-mix(in srgb, var(--sf-indigo) 12%, transparent), transparent 70%),
+    radial-gradient(55% 40% at 50% 100%,
+      color-mix(in srgb, var(--sf-accent) 9%, transparent), transparent 70%),
+    var(--sf-bg);
+}
+:root[data-theme="dark"] .sf-auth-glow,
+.dark .sf-auth-glow {
+  background:
+    radial-gradient(60% 45% at 50% 0%,
+      color-mix(in srgb, var(--sf-indigo) 20%, transparent), transparent 70%),
+    radial-gradient(55% 40% at 50% 100%,
+      color-mix(in srgb, var(--sf-accent) 14%, transparent), transparent 70%),
+    var(--sf-bg);
+}
+
+/* ── Submit-button pending spinner (login/forgot/reset) ────────────────── */
+.sf-spin {
+  animation: sf-spin-rotate 0.8s linear infinite;
+}
+@keyframes sf-spin-rotate {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
