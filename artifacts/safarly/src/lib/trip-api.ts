@@ -41,6 +41,18 @@ export interface DayTransport {
   legs: TransportLeg[];
 }
 
+/**
+ * One stop as sent to the server. The coordinates are the point: with them the
+ * Transportation agent computes each hop's real distance instead of guessing
+ * from a place name. Optional so a stop without them still works — it just
+ * falls back to the model path server-side.
+ */
+export interface TripEnrichStop {
+  name: string;
+  lat?: number;
+  lng?: number;
+}
+
 /** POST /api/trip/generate request body. Mirrors the server's TripGenerateRequest. */
 export interface TripEnrichRequest {
   cityDisplayName: string;
@@ -50,7 +62,7 @@ export interface TripEnrichRequest {
   budgetSarPerDay: number;
   travelType: string;
   languageName: string;
-  days: { dayNumber: number; stopNames: string[] }[];
+  days: { dayNumber: number; stops: TripEnrichStop[] }[];
   poiAreas: string[];
 }
 
@@ -227,6 +239,11 @@ export function applyEnrichment(
 /**
  * Builds the request body from what the client already has.
  *
+ * Stops are sent with their lat/lng, not just their names. That's what lets the
+ * Transportation agent compute each hop's real distance rather than guess it
+ * from a place name — the coordinates were already in the POI dataset all
+ * along, previously used only to drop Leaflet markers.
+ *
  * `poiAreas` feeds the Accommodation agent's "their itinerary centres on X"
  * framing. POIs carry no area field, so the real neighbourhood names come from
  * meal venues; POI names are appended as location anchors when there aren't
@@ -269,7 +286,11 @@ export function buildEnrichRequest(params: {
     languageName: params.languageName,
     days: itinerary.days.map((day) => ({
       dayNumber: day.dayNumber,
-      stopNames: day.stops.map((stop) => stop.poi.name),
+      stops: day.stops.map((stop) => ({
+        name: stop.poi.name,
+        lat:  stop.poi.lat,
+        lng:  stop.poi.lng,
+      })),
     })),
     poiAreas: areas.slice(0, 12),
   };

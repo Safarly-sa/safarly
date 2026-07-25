@@ -225,7 +225,7 @@ export function HomeBelowFold() {
               Ready to explore Saudi Arabia?
             </h2>
             <p className="text-muted-foreground mb-10 text-lg">
-              Let 14 AI agents plan every detail of your perfect journey.
+              Let Safarly's AI agents plan every detail of your perfect journey.
             </p>
             <Link
               href="/onboarding"

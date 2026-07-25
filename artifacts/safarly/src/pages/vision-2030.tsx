@@ -359,7 +359,7 @@ export function Vision2030() {
           {t("vision2030.cta.body")}
         </p>
         <Link
-          href="/trip"
+          href="/planner"
           style={{
             display: "inline-flex", alignItems: "center", gap: 8,
             padding: "14px 32px", borderRadius: 12,

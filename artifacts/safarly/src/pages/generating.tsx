@@ -16,6 +16,33 @@ import {
   type TripEnrichment,
 } from "@/lib/trip-api";
 import { languageNameOf } from "@/lib/language-names";
+import { getAuth } from "@/lib/auth";
+
+/**
+ * Used when someone reaches this screen without having filled in a traveller
+ * profile — which is now the normal path, not an error: anyone can plan a trip
+ * before they have an account, and profile-setup lives behind the sign-in wall.
+ *
+ * Every field the engine reads is optional in practice (`profile.interests ??
+ * []`, `profile.allergies ?? []`, and `travelType` only ever compared against
+ * "family"), so a neutral profile costs nothing but the personalisation layer:
+ * objectives still come from the trip's own goals, moods and travel context.
+ *
+ * Deliberately NOT allergy-safe-by-guessing: an empty `allergies` array means
+ * "none declared", and the itinerary's dish filtering treats it that way. That
+ * is the honest default — inventing restrictions nobody asked for would be just
+ * as wrong as dropping real ones.
+ */
+const DEFAULT_PROFILE: TravelerProfile = {
+  nationality:   "",
+  language:      "en",
+  ageRange:      "",
+  dietary:       "",
+  allergies:     [],
+  travelType:    "",
+  accessibility: false,
+  interests:     [],
+};
 
 /* ── Animation constants ────────────────────────────────────────────── */
 const TYPING_MS   = 14;  // ms per character
@@ -359,8 +386,11 @@ export function Generating() {
     const profileRaw = localStorage.getItem("safarly_profile");
     const tripRaw    = localStorage.getItem("safarly_trip");
 
-    if (!profileRaw || !tripRaw) {
-      navigateRef.current("/trip");
+    /* The trip spec is genuinely required — it names the city and the dates,
+       and there is no sane default for either. The profile is not: see
+       DEFAULT_PROFILE. */
+    if (!tripRaw) {
+      navigateRef.current("/planner");
       return;
     }
 
@@ -369,11 +399,13 @@ export function Generating() {
     let profile: TravelerProfile;
 
     try {
-      profile = JSON.parse(profileRaw) as TravelerProfile;
-      trip    = JSON.parse(tripRaw)    as TripSpec;
+      profile = profileRaw
+        ? { ...DEFAULT_PROFILE, ...(JSON.parse(profileRaw) as Partial<TravelerProfile>) }
+        : DEFAULT_PROFILE;
+      trip    = JSON.parse(tripRaw) as TripSpec;
       result  = generateItinerary(profile, trip);
     } catch {
-      navigateRef.current("/trip");
+      navigateRef.current("/planner");
       return;
     }
 
@@ -394,6 +426,15 @@ export function Generating() {
     const profile   = profileRef.current;
 
     if (!itinerary || !trip || !profile) {
+      setEnrichSettled(true);
+      return undefined;
+    }
+
+    /* Every enrichment route is session-guarded, so signed out this call can
+       only ever 401. Skipping it keeps three doomed agent lines off the screen
+       and saves the round trip — the traveller still gets their full local
+       itinerary, then meets the wall on the itinerary page itself. */
+    if (!getAuth()) {
       setEnrichSettled(true);
       return undefined;
     }

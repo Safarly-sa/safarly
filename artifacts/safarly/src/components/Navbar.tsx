@@ -56,10 +56,14 @@ export function Navbar() {
 
   const currentLang = LANGS.find(l => l.code === language) ?? LANGS[0];
 
+  /* Two agents, not a feature list. Live Lens and Dialect moved under the
+     Companion hub — they keep their own routes, and stay one tap away in the
+     mobile bottom nav, which is where someone standing in front of a menu
+     actually reaches for them. */
   const navLinks = [
     { href: "/",            label: t("nav.plan")       },
-    { href: "/lens",        label: t("nav.lens")       },
-    { href: "/dialect",     label: t("nav.dialect")    },
+    { href: "/planner",     label: t("nav.planner")    },
+    { href: "/companion",   label: t("nav.companion")  },
     { href: "/dashboard",   label: t("nav.dashboard")  },
     { href: "/vision-2030", label: t("nav.vision2030") },
   ];

@@ -37,9 +37,19 @@ export function markProfileComplete(): void {
   localStorage.setItem("safarly_profile_complete", "true");
 }
 
-/** Destination for the "Start Planning" CTA. */
+/**
+ * Destination for the "Start Planning" CTA — always the planner, signed in or
+ * not.
+ *
+ * This used to bounce anonymous visitors to /login before they saw anything.
+ * The wall now sits at the *results* instead (components/ResultsGate.tsx):
+ * planning is free and runs entirely client-side, so there is nothing to
+ * protect until the billable enrichment agents get involved. Asking someone to
+ * register before they have seen a single itinerary was costing us the people
+ * most worth converting.
+ */
 export function getStartPath(): string {
-  return getAuth() && isProfileComplete() ? "/trip" : "/login";
+  return "/planner";
 }
 
 /**

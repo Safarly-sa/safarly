@@ -17,6 +17,8 @@ import { localeTag } from "@/lib/locale-format";
 import { generateItinerary, isVerified, CITY_NAMES_AR, type ItineraryResult, type ItineraryDay, type ItineraryStop, type ItineraryMeal, type TripSpec, type TravelerProfile, type Objectives, type TransportLeg, type TripEvent, type AccommodationOption, type POI } from "@/lib/engine";
 import { isFavorite as isFavoritePoi, toggleFavorite as toggleFavoritePoi } from "@/lib/favorites";
 import { ConciergeChat } from "@/components/ConciergeChat";
+import { ResultsGate } from "@/components/ResultsGate";
+import { getAuth } from "@/lib/auth";
 import poisRaw from "@/data/pois.json";
 
 /* ── POI type (mirrors pois.json shape) ────────────────────────────── */
@@ -2110,6 +2112,11 @@ function TransportLegRow({ leg, t }: { leg: TransportLeg; t: (k: string) => stri
         fontSize:   "0.8125rem",
         color:      "var(--sf-text-muted)",
       }}>
+        {/* Distance is the one figure here that isn't an estimate — it comes
+            from the two stops' real coordinates, so it carries no hedge. */}
+        {typeof leg.distanceKm === "number" && (
+          <span>{leg.distanceKm} {t("itin.enrich.km")}</span>
+        )}
         {duration && <span>{duration}</span>}
         {leg.costSar > 0 && (
           <span>
@@ -2226,6 +2233,20 @@ export function Itinerary() {
   const [activeDay, setActiveDay] = useState(0);
   const [photoSubject, setPhotoSubject] = useState<PhotoSubject | null>(null);
 
+  /* Drives the sign-in wall below. Kept in sync with safarly-auth-changed the
+     same way the Navbar does it, so signing in from another tab drops the gate
+     here without a reload. */
+  const [authed, setAuthed] = useState(() => !!getAuth());
+  useEffect(() => {
+    function sync() { setAuthed(!!getAuth()); }
+    window.addEventListener("safarly-auth-changed", sync);
+    window.addEventListener("storage", sync);
+    return () => {
+      window.removeEventListener("safarly-auth-changed", sync);
+      window.removeEventListener("storage", sync);
+    };
+  }, []);
+
   /* ── Cascade state ──────────────────────────────────────────────── */
   const [cascade, setCascade] = useState<CascadeInfo>({
     phase: "idle", closedPoiId: "", closedPoiName: "",
@@ -2239,12 +2260,12 @@ export function Itinerary() {
   useEffect(() => {
     const raw = localStorage.getItem("safarly_itinerary");
     const tripRaw = localStorage.getItem("safarly_trip");
-    if (!raw || !tripRaw) { navigate("/trip"); return; }
+    if (!raw || !tripRaw) { navigate("/planner"); return; }
     try {
       setResult(JSON.parse(raw) as ItineraryResult);
       setTrip(JSON.parse(tripRaw) as TripSpec);
     } catch {
-      navigate("/trip");
+      navigate("/planner");
     }
   }, []);
 
@@ -2276,7 +2297,7 @@ export function Itinerary() {
   }
 
   function handleEdit() {
-    navigate("/trip");
+    navigate("/planner");
   }
 
   function handleConfirm() {
@@ -2471,7 +2492,7 @@ export function Itinerary() {
         </p>
         <button
           className="sf-btn-primary"
-          onClick={() => navigate("/trip")}
+          onClick={() => navigate("/planner")}
           style={{ width: "auto", padding: "12px 28px" }}
         >
           {t("itin.go_plan")}
@@ -2706,12 +2727,20 @@ export function Itinerary() {
       </button>
 
       {/* ── Personal Concierge ───────────────────────────────────────── */}
-      <ConciergeChat
-        itinerary={result}
-        trip={trip}
-        cityPois={cityPois}
-        onItineraryChange={handleConciergeChange}
-      />
+      {/* Hidden behind the wall: /api/concierge/chat is session-guarded, so
+          offering the panel signed out would only ever produce a 401. */}
+      {authed && (
+        <ConciergeChat
+          itinerary={result}
+          trip={trip}
+          cityPois={cityPois}
+          onItineraryChange={handleConciergeChange}
+        />
+      )}
+
+      {/* ── Sign-in wall ─────────────────────────────────────────────── */}
+      {/* Conversion device, not access control — see ResultsGate's header. */}
+      {!authed && <ResultsGate result={result} t={t} />}
 
       {/* ── Agent feed panel (closed + feeding phases) ───────────────── */}
       {(cascade.phase === "closed" || cascade.phase === "feeding") && (

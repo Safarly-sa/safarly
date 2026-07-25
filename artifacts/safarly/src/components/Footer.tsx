@@ -29,9 +29,10 @@ export function Footer() {
     };
   }, []);
 
-  const tripCraftingHref = authed
-    ? "/generating"
-    : `/login?returnTo=${encodeURIComponent("/generating")}`;
+  /* Signed out, send them to the planner rather than to /login: they can build
+     the whole trip anonymously now and only meet the wall at the results.
+     /generating without a stored trip would just bounce back anyway. */
+  const tripCraftingHref = authed ? "/generating" : "/planner";
 
   return (
     <footer

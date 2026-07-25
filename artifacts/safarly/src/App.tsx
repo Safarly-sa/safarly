@@ -33,6 +33,7 @@ const Generating      = lazy(() => import('@/pages/generating').then(m => ({ def
 const Itinerary       = lazy(() => import('@/pages/itinerary').then(m => ({ default: m.Itinerary })));
 const Lens            = lazy(() => import('@/pages/lens').then(m => ({ default: m.Lens })));
 const Dialect         = lazy(() => import('@/pages/dialect').then(m => ({ default: m.Dialect })));
+const Companion       = lazy(() => import('@/pages/companion').then(m => ({ default: m.Companion })));
 const Dashboard       = lazy(() => import('@/pages/dashboard').then(m => ({ default: m.Dashboard })));
 const About           = lazy(() => import('@/pages/about').then(m => ({ default: m.About })));
 const Vision2030      = lazy(() => import('@/pages/vision-2030').then(m => ({ default: m.Vision2030 })));
@@ -104,7 +105,11 @@ function Router() {
             {/* Legacy redirect: old /onboarding links go to /login */}
             <Route path="/onboarding"    component={Login} />
 
-            <Route path="/trip" component={Trip} />
+            {/* Smart Travel Planner. /planner is canonical; /trip is kept as a
+                legacy alias so existing links and saved tabs still land, the
+                same treatment /onboarding gets above. */}
+            <Route path="/planner" component={Trip} />
+            <Route path="/trip"    component={Trip} />
 
             <Route path="/generating" component={Generating} />
 
@@ -112,6 +117,9 @@ function Router() {
 
             <Route path="/about"     component={About} />
             <Route path="/vision-2030" component={Vision2030} />
+            {/* Companion hub, plus the two tools it fronts — both keep their
+                own routes so deep links and the bottom nav keep working. */}
+            <Route path="/companion" component={Companion} />
             <Route path="/lens"      component={Lens} />
             <Route path="/dialect"   component={Dialect} />
             <Route path="/dashboard" component={Dashboard} />
