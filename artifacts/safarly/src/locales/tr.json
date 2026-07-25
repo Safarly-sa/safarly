@@ -425,6 +425,7 @@
   "itin.enrich.goodfor": "Şunlar için ideal",
   "itin.enrich.min": "dk",
   "itin.enrich.hour": "sa",
+  "itin.enrich.km": "km",
   "itin.enrich.mode.flight": "Uçuş",
   "itin.enrich.mode.train": "Tren",
   "itin.enrich.mode.bus": "Otobüs",

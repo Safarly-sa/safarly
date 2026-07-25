@@ -425,6 +425,7 @@
   "itin.enrich.goodfor": "适合",
   "itin.enrich.min": "分钟",
   "itin.enrich.hour": "小时",
+  "itin.enrich.km": "公里",
   "itin.enrich.mode.flight": "航班",
   "itin.enrich.mode.train": "火车",
   "itin.enrich.mode.bus": "巴士",

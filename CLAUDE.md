@@ -72,6 +72,18 @@ Routes are declared in `artifacts/safarly/src/App.tsx`.
   the client already built, and streams per-agent completion. Called from
   `generating.tsx` via `lib/trip-api.ts`; always additive, never blocking — any
   failure (offline, no session, timeout) leaves the local itinerary untouched.
+- **Transport day legs are computed, not prompted.** Stops are sent to the API
+  with their real `lat`/`lng`, and `trip/transport-estimate.ts` derives each
+  hop's distance (haversine × a street-detour factor), mode, and duration
+  arithmetically; walking vs ride-hail is a distance threshold that tightens in
+  the Jun–Sep heat. The model then gets those settled legs and is asked *only*
+  for a practical `notes` line — a refinement that can fail without costing the
+  traveller the legs. Stops without coordinates fall back to the older
+  ask-the-model-for-everything path, which is still there and still weaker.
+  Read `leg.basis` for whether the geometry is computed; read `leg.uncertain`
+  for whether the *fare* is a guess — the fare constants are unsourced
+  order-of-magnitude figures, so computed ride legs stay uncertain. Arrival
+  legs are still fully model-driven: there is no airport coordinate table yet.
 - **Personal Concierge**: `POST /api/concierge/chat` (SSE) is a stateless
   tool-calling chat — the client sends history + current trip state each turn and
   applies the returned patch itself via `applyConciergePatch()` in
@@ -117,7 +129,13 @@ narrow and high-value rather than exhaustive: pure logic only, no DOM, no bootin
 - `concierge-tools.test.ts` (api-server) — the server-side guard that stops the model from
   proposing an edit referencing an invented POI id.
 - `*-validate.test.ts` (api-server) — the request validators; the trust boundary in front
-  of all three agent routes.
+  of all three agent routes. `trip-validate` is also the gate in front of the haversine:
+  a bad lat/lng that slips through comes back as a confident-looking distance built from
+  garbage, so its coordinate-rejection cases matter more than their size suggests.
+- `transport-estimate.test.ts`, `transport-agent.test.ts` (api-server) — the computed
+  transport legs. Pins the real Riyadh distances and the hot-season walk threshold, and
+  guards demo mode against regressing to the flat "15 min / 20 SAR for every hop" fixture
+  it used to return regardless of whether two stops were 200m or 30km apart.
 - `locales/locales.test.ts` — **locale drift guard.** Fails the suite if any locale's
   keyset differs from `en.json` (missing, extra, or blank values). This exists because
   `t()` echoing the key on a miss means a lagging locale fails silently in the running

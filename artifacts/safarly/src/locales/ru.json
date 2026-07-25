@@ -425,6 +425,7 @@
   "itin.enrich.goodfor": "Подходит для",
   "itin.enrich.min": "мин",
   "itin.enrich.hour": "ч",
+  "itin.enrich.km": "км",
   "itin.enrich.mode.flight": "Перелёт",
   "itin.enrich.mode.train": "Поезд",
   "itin.enrich.mode.bus": "Автобус",

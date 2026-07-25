@@ -425,6 +425,7 @@
   "itin.enrich.goodfor": "مناسب لـ",
   "itin.enrich.min": "دقيقة",
   "itin.enrich.hour": "ساعة",
+  "itin.enrich.km": "كم",
   "itin.enrich.mode.flight": "رحلة جوية",
   "itin.enrich.mode.train": "قطار",
   "itin.enrich.mode.bus": "حافلة",

@@ -130,6 +130,23 @@ export interface TransportLeg {
   costSar: number;
   notes?: string;
   uncertain: boolean;
+  /**
+   * Street-corrected distance between the two stops, computed server-side from
+   * their real coordinates (transport-estimate.ts). Present on day legs, absent
+   * on arrival legs and on any leg the model produced — nothing in the dataset
+   * gives the model coordinates to work from.
+   */
+  distanceKm?: number;
+  /**
+   * "computed" — distance, mode, and duration were derived arithmetically from
+   * coordinates, so they don't shift between runs. "model" — the whole leg is
+   * an estimate. Absent means model.
+   *
+   * Note this does NOT make a computed leg's *fare* trustworthy: those come
+   * from an unsourced constant table, which is why computed ride legs are
+   * still `uncertain`. Read `basis` for the geometry, `uncertain` for the price.
+   */
+  basis?: "computed" | "model";
 }
 
 export interface ArrivalTransport {

@@ -425,6 +425,7 @@
   "itin.enrich.goodfor": "کے لیے موزوں",
   "itin.enrich.min": "منٹ",
   "itin.enrich.hour": "گھنٹے",
+  "itin.enrich.km": "کلومیٹر",
   "itin.enrich.mode.flight": "پرواز",
   "itin.enrich.mode.train": "ٹرین",
   "itin.enrich.mode.bus": "بس",

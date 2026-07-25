@@ -425,6 +425,7 @@
   "itin.enrich.goodfor": "Gut für",
   "itin.enrich.min": "Min.",
   "itin.enrich.hour": "Std.",
+  "itin.enrich.km": "km",
   "itin.enrich.mode.flight": "Flug",
   "itin.enrich.mode.train": "Zug",
   "itin.enrich.mode.bus": "Bus",

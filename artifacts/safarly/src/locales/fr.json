@@ -425,6 +425,7 @@
   "itin.enrich.goodfor": "Idéal pour",
   "itin.enrich.min": "min",
   "itin.enrich.hour": "h",
+  "itin.enrich.km": "km",
   "itin.enrich.mode.flight": "Vol",
   "itin.enrich.mode.train": "Train",
   "itin.enrich.mode.bus": "Bus",

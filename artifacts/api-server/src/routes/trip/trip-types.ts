@@ -16,6 +16,18 @@ export interface TransportLeg {
   costSar: number;
   notes?: string;
   uncertain: boolean;
+  /**
+   * Street-corrected distance, computed from the two stops' real coordinates.
+   * Absent on model-produced legs — the model has no coordinates to work from,
+   * which is the whole reason transport-estimate.ts exists.
+   */
+  distanceKm?: number;
+  /**
+   * "computed" — distance/mode/duration derived from coordinates by
+   * transport-estimate.ts. "model" — the entire leg is a model estimate.
+   * Absent means model, for legs predating this field.
+   */
+  basis?: "computed" | "model";
 }
 
 export interface ArrivalTransport {
@@ -50,6 +62,20 @@ export interface AccommodationOption {
   goodFor: string;
 }
 
+/**
+ * One stop as the client sends it.
+ *
+ * lat/lng are optional rather than required because not every place on a day
+ * has them — meal venues carry an area name and no coordinates. A stop without
+ * them still works; it just falls back to the model path for its legs instead
+ * of being computed.
+ */
+export interface TripStop {
+  name: string;
+  lat?: number;
+  lng?: number;
+}
+
 /** POST /api/trip/generate request body. */
 export interface TripGenerateRequest {
   cityDisplayName: string;
@@ -59,7 +85,7 @@ export interface TripGenerateRequest {
   budgetSarPerDay: number;
   travelType: string;
   languageName: string;
-  days: { dayNumber: number; stopNames: string[] }[];
+  days: { dayNumber: number; stops: TripStop[] }[];
   poiAreas: string[];
 }
 
@@ -120,6 +146,31 @@ export const dayTransportSchema = {
     },
   },
   required: ["days"],
+};
+
+/**
+ * The refinement pass over computed legs. Deliberately narrow: the model is
+ * asked ONLY for prose notes, keyed back to a leg by index, because distance,
+ * mode, duration, and fare are already settled by transport-estimate.ts. Give
+ * it a field it could overwrite a computed number with and eventually it will.
+ */
+export const legNotesSchema = {
+  type: Type.OBJECT,
+  properties: {
+    notes: {
+      type: Type.ARRAY,
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          dayNumber: { type: Type.NUMBER },
+          legIndex: { type: Type.NUMBER, description: "0-based index of the leg within that day" },
+          note: { type: Type.STRING, description: "One short practical caveat, or empty if there is nothing worth saying" },
+        },
+        required: ["dayNumber", "legIndex", "note"],
+      },
+    },
+  },
+  required: ["notes"],
 };
 
 export const eventsSchema = {
