@@ -1,19 +1,29 @@
 /**
  * /login — Sign Up / Log In toggle.
- * Stores safarly_auth { name, email } in localStorage.
+ * The real session is a server-issued httpOnly cookie (lib/auth-api.ts);
+ * lib/auth.ts additionally stores safarly_auth { name, email } in
+ * localStorage as a synchronous-read mirror, never the source of truth.
  * Signup  → /profile-setup
  * Login   → /home (/) if profile complete, else /profile-setup
  */
 import { useState, useEffect } from "react";
 import { useLocation, useSearchParams, Link } from "wouter";
 import { AnimatePresence, motion } from "framer-motion";
-import { Mail, User, ArrowRight, Lock, Eye, EyeOff, Check, X } from "lucide-react";
+import { Mail, User, ArrowRight, Lock, Eye, EyeOff, Loader2 } from "lucide-react";
 import { usePageMeta } from "@/lib/usePageMeta";
 import { useTranslation } from "@/providers/translation-context";
 import { getAuth, setAuth, isProfileComplete, sanitizeReturnTo } from "@/lib/auth";
-import { isValidEmail, assessPassword } from "@/lib/validation";
+import { isValidEmail, assessPassword, PASSWORD_MIN_LENGTH } from "@/lib/validation";
 import { signUp, logIn } from "@/lib/auth-api";
+import { authErrorKey } from "@/lib/auth-errors";
+import { PasswordStrengthMeter, RULE_KEY } from "@/components/PasswordStrengthMeter";
 import safarlyLogo from "@assets/safarly-logo-new.png";
+
+interface FieldErrors {
+  name?: string;
+  email?: string;
+  password?: string;
+}
 
 export function Login() {
   usePageMeta("Sign In — Safarly", "Log in or create your Safarly account.");
@@ -26,7 +36,8 @@ export function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+  const [formError, setFormError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   /* Live policy feedback. Signup only — on login the rules are whatever the
@@ -39,21 +50,34 @@ export function Login() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [navigate]);
 
+  function clearErrors() {
+    setFieldErrors({});
+    setFormError("");
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setError("");
+    clearErrors();
     const trimEmail = email.trim();
     const trimName = name.trim();
 
-    if (!trimEmail) { setError("Please enter your email address."); return; }
-    if (!isValidEmail(trimEmail)) {
-      setError("Please enter a valid email address, like you@example.com.");
+    const nextFieldErrors: FieldErrors = {};
+    if (mode === "signup" && !trimName) nextFieldErrors.name = t("login.error.name.required");
+    if (!trimEmail) nextFieldErrors.email = t("login.error.email.required");
+    else if (!isValidEmail(trimEmail)) nextFieldErrors.email = t("login.error.email.invalid");
+    if (!password) nextFieldErrors.password = t("login.error.password.required");
+
+    if (Object.keys(nextFieldErrors).length > 0) {
+      setFieldErrors(nextFieldErrors);
       return;
     }
-    if (mode === "signup" && !trimName) { setError("Please enter your name."); return; }
-    if (!password) { setError("Please enter your password."); return; }
+
     if (mode === "signup" && !assessment.valid) {
-      setError(assessment.firstFailure ?? "Please choose a stronger password.");
+      setFormError(
+        assessment.firstFailureId
+          ? t(RULE_KEY[assessment.firstFailureId]).replace("{min}", String(PASSWORD_MIN_LENGTH))
+          : t("password.error.generic")
+      );
       return;
     }
 
@@ -63,7 +87,10 @@ export function Login() {
         ? await signUp({ name: trimName, email: trimEmail, password })
         : await logIn({ email: trimEmail, password });
 
-      if (!result.ok) { setError(result.error); return; }
+      /* Server errors never map to a specific field — the server deliberately
+         returns one generic message for both unknown-email and wrong-password
+         to avoid account enumeration; field-mapping it here would defeat that. */
+      if (!result.ok) { setFormError(t(authErrorKey(result.error))); return; }
 
       /* The server owns the account; localStorage keeps only the display copy
          the rest of the app already reads synchronously. */
@@ -95,10 +122,16 @@ export function Login() {
     transition: "border-color .2s",
   };
 
+  const fieldErrorStyle: React.CSSProperties = {
+    fontSize: "0.75rem",
+    color: "var(--sf-error)",
+    fontWeight: 600,
+    margin: "6px 0 0",
+  };
+
   return (
-    <div style={{
+    <div className="sf-auth-glow" style={{
       minHeight: "100dvh",
-      background: "var(--sf-bg)",
       display: "flex",
       flexDirection: "column",
       alignItems: "center",
@@ -111,7 +144,7 @@ export function Login() {
         <div style={{ textAlign: "center", marginBottom: "40px" }}>
           <img src={safarlyLogo} alt="Safarly" style={{ height: "52px", width: "auto" }} />
           <p style={{ color: "var(--sf-text-muted)", fontSize: "0.9375rem", marginTop: "10px" }}>
-            Your Saudi Journey, Intelligently Crafted
+            {t("login.tagline")}
           </p>
         </div>
 
@@ -145,7 +178,7 @@ export function Login() {
             <button
               key={m}
               type="button"
-              onClick={() => { setMode(m); setError(""); }}
+              onClick={() => { setMode(m); clearErrors(); }}
               style={{
                 flex: 1,
                 minHeight: "42px",
@@ -159,13 +192,13 @@ export function Login() {
                 transition: "background .2s, color .2s",
               }}
             >
-              {m === "signup" ? "Sign Up" : "Log In"}
+              {m === "signup" ? t("login.tab.signup") : t("login.tab.login")}
             </button>
           ))}
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+        <form onSubmit={handleSubmit} aria-busy={submitting} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
 
           {/* Name field — signup only */}
           <AnimatePresence initial={false}>
@@ -178,7 +211,7 @@ export function Login() {
                 transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
                 style={{ overflow: "hidden" }}
               >
-                <FieldLabel>Your Name</FieldLabel>
+                <FieldLabel>{t("login.field.name.label")}</FieldLabel>
                 <div style={{ position: "relative" }}>
                   <User
                     size={15}
@@ -193,21 +226,26 @@ export function Login() {
                   <input
                     type="text"
                     value={name}
-                    onChange={e => setName(e.target.value)}
-                    placeholder="e.g. Sara Al-Ghamdi"
+                    onChange={e => { setName(e.target.value); setFieldErrors(f => ({ ...f, name: undefined })); }}
+                    placeholder={t("login.field.name.placeholder")}
                     autoComplete="given-name"
+                    aria-invalid={Boolean(fieldErrors.name)}
+                    aria-describedby={fieldErrors.name ? "login-name-error" : undefined}
                     style={inputStyle}
                     onFocus={e => (e.currentTarget.style.borderColor = "var(--sf-indigo)")}
                     onBlur={e => (e.currentTarget.style.borderColor = "var(--sf-border)")}
                   />
                 </div>
+                {fieldErrors.name && (
+                  <p id="login-name-error" role="alert" style={fieldErrorStyle}>{fieldErrors.name}</p>
+                )}
               </motion.div>
             )}
           </AnimatePresence>
 
           {/* Email field — always shown */}
           <div>
-            <FieldLabel>Email Address</FieldLabel>
+            <FieldLabel>{t("login.field.email.label")}</FieldLabel>
             <div style={{ position: "relative" }}>
               <Mail
                 size={15}
@@ -222,19 +260,24 @@ export function Login() {
               <input
                 type="email"
                 value={email}
-                onChange={e => setEmail(e.target.value)}
-                placeholder="you@example.com"
+                onChange={e => { setEmail(e.target.value); setFieldErrors(f => ({ ...f, email: undefined })); }}
+                placeholder={t("login.field.email.placeholder")}
                 autoComplete="email"
+                aria-invalid={Boolean(fieldErrors.email)}
+                aria-describedby={fieldErrors.email ? "login-email-error" : undefined}
                 style={inputStyle}
                 onFocus={e => (e.currentTarget.style.borderColor = "var(--sf-indigo)")}
                 onBlur={e => (e.currentTarget.style.borderColor = "var(--sf-border)")}
               />
             </div>
+            {fieldErrors.email && (
+              <p id="login-email-error" role="alert" style={fieldErrorStyle}>{fieldErrors.email}</p>
+            )}
           </div>
 
           {/* Password field — always shown */}
           <div>
-            <FieldLabel>Password</FieldLabel>
+            <FieldLabel>{t("login.field.password.label")}</FieldLabel>
             <div style={{ position: "relative" }}>
               <Lock
                 size={15}
@@ -249,9 +292,16 @@ export function Login() {
               <input
                 type={showPassword ? "text" : "password"}
                 value={password}
-                onChange={e => setPassword(e.target.value)}
-                placeholder={mode === "signup" ? "At least 10 characters" : "Your password"}
+                onChange={e => { setPassword(e.target.value); setFieldErrors(f => ({ ...f, password: undefined })); }}
+                placeholder={mode === "signup"
+                  ? t("login.field.password.placeholder.signup").replace("{min}", String(PASSWORD_MIN_LENGTH))
+                  : t("login.field.password.placeholder.login")}
                 autoComplete={mode === "signup" ? "new-password" : "current-password"}
+                aria-invalid={Boolean(fieldErrors.password)}
+                aria-describedby={[
+                  fieldErrors.password ? "login-password-error" : null,
+                  mode === "signup" && password.length > 0 ? "login-password-strength" : null,
+                ].filter(Boolean).join(" ") || undefined}
                 style={{ ...inputStyle, paddingInlineEnd: "46px" }}
                 onFocus={e => (e.currentTarget.style.borderColor = "var(--sf-indigo)")}
                 onBlur={e => (e.currentTarget.style.borderColor = "var(--sf-border)")}
@@ -259,7 +309,7 @@ export function Login() {
               <button
                 type="button"
                 onClick={() => setShowPassword(s => !s)}
-                aria-label={showPassword ? "Hide password" : "Show password"}
+                aria-label={showPassword ? t("password.hide") : t("password.show")}
                 aria-pressed={showPassword}
                 style={{
                   position: "absolute", top: "50%",
@@ -274,50 +324,15 @@ export function Login() {
                 {showPassword ? <EyeOff size={16} aria-hidden /> : <Eye size={16} aria-hidden />}
               </button>
             </div>
-
-            {/* Requirement checklist — signup only, and only once typing starts.
-                Showing every unmet rule up front reads as a wall of red. */}
-            {mode === "signup" && password.length > 0 && (
-              <div style={{ marginTop: 12 }}>
-                <div
-                  style={{ display: "flex", gap: 4, marginBottom: 10 }}
-                  role="img"
-                  aria-label={`Password strength: ${assessment.score} of 4`}
-                >
-                  {[0, 1, 2, 3].map(i => (
-                    <div
-                      key={i}
-                      style={{
-                        flex: 1, height: 4, borderRadius: 2,
-                        background: i < assessment.score
-                          ? (assessment.score <= 1 ? "#DC2626"
-                            : assessment.score === 2 ? "#F59E0B"
-                            : assessment.score === 3 ? "#84CC16" : "var(--sf-accent)")
-                          : "var(--sf-border)",
-                        transition: "background 200ms ease",
-                      }}
-                    />
-                  ))}
-                </div>
-                <ul style={{ display: "flex", flexDirection: "column", gap: 5, listStyle: "none", padding: 0, margin: 0 }}>
-                  {assessment.rules.map(rule => (
-                    <li
-                      key={rule.id}
-                      style={{
-                        display: "flex", alignItems: "center", gap: 7,
-                        fontSize: "0.78rem",
-                        color: rule.passed ? "var(--sf-accent)" : "var(--sf-text-muted)",
-                      }}
-                    >
-                      {rule.passed
-                        ? <Check size={13} aria-hidden style={{ flexShrink: 0 }} />
-                        : <X size={13} aria-hidden style={{ flexShrink: 0, opacity: 0.5 }} />}
-                      <span>{rule.label}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
+            {fieldErrors.password && (
+              <p id="login-password-error" role="alert" style={fieldErrorStyle}>{fieldErrors.password}</p>
             )}
+
+            <PasswordStrengthMeter
+              id="login-password-strength"
+              assessment={assessment}
+              visible={mode === "signup" && password.length > 0}
+            />
           </div>
 
           {/* Forgot password — login only; signup has no password to forget yet */}
@@ -327,17 +342,20 @@ export function Login() {
                 href="/forgot-password"
                 style={{ color: "var(--sf-indigo)", fontWeight: 600, fontSize: "0.8125rem", textDecoration: "none" }}
               >
-                Forgot your password?
+                {t("login.forgot_link")}
               </Link>
             </p>
           )}
 
-          {/* Error */}
-          {error && (
-            <p style={{ fontSize: "0.8125rem", color: "var(--sf-error)", fontWeight: 600, margin: 0 }}>
-              {error}
-            </p>
-          )}
+          {/* Form-level error — always mounted so screen readers observe changes */}
+          <p
+            id="login-form-error"
+            role="alert"
+            aria-live="assertive"
+            style={{ fontSize: "0.8125rem", color: "var(--sf-error)", fontWeight: 600, margin: 0, minHeight: formError ? undefined : 0 }}
+          >
+            {formError}
+          </p>
 
           {/* Submit */}
           <button
@@ -364,9 +382,11 @@ export function Login() {
             onMouseLeave={e => (e.currentTarget.style.background = "var(--sf-accent)")}
           >
             {submitting
-              ? (mode === "signup" ? "Creating account…" : "Logging in…")
-              : (mode === "signup" ? "Create Account" : "Log In")}
-            {!submitting && <ArrowRight size={18} className="rtl:hidden" aria-hidden />}
+              ? (mode === "signup" ? t("login.submit.signup.pending") : t("login.submit.login.pending"))
+              : (mode === "signup" ? t("login.submit.signup") : t("login.submit.login"))}
+            {submitting
+              ? <Loader2 size={18} className="sf-spin" aria-hidden />
+              : <ArrowRight size={18} className="rtl:hidden" aria-hidden />}
           </button>
         </form>
 
@@ -377,11 +397,11 @@ export function Login() {
           fontSize: "0.8125rem",
           color: "var(--sf-text-muted)",
         }}>
-          {mode === "signup" ? "Already have an account?" : "New to Safarly?"}
+          {mode === "signup" ? t("login.switch.have_account") : t("login.switch.new_here")}
           {" "}
           <button
             type="button"
-            onClick={() => { setMode(mode === "signup" ? "login" : "signup"); setError(""); }}
+            onClick={() => { setMode(mode === "signup" ? "login" : "signup"); clearErrors(); }}
             style={{
               background: "none",
               border: "none",
@@ -392,7 +412,7 @@ export function Login() {
               padding: 0,
             }}
           >
-            {mode === "signup" ? "Log In" : "Sign Up"}
+            {mode === "signup" ? t("login.tab.login") : t("login.tab.signup")}
           </button>
         </p>
 

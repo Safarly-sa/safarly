@@ -10,13 +10,19 @@
  *
  * Length and character variety only — no common-password blocklist or
  * trivial-sequence check, by design.
+ *
+ * Display strings live in the locales under `password.rule.*` /
+ * `password.strength.*`, not here — this module stays locale-agnostic so
+ * callers can translate. Adding a rule needs a matching key in all 11 locale
+ * files (see artifacts/safarly/src/locales/locales.test.ts).
  */
 export const PASSWORD_MIN_LENGTH = 10;
 export const PASSWORD_MAX_LENGTH = 128;
 
+export type PasswordRuleId = "length" | "lower" | "upper" | "number" | "notPersonal";
+
 export interface PasswordRule {
-  id: string;
-  label: string;
+  id: PasswordRuleId;
   passed: boolean;
 }
 
@@ -26,8 +32,8 @@ export interface PasswordAssessment {
   valid: boolean;
   /** 0-4, for the meter only. Never gates submission. */
   score: number;
-  /** First unmet requirement, ready to show as an error. */
-  firstFailure: string | null;
+  /** Id of the first unmet requirement, for the caller to translate. */
+  firstFailureId: PasswordRuleId | null;
 }
 
 /**
@@ -46,27 +52,22 @@ export function assessPassword(password: string, identifiers: string[] = []): Pa
   const rules: PasswordRule[] = [
     {
       id: "length",
-      label: `At least ${PASSWORD_MIN_LENGTH} characters`,
       passed: password.length >= PASSWORD_MIN_LENGTH && password.length <= PASSWORD_MAX_LENGTH,
     },
     {
       id: "lower",
-      label: "One lowercase letter",
       passed: /[a-z]/.test(password),
     },
     {
       id: "upper",
-      label: "One uppercase letter",
       passed: /[A-Z]/.test(password),
     },
     {
       id: "number",
-      label: "One number",
       passed: /[0-9]/.test(password),
     },
     {
       id: "notPersonal",
-      label: "Doesn't contain your name or email",
       passed: password.length > 0 && !containsIdentifier,
     },
   ];
@@ -84,7 +85,7 @@ export function assessPassword(password: string, identifiers: string[] = []): Pa
     rules,
     valid,
     score: Math.min(score, 4),
-    firstFailure: rules.find((r) => !r.passed)?.label ?? null,
+    firstFailureId: rules.find((r) => !r.passed)?.id ?? null,
   };
 }
 

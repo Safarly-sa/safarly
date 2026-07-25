@@ -1,5 +1,9 @@
-/* ── Simple localStorage-backed auth helpers ──────────────────────────
-   No passwords — this is a demo auth layer (localStorage only).
+/* ── localStorage mirror of the real auth session ──────────────────────
+   The real session is a server-issued httpOnly cookie (Express + Drizzle,
+   see artifacts/api-server/src/routes/auth.ts); auth-api.ts is the actual
+   client. This file only mirrors { name, email } into localStorage so the
+   Navbar and profile-complete checks can read synchronously — never treat
+   it as authoritative for anything session-guarded.
    Keys:
      safarly_auth             { name: string; email: string }
      safarly_profile_complete "true" | absent
