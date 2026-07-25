@@ -10,6 +10,8 @@ import { ArrowRight, Calendar, Check, ChevronLeft, ChevronRight, Sparkles, X } f
 import { useTranslation } from "@/providers/translation-context";
 import { usePageMeta } from "@/lib/usePageMeta";
 import { localeTag } from "@/lib/locale-format";
+import { CityCarousel, type CityOption } from "@/components/CityCarousel";
+import { poiName } from "@/lib/poi-i18n";
 import {
   currencyForNationality, convertFromSAR, formatCurrencyAmount,
   getCurrencyDisplayPref, setCurrencyDisplayPref,
@@ -23,17 +25,21 @@ import poisData from "@/data/pois.json";
  * listed for that city in pois.json, preferring a verified one — every city's
  * data was authored with its single best-known landmark listed first.
  */
-const FAMOUS_POI: Record<string, string> = (() => {
-  const byCity = new Map<string, { name: string; verified?: boolean }[]>();
-  for (const p of poisData as { city: string; name: string; verified?: boolean }[]) {
+type FamousPoi = { id: string; name: string };
+
+const FAMOUS_POI: Record<string, FamousPoi> = (() => {
+  const byCity = new Map<string, (FamousPoi & { verified?: boolean })[]>();
+  for (const p of poisData as (FamousPoi & { city: string; verified?: boolean })[]) {
     const list = byCity.get(p.city) ?? [];
     list.push(p);
     byCity.set(p.city, list);
   }
-  const out: Record<string, string> = {};
+  const out: Record<string, FamousPoi> = {};
   for (const [city, list] of byCity) {
     const best = list.find(p => p.verified) ?? list[0];
-    if (best) out[city] = best.name;
+    // Keep the id, not just the name — the card resolves it through
+    // poiName() so Arabic shows "قلعة المصمك" rather than "Al-Masmak Fortress".
+    if (best) out[city] = { id: best.id, name: best.name };
   }
   return out;
 })();
@@ -71,11 +77,6 @@ function useTripStyles() {
       .sf-ctx-card { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; padding:14px 10px; border-radius:12px; cursor:pointer; border:1.5px solid var(--sf-border); background:var(--sf-surface); transition:border-color .18s, background .18s; min-height:88px; }
       .sf-ctx-card.selected { border-color:var(--sf-indigo); background:var(--sf-primary-soft); }
       .sf-ctx-card:hover:not(.selected) { border-color:color-mix(in srgb, var(--sf-indigo) 50%, var(--sf-border)); }
-
-      /* Compact city card */
-      .sf-city-compact { display:flex; flex-direction:column; padding:14px; border-radius:12px; cursor:pointer; border:1.5px solid var(--sf-border); background:var(--sf-surface); transition:all .18s; min-height:96px; text-align:start; }
-      .sf-city-compact.selected { border-color:var(--sf-indigo); background:var(--sf-primary-soft); box-shadow:0 0 0 1px var(--sf-indigo); }
-      .sf-city-compact:hover:not(.selected) { border-color:color-mix(in srgb, var(--sf-indigo) 50%, var(--sf-border)); }
 
       /* Goal card disabled (max selected) */
       .sf-goal-card-disabled { opacity:0.4; pointer-events:none; }
@@ -132,81 +133,18 @@ const CONTEXT_OPTIONS = [
    City data
    ────────────────────────────────────────────────────────────────────── */
 
-// Featured (with SVG skylines)
-function RiyadhSkyline() {
-  return (
-    <svg viewBox="0 0 300 70" preserveAspectRatio="xMidYMax meet" aria-hidden style={{ width: "100%", height: "56px", display: "block" }}>
-      <path d="M0,70 L0,52 L14,52 L14,42 L20,42 L20,32 L28,32 L28,42 L34,42 L34,48 L42,48 L42,10 L44,9 L47,7 L50,9 L52,10 L52,48 L58,48 L58,34 L68,34 L68,48 L74,48 L74,26 L84,26 L84,48 L90,48 L90,40 L100,40 L100,48 L106,48 L106,16 L114,16 L114,48 L120,48 L120,30 L132,30 L132,48 L140,48 L140,38 L152,38 L152,48 L160,48 L160,22 L170,22 L170,48 L178,48 L178,34 L188,34 L188,48 L196,48 L196,42 L206,42 L206,48 L214,48 L214,28 L224,28 L224,48 L232,48 L232,40 L244,40 L244,52 L252,52 L252,44 L262,44 L262,52 L272,52 L272,46 L284,46 L284,52 L292,52 L292,56 L300,56 L300,70 Z" style={{ fill: "var(--sf-surface-alt)", opacity: 0.9 }} />
-      <ellipse cx="47" cy="10" rx="4" ry="3" style={{ fill: "var(--sf-surface)", opacity: 0.6 }} />
-    </svg>
-  );
-}
-function JeddahSkyline() {
-  return (
-    <svg viewBox="0 0 300 70" preserveAspectRatio="xMidYMax meet" aria-hidden style={{ width: "100%", height: "56px", display: "block" }}>
-      <ellipse cx="55" cy="18" rx="3" ry="15" style={{ fill: "var(--sf-surface-alt)", opacity: 0.5 }} />
-      <path d="M0,70 L0,50 L12,50 L12,38 L22,38 L22,50 L28,50 L28,30 L38,30 L38,50 L44,50 L44,42 L58,42 L58,50 L66,50 L66,36 L74,36 L74,50 L82,50 L82,26 L92,26 L92,50 L100,50 L100,40 L110,40 L110,50 L118,50 L118,32 L128,32 L128,50 L136,50 L136,38 L148,38 L148,50 L156,50 L156,30 L166,30 L166,50 L174,50 L174,42 L184,42 L184,50 L192,50 L192,36 L202,36 L202,50 L210,50 L210,40 L222,40 L222,52 L232,52 L232,44 L244,44 L244,52 L254,52 L254,42 L266,42 L266,52 L276,52 L276,48 L288,48 L288,56 L298,56 L298,60 L300,60 L300,70 Z" style={{ fill: "var(--sf-surface-alt)", opacity: 0.9 }} />
-      <ellipse cx="77" cy="32" rx="8" ry="6" style={{ fill: "var(--sf-surface-alt)", opacity: 0.9 }} />
-    </svg>
-  );
-}
-function AlUlaSkyline() {
-  return (
-    <svg viewBox="0 0 300 70" preserveAspectRatio="xMidYMax meet" aria-hidden style={{ width: "100%", height: "56px", display: "block" }}>
-      <path d="M0,70 L0,58 Q8,55 15,50 Q22,42 30,48 Q38,38 46,46 Q52,32 60,42 Q68,26 76,38 Q84,24 92,36 Q100,18 108,32 Q116,14 124,28 Q132,20 140,32 Q148,10 156,26 Q164,18 172,30 Q180,22 188,36 Q196,28 204,42 Q212,34 220,46 Q228,38 236,50 Q244,44 252,54 Q260,48 268,56 Q276,52 284,58 L300,58 L300,70 Z" style={{ fill: "var(--sf-surface-alt)", opacity: 0.9 }} />
-      <path d="M0,70 L0,64 Q15,60 30,58 Q50,54 68,56 Q90,52 110,57 Q130,54 148,60 Q168,56 188,61 Q210,57 232,62 Q255,58 280,64 L300,66 L300,70 Z" style={{ fill: "var(--sf-surface)", opacity: 0.7 }} />
-    </svg>
-  );
-}
-
-type FeaturedCityId = "riyadh" | "jeddah" | "alula";
-const SKYLINES: Record<FeaturedCityId, React.ComponentType> = { riyadh: RiyadhSkyline, jeddah: JeddahSkyline, alula: AlUlaSkyline };
-
-function FeaturedCityCard({ id, title, sub, desc, famousFor, selected, onClick }: {
-  id: FeaturedCityId; title: string; sub: string; desc: string; famousFor?: string; selected: boolean; onClick: () => void;
-}) {
-  const Skyline = SKYLINES[id];
-  return (
-    <motion.button
-      type="button" onClick={onClick}
-      whileHover={{ y: -2 }} whileTap={{ scale: 0.98 }}
-      style={{
-        display: "flex", flexDirection: "column", textAlign: "start",
-        cursor: "pointer", borderRadius: "12px", overflow: "hidden",
-        border: `2px solid ${selected ? "var(--sf-indigo)" : "var(--sf-border)"}`,
-        background: "var(--sf-surface)", transition: "border-color .2s, box-shadow .2s",
-        boxShadow: selected ? "0 0 0 1px var(--sf-indigo), 0 8px 24px rgba(0,0,0,0.12)" : "0 2px 8px rgba(0,0,0,0.06)",
-        minHeight: "180px", flex: 1,
-      }}
-    >
-      <div style={{ padding: "16px 16px 10px", flex: 1 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-          <div>
-            <p style={{ fontSize: "1.0625rem", fontWeight: 800, color: "var(--sf-text)", lineHeight: 1.2, marginBottom: "2px" }}>{title}</p>
-            <p style={{ fontSize: "0.6875rem", fontWeight: 700, color: "var(--sf-accent)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "5px" }}>{sub}</p>
-            <p style={{ fontSize: "0.8rem", color: "var(--sf-text-muted)", lineHeight: 1.4, marginBottom: famousFor ? 4 : 0 }}>{desc}</p>
-            {famousFor && (
-              <p style={{ fontSize: "0.75rem", color: "var(--sf-text-muted)", lineHeight: 1.3, display: "flex", alignItems: "center", gap: 4 }}>
-                <span aria-hidden>📍</span><span style={{ fontWeight: 600 }}>{famousFor}</span>
-              </p>
-            )}
-          </div>
-          {selected && (
-            <div style={{ width: 20, height: 20, borderRadius: "50%", background: "var(--sf-indigo)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginInlineStart: 8 }}>
-              <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 5l2.5 2.5 4-4" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
-            </div>
-          )}
-        </div>
-      </div>
-      <div style={{ background: selected ? "var(--sf-primary-soft)" : "var(--sf-bg)", transition: "background .2s" }}>
-        <Skyline />
-      </div>
-    </motion.button>
-  );
-}
-
-// Compact city data with emoji icon — every city besides the 3 featured ones
-const COMPACT_CITIES = [
+/**
+ * Every selectable destination, in one flat list.
+ *
+ * There used to be a "featured 3 + 13 more" split; the carousel shows all
+ * sixteen at equal weight instead, so nothing is buried under a secondary
+ * heading. `icon` is only rendered in the no-photo fallback tile — see
+ * CityCarousel's CITY_IMAGE for which cities have a Visit Saudi photo.
+ */
+const ALL_CITIES = [
+  { id: "riyadh",         icon: "🏙️", region: "Riyadh Region"    },
+  { id: "jeddah",         icon: "🌊", region: "Hejaz Region"     },
+  { id: "alula",          icon: "🏜️", region: "Madinah Region"   },
   { id: "al_khobar",      icon: "🌊", region: "Eastern Province" },
   { id: "abha",           icon: "⛰️", region: "Aseer Region"     },
   { id: "taif",           icon: "🌹", region: "Hejaz Region"     },
@@ -221,34 +159,6 @@ const COMPACT_CITIES = [
   { id: "hail",           icon: "🐫", region: "Hail Region"      },
   { id: "yanbu",          icon: "🐠", region: "Madinah Region"   },
 ] as const;
-
-function CompactCityCard({ id, icon, title, sub, desc, famousFor, selected, onClick }: {
-  id: string; icon: string; title: string; sub: string; desc: string; famousFor?: string; selected: boolean; onClick: () => void;
-}) {
-  return (
-    <button
-      type="button" onClick={onClick}
-      className={`sf-city-compact${selected ? " selected" : ""}`}
-    >
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6 }}>
-        <span style={{ fontSize: "1.5rem", lineHeight: 1 }}>{icon}</span>
-        {selected && (
-          <div style={{ width: 18, height: 18, borderRadius: "50%", background: "var(--sf-indigo)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-            <svg width="9" height="9" viewBox="0 0 9 9" fill="none"><path d="M1.5 4.5l2 2 4-4" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
-          </div>
-        )}
-      </div>
-      <p style={{ fontWeight: 800, color: "var(--sf-text)", fontSize: "0.9375rem", lineHeight: 1.2, marginBottom: 2 }}>{title}</p>
-      <p style={{ fontSize: "0.6875rem", fontWeight: 700, color: "var(--sf-accent)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 4 }}>{sub}</p>
-      <p style={{ fontSize: "0.75rem", color: "var(--sf-text-muted)", lineHeight: 1.35, marginBottom: famousFor ? 4 : 0 }}>{desc}</p>
-      {famousFor && (
-        <p style={{ fontSize: "0.6875rem", color: "var(--sf-text-muted)", lineHeight: 1.3, display: "flex", alignItems: "center", gap: 4 }}>
-          <span aria-hidden>📍</span><span style={{ fontWeight: 600 }}>{famousFor}</span>
-        </p>
-      )}
-    </button>
-  );
-}
 
 // AI Surprise Me card
 function AiCityCard({ selected, onClick, t }: { selected: boolean; onClick: () => void; t: (k: string) => string }) {
@@ -879,7 +789,19 @@ export function Trip() {
     navigate("/generating");
   }
 
-  const featuredCities: FeaturedCityId[] = ["riyadh", "jeddah", "alula"];
+  /* Translated once per language change rather than per render — the carousel
+     re-renders on every selection, and t() lookups for 16 cities × 3 keys add
+     up for values that only change with the locale. */
+  const cityOptions: CityOption[] = useMemo(
+    () => ALL_CITIES.map(({ id, icon }) => ({
+      id,
+      icon,
+      title: t(`trip.city.${id}.title`),
+      sub: t(`trip.city.${id}.sub`),
+      famousFor: FAMOUS_POI[id] ? poiName(t, FAMOUS_POI[id]) : undefined,
+    })),
+    [t],
+  );
   const moodList = [
     { key: "relax", icon: "🌊" }, { key: "adventure", icon: "🧗" },
     { key: "romantic", icon: "🌹" }, { key: "luxury", icon: "✨" },
@@ -939,40 +861,12 @@ export function Trip() {
           <Section title={t("trip.city.label")}>
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
 
-              {/* Featured 3 */}
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12 }}>
-                {featuredCities.map(id => (
-                  <FeaturedCityCard
-                    key={id} id={id}
-                    title={t(`trip.city.${id}.title`)}
-                    sub={t(`trip.city.${id}.sub`)}
-                    desc={t(`trip.city.${id}.desc`)}
-                    famousFor={FAMOUS_POI[id]}
-                    selected={city === id}
-                    onClick={() => setCity(city === id ? "" : id)}
-                  />
-                ))}
-              </div>
-
-              {/* More destinations label */}
-              <p style={{ fontSize: "0.6875rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: "var(--sf-text-muted)", marginTop: 4 }}>
-                {t("trip.city.more")}
-              </p>
-
-              {/* Every other city — all 16 Saudi destinations are now selectable */}
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))", gap: 10 }}>
-                {COMPACT_CITIES.map(({ id, icon }) => (
-                  <CompactCityCard
-                    key={id} id={id} icon={icon}
-                    title={t(`trip.city.${id}.title`)}
-                    sub={t(`trip.city.${id}.sub`)}
-                    desc={t(`trip.city.${id}.desc`)}
-                    famousFor={FAMOUS_POI[id]}
-                    selected={city === id}
-                    onClick={() => setCity(city === id ? "" : id)}
-                  />
-                ))}
-              </div>
+              {/* All 16 destinations, photo cards in a swipeable carousel */}
+              <CityCarousel
+                cities={cityOptions}
+                selectedId={city}
+                onSelect={setCity}
+              />
 
               {/* AI Surprise card */}
               <AiCityCard

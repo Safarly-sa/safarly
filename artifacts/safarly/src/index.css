@@ -404,19 +404,19 @@ html[dir="rtl"] {
   position: relative;
   isolation: isolate;
   background:
-    radial-gradient(60% 45% at 50% 0%,
-      color-mix(in srgb, var(--sf-indigo) 12%, transparent), transparent 70%),
-    radial-gradient(55% 40% at 50% 100%,
-      color-mix(in srgb, var(--sf-accent) 9%, transparent), transparent 70%),
+    radial-gradient(65% 50% at 50% 0%,
+      color-mix(in srgb, var(--sf-indigo) 26%, transparent), transparent 75%),
+    radial-gradient(60% 45% at 50% 100%,
+      color-mix(in srgb, var(--sf-accent) 20%, transparent), transparent 75%),
     var(--sf-bg);
 }
 :root[data-theme="dark"] .sf-auth-glow,
 .dark .sf-auth-glow {
   background:
-    radial-gradient(60% 45% at 50% 0%,
-      color-mix(in srgb, var(--sf-indigo) 20%, transparent), transparent 70%),
-    radial-gradient(55% 40% at 50% 100%,
-      color-mix(in srgb, var(--sf-accent) 14%, transparent), transparent 70%),
+    radial-gradient(65% 50% at 50% 0%,
+      color-mix(in srgb, var(--sf-indigo) 38%, transparent), transparent 75%),
+    radial-gradient(60% 45% at 50% 100%,
+      color-mix(in srgb, var(--sf-accent) 28%, transparent), transparent 75%),
     var(--sf-bg);
 }
 
@@ -427,4 +427,179 @@ html[dir="rtl"] {
 @keyframes sf-spin-rotate {
   from { transform: rotate(0deg); }
   to   { transform: rotate(360deg); }
+}
+
+/* ── City picker carousel (/trip) ──────────────────────────────────────
+   Photo cards in a native scroll-snap track. Arrows are an extra affordance
+   for mouse users; touch/trackpad/keyboard all drive the track directly. */
+.sf-city-carousel {
+  position: relative;
+}
+
+.sf-city-track {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;   /* don't chain into page/back-nav gestures */
+  scroll-snap-type: x mandatory;
+  scroll-padding-inline: 4px;
+  padding: 4px 4px 10px;
+  scrollbar-width: none;            /* arrows + swipe are the affordances */
+  -ms-overflow-style: none;
+}
+.sf-city-track::-webkit-scrollbar { display: none; }
+
+.sf-city-card {
+  flex: 0 0 236px;
+  scroll-snap-align: start;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  border: 1.5px solid var(--sf-border);
+  border-radius: 14px;
+  background: var(--sf-surface);
+  cursor: pointer;
+  overflow: hidden;
+  text-align: start;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+}
+.sf-city-card:hover:not(.selected) {
+  border-color: color-mix(in srgb, var(--sf-indigo) 50%, var(--sf-border));
+  transform: translateY(-2px);
+}
+.sf-city-card:active { transform: scale(0.985); }
+.sf-city-card.selected {
+  border-color: var(--sf-indigo);
+  box-shadow: 0 0 0 2px var(--sf-indigo), 0 8px 22px rgba(0, 0, 0, 0.14);
+}
+
+/* aspect-ratio reserves the box before the photo lands, so the row can't
+   reflow as images stream in (CLS). */
+.sf-city-card-media {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  background: var(--sf-surface-alt);
+}
+.sf-city-card-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.4s ease;
+}
+.sf-city-card:hover .sf-city-card-img { transform: scale(1.06); }
+
+.sf-city-card-fallback {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.25rem;
+  background:
+    radial-gradient(120% 100% at 50% 0%,
+      color-mix(in srgb, var(--sf-indigo) 26%, var(--sf-surface-alt)), transparent 70%),
+    linear-gradient(160deg,
+      color-mix(in srgb, var(--sf-accent) 16%, var(--sf-surface-alt)), var(--sf-surface-alt));
+}
+
+.sf-city-card-scrim {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(to top,
+    rgba(10, 14, 22, 0.82) 0%, rgba(10, 14, 22, 0.28) 42%, transparent 68%);
+}
+
+.sf-city-card-name {
+  position: absolute;
+  inset-inline: 12px;
+  inset-block-end: 10px;
+  color: #fff;
+  font-weight: 800;
+  font-size: 1.0625rem;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.45);
+}
+
+.sf-city-card-check {
+  position: absolute;
+  inset-block-start: 10px;
+  inset-inline-end: 10px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--sf-indigo);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.sf-city-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 10px 12px 12px;
+}
+.sf-city-card-sub {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--sf-text-accent);
+}
+.sf-city-card-poi {
+  font-size: 0.75rem;
+  color: var(--sf-text-muted);
+  line-height: 1.35;
+  /* Two-line clamp keeps every card the same height regardless of POI name. */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.sf-city-card-selected-label {
+  margin-block-start: 2px;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  color: var(--sf-indigo);
+}
+
+/* 44x44 hit area, per touch-target minimums. */
+.sf-city-arrow {
+  position: absolute;
+  inset-block-start: calc(50% - 30px);
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1px solid var(--sf-border);
+  background: var(--sf-surface);
+  color: var(--sf-text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 2;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+  transition: background 0.18s ease, border-color 0.18s ease, opacity 0.18s ease;
+}
+.sf-city-arrow:hover:not(:disabled) {
+  border-color: var(--sf-indigo);
+  background: color-mix(in srgb, var(--sf-indigo) 10%, var(--sf-surface));
+}
+.sf-city-arrow:disabled {
+  opacity: 0.32;
+  cursor: default;
+  box-shadow: none;
+}
+.sf-city-arrow-prev { inset-inline-start: -14px; }
+.sf-city-arrow-next { inset-inline-end: -14px; }
+
+/* On touch screens the swipe IS the interaction — drop the arrows rather than
+   float them over the first and last card's tap targets. */
+@media (max-width: 640px), (hover: none) {
+  .sf-city-arrow { display: none; }
 }
