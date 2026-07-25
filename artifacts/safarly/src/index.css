@@ -568,6 +568,16 @@ html[dir="rtl"] {
   color: var(--sf-indigo);
 }
 
+/* Companion hub cards. The lift is hover-only and tiny — these are navigation
+   tiles, not something to draw the eye away from the page heading. */
+.sf-companion-card:hover {
+  border-color: var(--sf-accent);
+  transform: translateY(-2px);
+}
+@media (prefers-reduced-motion: reduce) {
+  .sf-companion-card:hover { transform: none; }
+}
+
 /* 44x44 hit area, per touch-target minimums. */
 .sf-city-arrow {
   position: absolute;

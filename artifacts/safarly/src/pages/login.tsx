@@ -44,9 +44,13 @@ export function Login() {
      account was created with, so showing today's checklist would be noise. */
   const assessment = assessPassword(password, [email, name]);
 
-  /* Redirect if already authenticated + profile complete */
+  /* Redirect if already authenticated.
+     Deliberately no longer conditional on the profile being complete: signing
+     up from the results wall skips profile-setup by design, so "authed with an
+     empty profile" is now a normal state, and gating this on it would strand
+     those accounts on a sign-in form they have no reason to see. */
   useEffect(() => {
-    if (getAuth() && isProfileComplete()) navigate(returnTo ?? "/");
+    if (getAuth()) navigate(returnTo ?? "/");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [navigate]);
 
@@ -95,9 +99,16 @@ export function Login() {
       /* The server owns the account; localStorage keeps only the display copy
          the rest of the app already reads synchronously. */
       setAuth({ name: result.user.name, email: result.user.email });
+
+      /* Someone who just hit the wall on a finished itinerary has earned the
+         payoff, not a seven-step form. Send them straight to what they built;
+         profile-setup is offered on the itinerary itself as an optional way to
+         sharpen future recommendations. Every other entry point still collects
+         the profile up front, where it costs nothing. */
+      const cameFromResultsGate = returnTo === "/itinerary";
       const returnToQuery = returnTo ? `?returnTo=${encodeURIComponent(returnTo)}` : "";
       navigate(
-        mode === "signup" || !isProfileComplete()
+        !cameFromResultsGate && (mode === "signup" || !isProfileComplete())
           ? `/profile-setup${returnToQuery}`
           : returnTo ?? "/"
       );

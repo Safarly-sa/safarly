@@ -25,14 +25,14 @@ const AGENTS = [
 const FEATURES = [
   { Icon: Camera,        title: "Live Lens",        desc: "Point your camera at a dish, landmark, or street sign. AI identifies it and gives you cultural context instantly.", href: "/lens" },
   { Icon: Languages,     title: "Dialect Tutor",    desc: "Practice Najdi, Hijazi, Janubi, and Shamali Arabic phrases with pronunciation coaching.", href: "/dialect" },
-  { Icon: Map,           title: "Smart Itinerary",  desc: "A day-by-day plan built around your goals — with real-time replanning if a venue closes.", href: "/trip" },
+  { Icon: Map,           title: "Smart Itinerary",  desc: "A day-by-day plan built around your goals — with real-time replanning if a venue closes.", href: "/planner" },
   { Icon: LayoutDashboard, title: "Travel Dashboard", desc: "Track your ongoing and past trips, spending, and progress all in one place.", href: "/dashboard" },
 ];
 
 export function About() {
   const { t } = useTranslation();
   const reduce = useReducedMotion();
-  usePageMeta("About Safarly", "Learn how 14 AI agents work together to craft your perfect Saudi journey.");
+  usePageMeta("About Safarly", "Learn how Safarly's AI agents work together to craft your perfect Saudi journey.");
 
   /* Staggered entrance. Reduced motion keeps the fade but drops the rise, so
      the reveal still reads as sequential without any spatial movement. */
@@ -107,16 +107,19 @@ export function About() {
             maxWidth: 600,
             margin: "0 auto 36px",
           }}>
-            Safarly is Saudi Arabia's first multi-agent AI travel companion. 14 specialised agents
-            collaborate behind the scenes — each one an expert — to plan, guide, translate, and enrich
-            every moment of your journey.
+            {/* Two agents, six specialists — the real count. The old copy claimed
+                14, which was never true of the running system and is the kind of
+                number a curious reader can disprove in one click. */}
+            Safarly is Saudi Arabia's first multi-agent AI travel companion. Two agents — the Smart
+            Travel Planner and the Smart Companion — coordinate six specialists behind the scenes to
+            plan, guide, translate, and enrich every moment of your journey.
           </motion.p>
 
           <motion.div variants={item} style={{
             display: "flex", flexWrap: "wrap", gap: 12, justifyContent: "center",
           }}>
             <Link
-              href="/trip"
+              href="/planner"
               className="sf-hero-cta-primary"
               style={{
                 display: "inline-flex", alignItems: "center", gap: 8,
@@ -284,10 +287,10 @@ export function About() {
           Ready to explore?
         </h2>
         <p style={{ color: "var(--sf-text-muted)", marginBottom: 28 }}>
-          Let 14 AI agents plan every detail of your perfect journey.
+          Let Safarly's AI agents plan every detail of your perfect journey.
         </p>
         <Link
-          href="/trip"
+          href="/planner"
           style={{
             display: "inline-flex", alignItems: "center", gap: 8,
             padding: "14px 32px", borderRadius: 12,

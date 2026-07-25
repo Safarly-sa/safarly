@@ -451,7 +451,7 @@ function TripsTab({ pastTrips, language, t }: {
           {t("dash.trips.empty.desc")}
         </p>
         <button
-          onClick={() => navigate("/trip")}
+          onClick={() => navigate("/planner")}
           style={{ background: "var(--sf-accent)", color: "#0A0E16", border: "none", borderRadius: 10, padding: "13px 28px", fontWeight: 700, fontSize: "0.9375rem", cursor: "pointer" }}
         >
           {t("dash.ongoing.empty.cta")}
@@ -774,7 +774,7 @@ function OngoingTripTab({ confirmed, language, t }: {
           {t("dash.ongoing.empty.desc")}
         </p>
         <button
-          onClick={() => navigate("/trip")}
+          onClick={() => navigate("/planner")}
           style={{ background: "var(--sf-accent)", color: "#0A0E16", border: "none", borderRadius: 10, padding: "13px 28px", fontWeight: 700, fontSize: "0.9375rem", cursor: "pointer" }}
         >
           {t("dash.ongoing.empty.cta")}
