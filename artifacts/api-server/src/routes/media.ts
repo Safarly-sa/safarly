@@ -11,11 +11,13 @@ import { Router, type IRouter } from "express";
 import express from "express";
 import { requireSession } from "../lib/session";
 import { storeImage, getImage } from "../lib/media-storage";
-import { isAllowedImageType, MAX_IMAGE_BYTES } from "../lib/media-validate";
+import { isAllowedImageType, MAX_IMAGE_BYTES, buildMediaUrl } from "../lib/media-validate";
 
 const router: IRouter = Router();
 
 const ID_PATTERN = /^[0-9a-f-]{36}$/i;
+
+const isProduction = process.env.NODE_ENV === "production";
 
 router.post(
   "/media/upload",
@@ -49,8 +51,7 @@ router.post(
       return;
     }
 
-    const publicUrl = `${req.protocol}://${req.get("host")}/api/media/file/${id}`;
-    res.status(201).json({ publicUrl });
+    res.status(201).json({ publicUrl: buildMediaUrl(req.get("host") ?? "", id, isProduction) });
   },
 );
 
