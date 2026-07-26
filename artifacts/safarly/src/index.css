@@ -393,6 +393,20 @@ html[dir="rtl"] {
 }
 .sf-aurora-band .sf-aurora-grid { opacity: 0.32; }
 
+/* ── Navbar brand logo ──────────────────────────────────────────────── */
+.site-logo img {
+  height: 60px;
+  width: auto;
+  max-width: none;
+  display: block;
+  object-fit: contain;
+}
+@media (max-width: 768px) {
+  .site-logo img {
+    height: 48px;
+  }
+}
+
 /* ── Auth pages: quiet Aurora echo ─────────────────────────────────────
    The auth screens sit outside the app shell (no Navbar, no BottomNav), so
    they lose the Aurora visual language the rest of the app carries. This is

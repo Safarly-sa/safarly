@@ -87,8 +87,8 @@ export function Navbar() {
       <div className="max-w-7xl mx-auto px-6 lg:px-8 h-full flex items-center justify-between">
 
         {/* Brand */}
-        <Link href="/" className="flex items-center shrink-0 group" aria-label="Safarly — Home">
-          <img src={safarlyLogo} alt="Safarly" style={{ height: "40px", width: "auto", objectFit: "contain" }} />
+        <Link href="/" className="site-logo flex items-center shrink-0 group" aria-label="Safarly — Home">
+          <img src={safarlyLogo} alt="Safarly" />
         </Link>
 
         {/* Nav links */}
