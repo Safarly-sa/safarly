@@ -55,3 +55,7 @@ Thumbs.db
 # Legacy Replit leftovers
 .cache/
 .local/
+
+# Caveman plugin local install artifacts
+.agents/
+skills-lock.json
