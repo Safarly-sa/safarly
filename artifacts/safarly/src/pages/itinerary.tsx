@@ -14,7 +14,7 @@ import { AuroraHero } from "@/components/AuroraHero";
 import { poiName, poiCulture, resolve } from "@/lib/poi-i18n";
 import { dishName, dishDesc, mealVenue, mealArea } from "@/lib/dish-i18n";
 import { localeTag } from "@/lib/locale-format";
-import { generateItinerary, isVerified, CITY_NAMES_AR, type ItineraryResult, type ItineraryDay, type ItineraryStop, type ItineraryMeal, type TripSpec, type TravelerProfile, type Objectives, type TransportLeg, type TripEvent, type AccommodationOption, type POI } from "@/lib/engine";
+import { generateItinerary, isVerified, optimizeDayStops, CITY_NAMES_AR, type ItineraryResult, type ItineraryDay, type ItineraryStop, type ItineraryMeal, type TripSpec, type TravelerProfile, type Objectives, type TransportLeg, type TripEvent, type AccommodationOption, type POI } from "@/lib/engine";
 import { isFavorite as isFavoritePoi, toggleFavorite as toggleFavoritePoi } from "@/lib/favorites";
 import { ConciergeChat } from "@/components/ConciergeChat";
 import { ResultsGate } from "@/components/ResultsGate";
@@ -2318,11 +2318,6 @@ export function Itinerary() {
     localStorage.setItem("safarly_ongoing_trip", JSON.stringify(confirmed));
   }
 
-  /* ── Haversine-approximation distance (deg → arbitrary unit) ──── */
-  function ptDist(a: { lat: number; lng: number }, b: { lat: number; lng: number }) {
-    return Math.sqrt((a.lat - b.lat) ** 2 + (a.lng - b.lng) ** 2);
-  }
-
   /* ── Wrench / cascade handler ───────────────────────────────────── */
   function handleWrench() {
     if (!result || !trip) return;
@@ -2365,28 +2360,19 @@ export function Itinerary() {
       prayerGapBefore: target.prayerGapBefore,
     };
 
-    // Remaining stops (excluding closed) + replacement → nearest-neighbour reorder
+    // Remaining stops (excluding closed) + replacement → optimal slot reassignment.
+    // optimizeDayStops does a full permutation search and actually changes which
+    // POI occupies which time slot (not just array order) — the timeline sorts by
+    // startTime for display, so a reorder that only shuffled array position, as
+    // this used to do, was never visible. This also picks up the midday-must-be-
+    // indoor constraint, which the old pass didn't check.
     const remaining = day.stops.filter(s => s.poi.id !== target.poi.id);
     const allNew    = [...remaining, replacementStop];
 
-    const reordered: ItineraryStop[] = [];
-    const pool2 = [...allNew];
-    const firstStop = pool2.find(s => s.slot === "morning") ?? pool2[0];
-    reordered.push(firstStop);
-    pool2.splice(pool2.indexOf(firstStop), 1);
-    while (pool2.length > 0) {
-      const last = reordered[reordered.length - 1];
-      let minD = Infinity, minI = 0;
-      pool2.forEach((s, i) => {
-        const d = ptDist(
-          s.poi as unknown as { lat: number; lng: number },
-          last.poi as unknown as { lat: number; lng: number }
-        );
-        if (d < minD) { minD = d; minI = i; }
-      });
-      reordered.push(pool2[minI]);
-      pool2.splice(minI, 1);
-    }
+    const priorSlotById = new Map(allNew.map(s => [s.poi.id, s.slot]));
+    const optimizedDay  = optimizeDayStops(allNew);
+    const reordered      = optimizedDay.stops;
+    const reorderedCount = reordered.filter(s => priorSlotById.get(s.poi.id) !== s.slot).length;
 
     // Shift lunch by 30 minutes
     const lunch = day.meals.find(m => m.type === "lunch");
@@ -2434,7 +2420,7 @@ export function Itinerary() {
       altName2,
       newDailyCost,
       shiftedLunch,
-      reorderedCount:  reordered.length,
+      reorderedCount,
     };
 
     setCascade({ ...base, phase: "closed",  feedStep: 0 });

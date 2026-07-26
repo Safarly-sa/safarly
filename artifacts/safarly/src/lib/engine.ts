@@ -367,6 +367,146 @@ function dist(a: POI, b: POI): number {
   return Math.sqrt((a.lat - b.lat) ** 2 + (a.lng - b.lng) ** 2);
 }
 
+/**
+ * All orderings of `items`, shortest input first assumed. Only ever called on
+ * a day's stops, which are capped at SLOTS.length (4) by construction in
+ * buildDays below — worst case 24 permutations, trivial for a synchronous call.
+ */
+function permutations<T>(items: T[]): T[][] {
+  if (items.length <= 1) return [items];
+  const out: T[][] = [];
+  for (let i = 0; i < items.length; i++) {
+    const rest = [...items.slice(0, i), ...items.slice(i + 1)];
+    for (const tail of permutations(rest)) out.push([items[i], ...tail]);
+  }
+  return out;
+}
+
+export interface DayOptimization {
+  /**
+   * Always a freshly built array with self-consistent slot/startTime/endTime,
+   * even when `reordered` is false — use this, not the input, regardless of
+   * the flag. A caller that only swaps in `.stops` when `reordered` is true
+   * (as buildDays does) is still safe: on an input that was already
+   * self-consistent, the rebuild reproduces it exactly, so skipping it there
+   * changes nothing.
+   */
+  stops: ItineraryStop[];
+  /** Whether the winning arrangement assigns any POI to a different slot than the input had it in — the signal for a "stops reordered" notice, not for whether anything in `.stops` changed. */
+  reordered: boolean;
+  /** Total travel-distance reduction, in the same degree-ish unit as dist(); 0 when not reordered. */
+  distanceSaved: number;
+}
+
+/**
+ * Finds the shortest-travel assignment of a day's already-selected stops to
+ * their fixed time slots (morning/midday/afternoon/evening).
+ *
+ * This replaces two earlier, narrower pieces of logic that both computed the
+ * same problem badly:
+ *   - buildDays used to only ever try ONE candidate — swapping midday and
+ *     afternoon — and applied it without checking that the stop landing in
+ *     midday was actually indoor, which could reintroduce the exact
+ *     heat-hours violation scorePoi's -500 exclusion exists to prevent.
+ *   - the venue-closure demo in itinerary.tsx ran a nearest-neighbour pass
+ *     over the stop ARRAY, but every stop kept its original slot/startTime,
+ *     and the timeline always re-sorts by startTime for display — so that
+ *     reorder had no visible effect. Its "N stops reordered" claim was cosmetic.
+ *
+ * Full permutation search (not a greedy heuristic) is what makes this an
+ * actual optimum rather than a better guess, and it's affordable specifically
+ * because a day is capped at 4 stops. Non-mutating: returns a new stops array,
+ * leaves the input untouched.
+ *
+ * Deliberately canonicalises on each stop's OWN `.slot` field rather than
+ * trusting array position to mean slot order. The obvious alternative —
+ * document "pass this in slot order" as a precondition — is a footgun a
+ * caller can violate silently: the venue-closure flow in itinerary.tsx builds
+ * its replacement-stop array by filtering out the closed stop and APPENDING
+ * the replacement at the end, which does not preserve slot order (a removed
+ * midday stop's replacement lands at array index 3, not 1). Trusting position
+ * there would check the wrong stop against the midday-indoor rule and could
+ * silently let an outdoor replacement stand in the heat slot. Sorting by the
+ * stop's own field first makes the function correct regardless of what order
+ * the caller happened to hand stops in.
+ *
+ * The search only ever compares among VALID permutations — an input that
+ * itself violates the midday rule is never treated as the baseline to beat,
+ * so a violating arrangement that happens to already be geographically
+ * shortest still gets corrected, not kept for "already being optimal".
+ * `distanceSaved` can come out negative in that case: correctness cost some
+ * distance, and that's reported honestly rather than clamped to 0.
+ */
+export function optimizeDayStops(stops: ItineraryStop[]): DayOptimization {
+  if (stops.length < 2) return { stops, reordered: false, distanceSaved: 0 };
+
+  const bySlot = [...stops].sort(
+    (a, b) => SLOTS.indexOf(a.slot) - SLOTS.indexOf(b.slot),
+  );
+  const slots = bySlot.map((s) => s.slot);
+  const middayIndex = slots.indexOf("midday");
+
+  const currentPois = bySlot.map((s) => s.poi);
+  const totalDist = (order: POI[]): number => {
+    let d = 0;
+    for (let i = 0; i < order.length - 1; i++) d += dist(order[i], order[i + 1]);
+    return d;
+  };
+  const violatesMiddayIndoor = (order: POI[]): boolean =>
+    middayIndex !== -1 && !order[middayIndex].indoor;
+
+  const currentDist = totalDist(currentPois);
+
+  // bestOrder starts as `null`, NOT seeded from currentPois: if the given
+  // arrangement itself violates the midday rule, it must never win purely
+  // for being unbeaten on distance — permutations() is guaranteed to yield
+  // the identity ordering first (see its own doc comment), so when the
+  // input IS valid, it's still the first candidate tried and wins every
+  // tie, which is what keeps a correct, already-shortest arrangement from
+  // being churned for no reason.
+  let bestOrder: POI[] | null = null;
+  let bestDist = Infinity;
+
+  for (const order of permutations(currentPois)) {
+    if (violatesMiddayIndoor(order)) continue;
+    const d = totalDist(order);
+    if (d < bestDist) { bestDist = d; bestOrder = order; }
+  }
+
+  // No valid arrangement exists at all — e.g. none of today's stops are
+  // indoor, which is reachable in practice: the venue-closure flow can swap
+  // in an outdoor replacement without checking, leaving a day with zero
+  // indoor stops to put in the heat slot. There's nothing better to offer,
+  // but the input's time metadata can still be wrong (see below) — falling
+  // back to the current geometry, not returning early, is what still gets
+  // that fixed.
+  if (!bestOrder) { bestOrder = currentPois; bestDist = currentDist; }
+
+  // Rebuilt unconditionally, even when the assignment didn't change: a stop
+  // handed in with a stale startTime/endTime (the venue-closure flow builds
+  // its replacement stop by copying the CLOSED stop's time footprint, not
+  // deriving one from the replacement's own duration_hrs) needs correcting
+  // regardless of whether the geographic search found anything to improve.
+  // `reordered` tracks only whether the POI-to-slot ASSIGNMENT changed —
+  // that's the meaningful signal for a caller deciding whether to show a
+  // "stops reordered" notice, not whether any object churned.
+  const reordered = !bestOrder.every((poi, i) => poi === currentPois[i]);
+
+  const newStops: ItineraryStop[] = bestOrder.map((poi, i) => {
+    const slot = slots[i];
+    const startTime = SLOT_START[slot];
+    return {
+      slot,
+      startTime,
+      endTime: addMinutes(startTime, Math.round(poi.duration_hrs * 60)),
+      poi,
+      prayerGapBefore: PRAYER_GAP_BEFORE[slot],
+    };
+  });
+
+  return { stops: newStops, reordered, distanceSaved: reordered ? currentDist - bestDist : 0 };
+}
+
 /* ── Meal venue resolution ─────────────────────────────────────────────
  * dishes.json is shared across every city, so the venue/area a diner is
  * pointed to has to be resolved per (dish, poiCity) — see meal-venues.json,
@@ -585,32 +725,13 @@ function buildDays(
       });
     }
 
-    // Soft geographic reorder: keep morning first and evening last;
-    // optionally swap midday/afternoon to reduce backtracking.
-    if (dayStops.length === 4) {
-      const bySlot: Record<string, ItineraryStop> = {};
-      for (const s of dayStops) bySlot[s.slot] = s;
-
-      const mid  = bySlot["midday"];
-      const aft  = bySlot["afternoon"];
-      const morn = bySlot["morning"];
-      const eve  = bySlot["evening"];
-
-      // Swap midday/afternoon if that reduces total travel distance
-      if (mid && aft && morn && eve) {
-        const normalDist  = dist(morn.poi, mid.poi)  + dist(mid.poi, aft.poi)  + dist(aft.poi, eve.poi);
-        const swappedDist = dist(morn.poi, aft.poi)  + dist(aft.poi, mid.poi)  + dist(mid.poi, eve.poi);
-        if (swappedDist < normalDist) {
-          // Swap, but keep slot labels correct for prayer times
-          dayStops.length = 0;
-          dayStops.push(
-            morn,
-            { ...aft, slot: "midday",    startTime: SLOT_START["midday"],    endTime: addMinutes(SLOT_START["midday"],    Math.round(aft.poi.duration_hrs  * 60)), prayerGapBefore: "12:00" },
-            { ...mid, slot: "afternoon", startTime: SLOT_START["afternoon"], endTime: addMinutes(SLOT_START["afternoon"], Math.round(mid.poi.duration_hrs  * 60)), prayerGapBefore: "15:30" },
-            eve,
-          );
-        }
-      }
+    // Geographic reorder: find the shortest-travel assignment of today's stops
+    // to their fixed time slots (full permutation search, not a single
+    // candidate swap — see optimizeDayStops for why that used to be a bug).
+    const optimizedDay = optimizeDayStops(dayStops);
+    if (optimizedDay.reordered) {
+      dayStops.length = 0;
+      dayStops.push(...optimizedDay.stops);
     }
 
     // Meals
