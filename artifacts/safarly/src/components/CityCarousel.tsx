@@ -14,10 +14,13 @@
  * carousel can never trap content behind a control that didn't render.
  *
  * Photos come from Visit Saudi's own CDN (scth.scene7.com), the same source the
- * homepage hero already uses. Three of the sixteen cities have no image on that
- * CDN — see CITY_IMAGE — and they deliberately fall back to a branded gradient
- * tile rather than borrowing a neighbouring city's photo, which would caption
- * one place with another's skyline.
+ * homepage hero already uses. All sixteen cities have one — see CITY_IMAGE for
+ * which, and for the rule about never borrowing a neighbouring city's photo.
+ *
+ * The gradient fallback below is still load-bearing even though no city relies
+ * on it today: these are hotlinked assets on someone else's CDN, so any slug
+ * can start 404ing without warning. A card that loses its photo degrades to the
+ * branded tile instead of an empty box.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
@@ -29,28 +32,44 @@ const CARD_W = 236;
 const GAP = 12;
 
 /**
- * Visit Saudi CDN slugs, verified to return a real image (not Scene7's 810-byte
- * "asset not found" placeholder) at the time of writing.
+ * Visit Saudi CDN slugs. All 16 cities now have one.
  *
- * al_khobar, dhahran and khamis_mushait are absent on purpose: the CDN has no
- * asset for them, and showing Dammam's photo under "Al Khobar" would be the
- * same class of mislabelling as the "(Ithra)" bug in pois.json. They render the
- * gradient fallback instead.
+ * Every slug here was checked by *looking at the image*, not just by seeing
+ * bytes come back — Scene7 answers 200 for a missing asset and serves a grey
+ * "no image" placeholder, so a slug that merely resolves proves nothing. Two
+ * candidates were rejected on sight and are worth naming so nobody re-adds
+ * them: `ithra` is a festival poster with Arabic text burned into it, and
+ * `eastern-province` is a letterboxed video still of a potter. Both load fine.
+ *
+ * The rule this file used to state still holds: never caption a city with a
+ * neighbour's skyline, which is the same class of error as the "(Ithra)" bug
+ * in pois.json. `ithra-2` is Dhahran's by right rather than by borrowing —
+ * the King Abdulaziz Center genuinely stands in Dhahran, which is exactly why
+ * labelling a *Riyadh* art row "(Ithra)" was wrong.
  */
 const CITY_IMAGE: Record<string, string> = {
-  riyadh:  "riyadh-banner-new",
-  jeddah:  "jeddah-banner",
-  alula:   "alula-banner-new",
-  abha:    "about-abha_hero_banner_desktop-1",
-  taif:    "Taif-banner-new",
-  madinah: "madinah-banner-promotion",
-  mecca:   "New-makkah-view-homepage",
-  dammam:  "dammam-2",
-  jazan:   "about-jazan_hero_banner_desktop-3",
-  najran:  "New-Najran-Banner-Image",
-  tabuk:   "New-Tabuk_Image-Banner",
-  hail:    "hail-hero-banner",
-  yanbu:   "yanbu-new-hero-banner",
+  riyadh:         "riyadh-banner-new",
+  // The Corniche at night, with the city's name lit in the frame. Replaced
+  // `jeddah-banner`, a generic Red Sea dive shot that could have been anywhere
+  // on the coast and left the card unidentifiable as Jeddah.
+  jeddah:         "jeddah-corniche",
+  alula:          "alula-banner-new",
+  abha:           "about-abha_hero_banner_desktop-1",
+  taif:           "Taif-banner-new",
+  madinah:        "madinah-banner-promotion",
+  mecca:          "New-makkah-view-homepage",
+  // The water tower photographed on the corniche. Replaced `dammam-2`, which
+  // is a cut-out of the same tower on a white studio background — it read as a
+  // white rectangle punched into a dark card rather than as a photo.
+  dammam:         "dammam-3",
+  al_khobar:      "khobar",
+  dhahran:        "ithra-2",
+  khamis_mushait: "khamis-mushait",
+  jazan:          "about-jazan_hero_banner_desktop-3",
+  najran:         "New-Najran-Banner-Image",
+  tabuk:          "New-Tabuk_Image-Banner",
+  hail:           "hail-hero-banner",
+  yanbu:          "yanbu-new-hero-banner",
 };
 
 /** Served as WebP at 2x the card width so the art stays crisp on retina. */
