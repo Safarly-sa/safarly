@@ -4,6 +4,7 @@ import cookieParser from "cookie-parser";
 import pinoHttp from "pino-http";
 import router from "./routes";
 import { logger } from "./lib/logger";
+import { buildPreviewPatterns, isOriginAllowed } from "./lib/cors-origin";
 
 const app: Express = express();
 const isProduction = process.env.NODE_ENV === "production";
@@ -39,16 +40,37 @@ const allowedOrigins = (process.env.CORS_ORIGIN ?? "")
   .map((o) => o.trim())
   .filter(Boolean);
 
+/**
+ * Carries a status so the error handler answers 403 rather than 500. A
+ * disallowed origin is a normal thing for a public API to be sent — bots and
+ * scanners do it constantly — and reporting it as a server fault buries real
+ * failures in the same bucket.
+ */
+class CorsOriginError extends Error {
+  readonly status = 403;
+  constructor(origin: string) {
+    super(`Origin not allowed by CORS: ${origin}`);
+    this.name = "CorsOriginError";
+  }
+}
+
+/**
+ * Preview subdomains are allowed alongside the exact origins — see
+ * lib/cors-origin.ts for how the patterns are derived and what that trusts.
+ * Built once at startup rather than per request; the allowlist cannot change
+ * without a restart.
+ */
+const previewOriginPatterns = buildPreviewPatterns(allowedOrigins);
+
 app.use(
   cors({
     origin(origin, callback) {
       // Same-origin/non-browser callers (curl, health checks) send no Origin.
       if (!origin) return callback(null, true);
-      if (allowedOrigins.includes(origin)) return callback(null, true);
-      if (!isProduction && /^http:\/\/localhost:\d+$/.test(origin)) {
+      if (isOriginAllowed(origin, allowedOrigins, previewOriginPatterns, !isProduction)) {
         return callback(null, true);
       }
-      return callback(new Error(`Origin not allowed by CORS: ${origin}`));
+      return callback(new CorsOriginError(origin));
     },
     credentials: true,
   }),
@@ -81,9 +103,14 @@ app.use("/api", router);
  * error-handling middleware by arity, not by name.
  */
 const handleError: ErrorRequestHandler = (err, req, res, _next) => {
-  req.log?.error({ err }, "Unhandled error");
+  const status = err?.status ?? 500;
+  // A 4xx here is the app rejecting a request on purpose; only 5xx means
+  // something actually broke. Logging both at error level made a scanner
+  // hitting a disallowed origin look identical to a genuine fault.
+  if (status >= 500) req.log?.error({ err }, "Unhandled error");
+  else req.log?.warn({ err }, "Request rejected");
   if (res.headersSent) return;
-  res.status(err?.status ?? 500).json({ error: "Something went wrong. Please try again." });
+  res.status(status).json({ error: "Something went wrong. Please try again." });
 };
 app.use(handleError);
 
