@@ -15,5 +15,11 @@ services:
         value: "true"
       - key: CORS_ORIGIN
         value: https://safarly.pages.dev
+      # Render fronts the app with Cloudflare, which overwrites this header on
+      # every request, so a client cannot forge it. Without it req.ip is the
+      # proxy's address — the same for every caller — which erases the IP half
+      # of the login throttle's key. See src/lib/client-ip.ts.
+      - key: CLIENT_IP_HEADER
+        value: cf-connecting-ip
       - key: DATABASE_URL
         sync: false
