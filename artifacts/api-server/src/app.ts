@@ -54,8 +54,17 @@ app.use(
   }),
 );
 app.use(cookieParser());
+/**
+ * JSON only, deliberately. The session cookie is `SameSite=None` in
+ * production (it has to be — see routes/auth.ts), so the CORS allowlist above
+ * is what stands between a foreign origin and an authenticated request. That
+ * only works against body types the browser preflights: parsing form encoding
+ * or text/plain would let a cross-site form POST through with cookies
+ * attached and no preflight to block it. `express.urlencoded` was removed for
+ * exactly this reason — no route needs it. Reintroducing form parsing means
+ * adding CSRF tokens first.
+ */
 app.use(express.json({ limit: "100kb" }));
-app.use(express.urlencoded({ extended: true, limit: "100kb" }));
 
 app.use("/api", router);
 
