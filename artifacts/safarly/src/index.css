@@ -63,8 +63,18 @@
 
      The `env()` fallbacks matter: outside a notched device — and in every
      browser before the viewport-fit opt-in — they resolve to 0px, so
-     these collapse to exactly the 68/64 they replaced. */
-  --sf-navbar-h: calc(68px + env(safe-area-inset-top, 0px));
+     these collapse to exactly the 68/64 they replaced.
+
+     `--sf-navbar-h` is what page content must clear, which is not the same
+     as the bar's own height once the offline banner is on screen — the banner
+     is fixed too, so it covers the top of the page rather than pushing it
+     down. PWAProvider sets `--sf-offline-h` to the banner's height while it is
+     mounted, which widens the offset for every page at once. Splitting it this
+     way means the bar keeps its true height (`--sf-navbar-base`) while pages
+     keep reading one token and needed no changes. */
+  --sf-navbar-base: calc(68px + env(safe-area-inset-top, 0px));
+  --sf-offline-h: 0px;
+  --sf-navbar-h: calc(var(--sf-navbar-base) + var(--sf-offline-h));
   --sf-bottomnav-h: calc(64px + env(safe-area-inset-bottom, 0px));
 
   /* Light Grid Default Vars */

@@ -88,7 +88,10 @@ export function Navbar() {
         // notched device the inset is 0px and this is the plain 68px it was.
         // The inner row keeps its own 68px via `h-full`, since border-box
         // height means the padding is carved out of the total.
-        height: "var(--sf-navbar-h)",
+        // `--sf-navbar-base`, not `--sf-navbar-h`: the latter also carries the
+        // offline banner's height, which pages need to clear but this bar must
+        // not grow by.
+        height: "var(--sf-navbar-base)",
         paddingTop: "env(safe-area-inset-top, 0px)",
         // Landscape on a notched phone puts the notch on one side; the insets
         // keep the brand and the sign-in button clear of it. They go on the

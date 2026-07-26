@@ -34,6 +34,16 @@ import {
 const UPDATE_CHECK_MS = 60 * 60 * 1000; // 1 hour
 
 /**
+ * Height of the offline banner, published to CSS as `--sf-offline-h`.
+ *
+ * The banner is fixed, so it covers the top of the page instead of pushing it
+ * down — without this every page's first heading ends up half-hidden behind it.
+ * Setting the token widens `--sf-navbar-h` for all pages at once rather than
+ * touching each one. Kept in sync with the banner's own `height` below.
+ */
+const OFFLINE_BANNER_H = "38px";
+
+/**
  * Delay before the install prompt appears.
  *
  * Not zero on purpose. An install card thrown up during first paint is asking
@@ -172,18 +182,35 @@ function OfflineBanner() {
     };
   }, []);
 
+  // Publishes the banner's height so page content clears it. Runs as an effect
+  // keyed on `offline` so the token is cleared the moment the connection is
+  // back, and on unmount — a stale 38px would push every page down forever.
+  useEffect(() => {
+    if (!offline) return;
+    const root = document.documentElement;
+    root.style.setProperty("--sf-offline-h", OFFLINE_BANNER_H);
+    // Braces matter: removeProperty returns a string, and an implicit return
+    // makes this an invalid effect cleanup.
+    return () => {
+      root.style.removeProperty("--sf-offline-h");
+    };
+  }, [offline]);
+
   if (!offline) return null;
 
   return (
     <div
       role="status"
       aria-live="polite"
-      className="fixed z-[55] start-0 end-0 top-[var(--sf-navbar-h)]"
+      // Positioned against the bar's own height, not `--sf-navbar-h`, which
+      // now includes this banner and would offset it by itself.
+      className="fixed z-[55] start-0 end-0 top-[var(--sf-navbar-base)]"
       style={{
+        height: OFFLINE_BANNER_H,
         background: "var(--sf-surface-alt)",
         borderBottom: "1px solid var(--sf-border)",
         color: "var(--sf-text)",
-        padding: "8px 16px",
+        padding: "0 16px",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -228,7 +255,11 @@ export function PWAProvider() {
   const [installDismissed, setInstallDismissed] = useState(false);
 
   useEffect(() => {
-    const onAvailable = () => setHasNativePrompt(true);
+    // Re-reads the stash rather than trusting the event: the stash is the
+    // thing `install()` actually consumes, so treating the announcement as
+    // proof would offer an Install button with nothing behind it if the two
+    // ever disagreed.
+    const onAvailable = () => setHasNativePrompt(peekInstallPrompt() !== null);
 
     // Fires when the install completes through any route, including Chromium's
     // own menu item. Clears the card so it can't linger over an installed app.
