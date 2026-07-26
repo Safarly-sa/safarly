@@ -15,7 +15,7 @@ import {
   type PublicPost,
 } from "@workspace/db";
 import { requireSession } from "../../lib/session";
-import { validateCreateRequest } from "./posts-validate";
+import { validateCreateRequest, validateUpdateRequest } from "./posts-validate";
 
 const router: IRouter = Router();
 
@@ -119,6 +119,56 @@ router.post("/posts", requireSession, async (req, res) => {
 
   const [creator] = await db.select({ name: usersTable.name }).from(usersTable).where(eq(usersTable.id, req.user!.id));
   res.status(201).json({ post: toPublicPost(post, creator?.name ?? "", media) });
+});
+
+/* ── PATCH /api/posts/:id — creator-only, partial update ────────────────── */
+router.patch<{ id: string }>("/posts/:id", requireSession, async (req, res) => {
+  const [existing] = await db.select().from(postsTable).where(eq(postsTable.id, req.params.id)).limit(1);
+  if (!existing) {
+    res.status(404).json({ error: "Story not found." });
+    return;
+  }
+  if (existing.creatorId !== req.user!.id) {
+    res.status(403).json({ error: "You can only edit your own stories." });
+    return;
+  }
+
+  const parsed = validateUpdateRequest(req.body);
+  if (!parsed) {
+    res.status(400).json({ error: "Invalid update — check title, content, city and media." });
+    return;
+  }
+
+  const { media: newMedia, ...fields } = parsed;
+  const [post] =
+    Object.keys(fields).length > 0
+      ? await db
+          .update(postsTable)
+          .set({ ...fields, updatedAt: new Date() })
+          .where(eq(postsTable.id, req.params.id))
+          .returning()
+      : [existing];
+
+  let media = await db.select().from(postMediaTable).where(eq(postMediaTable.postId, post.id));
+  if (newMedia) {
+    await db.delete(postMediaTable).where(eq(postMediaTable.postId, post.id));
+    media = await db
+      .insert(postMediaTable)
+      .values(
+        newMedia.map((m, i) => ({
+          postId: post.id,
+          type: m.type,
+          url: m.url,
+          tiktokVideoId: m.tiktokVideoId ?? null,
+          caption: m.caption ?? null,
+          sortOrder: i,
+        })),
+      )
+      .returning();
+  }
+
+  const [creator] = await db.select({ name: usersTable.name }).from(usersTable).where(eq(usersTable.id, post.creatorId));
+  res.json({ post: toPublicPost(post, creator?.name ?? "", media) });
 });
 
 /* ── DELETE /api/posts/:id — creator-only ──────────────────────────────── */

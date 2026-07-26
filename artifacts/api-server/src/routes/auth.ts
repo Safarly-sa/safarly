@@ -35,25 +35,40 @@ const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
 const RESET_TOKEN_TTL_MS = 60 * 60 * 1000; // 1 hour
 const isProduction = process.env.NODE_ENV === "production";
 
+/**
+ * In production the frontend and the API are on different sites
+ * (safarly.pages.dev vs safarly-api.onrender.com), and `SameSite=Lax` is not
+ * sent on cross-site fetch — so a Lax cookie is set at login and then never
+ * returned, leaving every session-guarded route 401ing. `None` is the only
+ * value a cross-site XHR cookie can take, and the spec requires `Secure`
+ * alongside it.
+ *
+ * SameSite is load-bearing CSRF protection, so removing it has to be paid for
+ * elsewhere: the CORS allowlist in app.ts is now the control. That works
+ * because every route here consumes JSON, which forces a preflight a foreign
+ * origin cannot pass. It only holds while the API parses nothing that
+ * qualifies as a CORS "simple request" — which is why app.ts no longer
+ * installs `express.urlencoded`. Do not add it back, and do not add a route
+ * that accepts form encoding or text/plain, without putting a CSRF token in
+ * front of it.
+ *
+ * Locally both sides are http://localhost, so Lax still applies and `Secure`
+ * would break the cookie over plain HTTP.
+ */
+const cookieOptions = {
+  httpOnly: true,
+  sameSite: isProduction ? ("none" as const) : ("lax" as const),
+  secure: isProduction,
+  path: "/",
+};
+
 function setSessionCookie(res: Response, sessionId: string, expiresAt: Date): void {
-  res.cookie(SESSION_COOKIE, sessionId, {
-    httpOnly: true,
-    // Lax still sends the cookie on top-level navigation, so returning from an
-    // email link keeps you signed in, while blocking cross-site POSTs (CSRF).
-    sameSite: "lax",
-    secure: isProduction,
-    expires: expiresAt,
-    path: "/",
-  });
+  res.cookie(SESSION_COOKIE, sessionId, { ...cookieOptions, expires: expiresAt });
 }
 
+/** Attributes must match the ones it was set with, or the browser keeps the cookie. */
 function clearSessionCookie(res: Response): void {
-  res.clearCookie(SESSION_COOKIE, {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: isProduction,
-    path: "/",
-  });
+  res.clearCookie(SESSION_COOKIE, cookieOptions);
 }
 
 async function createSession(userId: string, res: Response): Promise<void> {

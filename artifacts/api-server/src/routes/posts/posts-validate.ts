@@ -9,7 +9,7 @@
  * markdown/text, not HTML, so there is no markup to sanitise; it is rendered
  * as text on the client, never dangerously-set as HTML.
  */
-import type { PostCreateRequest, PostMediaInput } from "./posts-types";
+import type { PostCreateRequest, PostMediaInput, PostUpdateRequest } from "./posts-types";
 
 const MAX_TITLE = 120;
 const MAX_CONTENT = 8000;
@@ -95,4 +95,51 @@ export function validateCreateRequest(body: unknown): PostCreateRequest | null {
       .map((tag) => tag.trim().slice(0, MAX_TAG)),
     media,
   };
+}
+
+/**
+ * PATCH body — every field is optional (only supplied fields change), but any
+ * field that IS supplied is validated by the exact same rules as create. If
+ * `media` is supplied it's a full replacement of the post's media, not a
+ * merge — the route deletes and re-inserts, mirroring how the client's form
+ * always sends its complete current media list.
+ */
+export function validateUpdateRequest(body: unknown): PostUpdateRequest | null {
+  const b = body as Partial<PostCreateRequest> | null;
+  if (!b || typeof b !== "object") return null;
+
+  const update: PostUpdateRequest = {};
+
+  if (b.title !== undefined) {
+    if (typeof b.title !== "string" || !b.title.trim()) return null;
+    update.title = stripScriptTags(b.title.trim()).slice(0, MAX_TITLE);
+  }
+  if (b.content !== undefined) {
+    if (typeof b.content !== "string" || !b.content.trim()) return null;
+    update.content = stripScriptTags(b.content.trim()).slice(0, MAX_CONTENT);
+  }
+  if (b.city !== undefined) {
+    if (typeof b.city !== "string" || !b.city.trim()) return null;
+    update.city = b.city.trim().toLowerCase().slice(0, MAX_CITY);
+  }
+  if (b.poiIds !== undefined) {
+    if (!Array.isArray(b.poiIds)) return null;
+    update.poiIds = [...new Set(b.poiIds.filter((v): v is string => typeof v === "string"))]
+      .slice(0, MAX_POI_IDS)
+      .map((id) => id.slice(0, MAX_POI_ID_LEN));
+  }
+  if (b.tags !== undefined) {
+    if (!Array.isArray(b.tags)) return null;
+    update.tags = [...new Set(b.tags.filter((v): v is string => typeof v === "string" && v.trim().length > 0))]
+      .slice(0, MAX_TAGS)
+      .map((tag) => tag.trim().slice(0, MAX_TAG));
+  }
+  if (b.media !== undefined) {
+    if (!Array.isArray(b.media)) return null;
+    const media = b.media.slice(0, MAX_MEDIA).map(toMedia).filter((m): m is PostMediaInput => m !== null);
+    if (media.length === 0) return null;
+    update.media = media;
+  }
+
+  return update;
 }

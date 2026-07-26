@@ -99,6 +99,22 @@ export async function createStory(input: PostCreateInput): Promise<PostResult> {
   }
 }
 
+export async function updateStory(id: string, input: Partial<PostCreateInput>): Promise<PostResult> {
+  try {
+    const res = await fetch(`${API_BASE}/api/posts/${encodeURIComponent(id)}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify(input),
+    });
+    if (!res.ok) return { ok: false, error: await parseError(res) };
+    const payload = await res.json();
+    return { ok: true, post: payload.post };
+  } catch {
+    return { ok: false, error: OFFLINE_MESSAGE };
+  }
+}
+
 export type DeleteResult = { ok: true } | { ok: false; error: string };
 
 export async function deleteStory(id: string): Promise<DeleteResult> {

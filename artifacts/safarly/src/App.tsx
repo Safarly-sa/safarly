@@ -38,6 +38,7 @@ const Dashboard       = lazy(() => import('@/pages/dashboard').then(m => ({ defa
 const Stories         = lazy(() => import('@/pages/stories').then(m => ({ default: m.Stories })));
 const StoryDetail     = lazy(() => import('@/pages/story-detail').then(m => ({ default: m.StoryDetail })));
 const CreateStory     = lazy(() => import('@/pages/create-story').then(m => ({ default: m.CreateStory })));
+const EditStory       = lazy(() => import('@/pages/edit-story').then(m => ({ default: m.EditStory })));
 const About           = lazy(() => import('@/pages/about').then(m => ({ default: m.About })));
 const Vision2030      = lazy(() => import('@/pages/vision-2030').then(m => ({ default: m.Vision2030 })));
 const NotFound        = lazy(() => import('@/pages/not-found'));
@@ -130,6 +131,7 @@ function Router() {
             {/* Trip Stories — creator posts, order matters: /stories/new
                 before the /stories/:id catch-all. */}
             <Route path="/stories/new" component={CreateStory} />
+            <Route path="/stories/:id/edit" component={EditStory} />
             <Route path="/stories/:id" component={StoryDetail} />
             <Route path="/stories"     component={Stories} />
 

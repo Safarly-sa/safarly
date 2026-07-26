@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { validateCreateRequest } from "./posts-validate";
+import { validateCreateRequest, validateUpdateRequest } from "./posts-validate";
 
 describe("validateCreateRequest", () => {
   const ok = {
@@ -88,5 +88,38 @@ describe("validateCreateRequest", () => {
   it("rejects non-object bodies", () => {
     expect(validateCreateRequest(null)).toBeNull();
     expect(validateCreateRequest("nope")).toBeNull();
+  });
+});
+
+describe("validateUpdateRequest", () => {
+  it("returns an empty patch for an empty body — nothing to change", () => {
+    expect(validateUpdateRequest({})).toEqual({});
+  });
+
+  it("only includes fields that were supplied", () => {
+    const result = validateUpdateRequest({ title: "New Title" });
+    expect(result).toEqual({ title: "New Title" });
+  });
+
+  it("validates a supplied field by the same rules as create", () => {
+    expect(validateUpdateRequest({ title: "   " })).toBeNull();
+    expect(validateUpdateRequest({ city: "" })).toBeNull();
+  });
+
+  it("rejects a supplied media array that ends up empty after filtering", () => {
+    expect(validateUpdateRequest({ media: [{ type: "pdf", url: "https://example.com/a.pdf" }] })).toBeNull();
+  });
+
+  it("validates and normalises a supplied media replacement", () => {
+    const result = validateUpdateRequest({
+      media: [{ type: "image", url: "https://example.com/a.jpg" }],
+    });
+    expect(result?.media).toHaveLength(1);
+    expect(result?.media?.[0].url).toBe("https://example.com/a.jpg");
+  });
+
+  it("rejects non-object bodies", () => {
+    expect(validateUpdateRequest(null)).toBeNull();
+    expect(validateUpdateRequest("nope")).toBeNull();
   });
 });
