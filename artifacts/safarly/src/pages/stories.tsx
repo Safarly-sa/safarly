@@ -47,7 +47,7 @@ export function Stories() {
   }, []);
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-10">
+    <div className="max-w-5xl mx-auto px-4 pt-24 pb-10">
       <div className="flex items-center justify-between gap-4 mb-8 flex-wrap">
         <div>
           <h1 className="text-2xl font-bold">{t("stories.title")}</h1>

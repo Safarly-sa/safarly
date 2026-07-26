@@ -6,6 +6,7 @@ import tripGenerateRouter from "./trip/generate";
 import conciergeChatRouter from "./concierge/chat";
 import dialectRouter from "./dialect";
 import postsRouter from "./posts";
+import mediaRouter from "./media";
 
 const router: IRouter = Router();
 
@@ -16,5 +17,6 @@ router.use(tripGenerateRouter);
 router.use(conciergeChatRouter);
 router.use(dialectRouter);
 router.use(postsRouter);
+router.use(mediaRouter);
 
 export default router;
