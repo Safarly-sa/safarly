@@ -3,7 +3,7 @@
  * Generates a day-by-day itinerary from traveller profile + trip spec.
  */
 
-import poisData from "../data/pois.json";
+import { pois as poisData, type Poi } from "@workspace/poi-data";
 import dishesData from "../data/dishes.json";
 import mealVenuesData from "../data/meal-venues.json";
 
@@ -42,33 +42,13 @@ export interface Objectives {
   photography: number;
 }
 
-export interface POI {
-  id: string;
-  name: string;
-  city: string;
-  category: string;
-  lat: number;
-  lng: number;
-  price_range: number;
-  duration_hrs: number;
-  hidden_gem: boolean;
-  family_friendly: boolean;
-  accessible: boolean;
-  indoor: boolean;
-  best_slot: string;
-  map_url: string;
-  culture_note?: string;
-  /**
-   * Whether this entry's coordinates and entry price come from the researched
-   * dataset (true) or were authored to fill out the pool (false).
-   *
-   * Authored entries are real, well-known places, but their lat/lng is
-   * approximate and their price is an estimate — so they must not carry the
-   * "Verified" badge. Absent is treated as verified: the original 50 rows
-   * predate this field.
-   */
-  verified?: boolean;
-}
+/**
+ * The shape now lives with the data in `@workspace/poi-data`, so the API
+ * server can validate submitted POI ids against the same source the engine
+ * schedules from. Re-exported under the old name because plenty of pages
+ * import `POI` from here.
+ */
+export type POI = Poi;
 
 interface Dish {
   id: string;

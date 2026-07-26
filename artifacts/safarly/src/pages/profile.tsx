@@ -21,7 +21,7 @@ import {
 } from "./profile-setup";
 import phrasesRaw from "@/data/phrases.json";
 import dishesRaw from "@/data/dishes.json";
-import poisRaw from "@/data/pois.json";
+import { pois as poisRaw } from "@workspace/poi-data";
 import { poiName as poiI18nName } from "@/lib/poi-i18n";
 import {
   DEFAULT_COLLECTION_ID,

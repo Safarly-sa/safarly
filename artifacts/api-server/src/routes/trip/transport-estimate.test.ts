@@ -11,7 +11,7 @@ import {
  * These are the numbers that used to be model guesses, so they're worth
  * pinning: the whole point of computing them is that they stop moving.
  *
- * Real coordinates from artifacts/safarly/src/data/pois.json, so a regression
+ * Real coordinates from lib/poi-data/src/pois.json, so a regression
  * here means the itinerary's actual distances changed, not that a fixture did.
  */
 const MASMAK = { name: "Al-Masmak Fortress", lat: 24.6883, lng: 46.7146 };

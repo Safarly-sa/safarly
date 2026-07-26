@@ -19,9 +19,13 @@ pnpm run test                                   # run the safarly + api-server t
 - `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod
   schemas from the OpenAPI spec (`lib/api-spec/openapi.yaml`)
 - `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
-- Required env: `DATABASE_URL` — Postgres connection string, needed only by the
-  API server's DB calls. The frontend runs without it.
+- Required env: `DATABASE_URL` — Postgres connection string. The API server
+  needs it for auth, Trip Stories and uploaded images; the frontend runs
+  without it, but Stories will be empty and sign-in unavailable.
 - Optional env: `PORT` (frontend dev port, default `5173`), `BASE_PATH` (default `/`)
+- Deployment env lives in `render.yaml` (API) and
+  `artifacts/safarly/.env.production` (frontend's `VITE_API_URL`). See the
+  `CLIENT_IP_HEADER` and CORS notes in Gotchas before changing either.
 
 ## Stack
 
@@ -44,8 +48,10 @@ pnpm run test                                   # run the safarly + api-server t
 | `artifacts/safarly/src/lib/{trip,concierge,dialect}-api.ts` | SSE/JSON clients for the three server-side agents — see Architecture decisions |
 | `artifacts/safarly/src/components/AuroraHero.tsx` | Reusable interactive hero backdrop (pointer-parallax + ambient drift); full hero on About/Vision 2030, compact `.sf-aurora-band` header on the tool pages |
 | `artifacts/safarly/src/locales/` | 11 locales: ar, de, en, es, fr, it, pt, ru, tr, ur, zh — kept in parity by a test, see Testing |
-| `artifacts/safarly/src/data/` | POIs, dishes, phrases (the live copies). `pois.json` carries a `verified` flag: `false` marks entries authored to fill out the pool rather than sourced from research — see the itinerary's "Estimated" badge |
-| `artifacts/api-server/` | Express API — auth, Live Lens vision, trip enrichment, the Personal Concierge, and the dialect coach. See Architecture decisions |
+| `artifacts/safarly/src/data/` | Dishes and phrases (the live copies). POIs used to live here too — they now sit in `lib/poi-data/` so the API can read them |
+| `lib/poi-data/` | **The POI dataset**, shared by the frontend engine and the API. `pois.json` carries a `verified` flag: `false` marks entries authored to fill out the pool rather than sourced from research — see the itinerary's "Estimated" badge. Exports `POI_IDS`/`isKnownPoiId` so the API can reject ids that name no real place |
+| `artifacts/safarly/src/pages/{stories,story-detail,create-story,edit-story}.tsx`, `components/StoryForm.tsx` | Trip Stories — the creator feed. See Architecture decisions |
+| `artifacts/api-server/` | Express API — auth, Live Lens vision, trip enrichment, the Personal Concierge, the dialect coach, and Trip Stories. See Architecture decisions |
 | `artifacts/mockup-sandbox/` | Design mockup sandbox, not shipped |
 | `lib/db/src/schema/` | Drizzle schema — source of truth for DB |
 | `lib/api-spec/openapi.yaml` | API contract — source of truth, drives codegen |
@@ -98,6 +104,23 @@ Routes are declared in `artifacts/safarly/src/App.tsx`.
   before the agent existed. The agent's own code comment flags Saudi regional
   dialects as low-resource for current models — spot-check output with a native
   speaker before relying on it.
+- **Trip Stories**: creator posts at `/stories`, backed by `posts` +
+  `post_media`. Reads are public, writes are session-guarded, and edit/delete
+  are creator-only. A story is anchored to a real city and real POI ids from
+  `@workspace/poi-data` rather than freeform location text, which is what lets
+  the detail page draw a map and offer "start your own trip like this" back
+  into the planner. The client picks ids from a list, but the API re-checks
+  them — the picker is a convenience, not a constraint on what a request can
+  contain.
+- **Story images are stored in Postgres** (`media_blobs`), not object storage.
+  R2 was built first and reverted: every provider evaluated wants a payment
+  method on file even under a free tier, and this app already requires
+  `DATABASE_URL`. The costs are real — reads proxy through
+  `GET /api/media/file/:id` instead of a CDN, so on Render's free plan a cold
+  start (**measured ~52s**) sits in front of every image; and it is images
+  only, with video and TikTok staying paste-a-link. Uploads reuse
+  `prepareImageForUpload`'s client-side downscale. If image latency starts
+  mattering more than hosting cost, this is the thing to revisit first.
 - **Maps use Leaflet + raster OSM tiles** (no API key) to draw the active
   day's numbered stop route on the itinerary page. See
   `docs/notes/itinerary-map.md`.
@@ -136,6 +159,16 @@ narrow and high-value rather than exhaustive: pure logic only, no DOM, no bootin
   transport legs. Pins the real Riyadh distances and the hot-season walk threshold, and
   guards demo mode against regressing to the flat "15 min / 20 SAR for every hop" fixture
   it used to return regardless of whether two stops were 200m or 30km apart.
+- `cors-origin.test.ts`, `client-ip.test.ts` (api-server) — both are security
+  boundaries rather than utilities, which is why they are split out and pinned.
+  `cors-origin` is what replaced SameSite as CSRF protection, so its near-miss
+  cases matter: `evil-safarly.pages.dev` and `safarly.pages.dev.evil.com` must
+  both fail. `client-ip` decides the login throttle's key, where reading a
+  client-writable header would mean a bypass.
+- `posts-validate.test.ts`, `media-validate.test.ts` (api-server) — the Stories
+  trust boundary. Covers unknown POI ids being dropped, `javascript:` media
+  URLs being rejected (a tiktok item's url renders as an anchor href, so that
+  one is stored XSS), and that production never emits an `http://` media URL.
 - `locales/locales.test.ts` — **locale drift guard.** Fails the suite if any locale's
   keyset differs from `en.json` (missing, extra, or blank values). This exists because
   `t()` echoing the key on a miss means a lagging locale fails silently in the running
@@ -148,8 +181,30 @@ narrow and high-value rather than exhaustive: pure logic only, no DOM, no bootin
 - **`SpeechRecognition` is declared locally**, in
   `artifacts/safarly/src/types/speech-recognition.d.ts` — TypeScript's `lib.dom`
   does not ship it. Extend that file rather than reaching for `as any`.
+- **The session cookie is `SameSite=None` in production, and the CORS
+  allowlist is what replaced it as CSRF protection.** In production the
+  frontend and API are on different sites (`safarly.pages.dev` vs
+  `safarly-api.onrender.com`), where a `Lax` cookie is never sent on
+  cross-site fetch — sign-in and every write silently 401'd once deployed
+  while working locally. `None` is the only workable value, which costs the
+  SameSite defence, so `app.ts` now carries it: the allowlist only holds
+  against body types the browser preflights. **`express.urlencoded` was
+  removed for this reason and must not come back** — form encoding is a CORS
+  simple request, so a cross-site form POST would arrive with cookies and no
+  preflight to stop it. Adding form or `text/plain` parsing means adding CSRF
+  tokens first. The allowlist also matches `*.pages.dev` preview subdomains
+  (`lib/cors-origin.ts`), so it trusts any preview build of the Pages project.
+- **Don't derive absolute URLs from `req.protocol`.** Render terminates TLS at
+  its edge and forwards over plain HTTP, so it reports `http` in production.
+  Media upload returned an `http://` URL that browsers blocked as mixed
+  content — and it was persisted to `post_media.url`, so it stayed broken.
+  `req.ip` has the same root cause: it is the proxy's address, which erased
+  the IP half of the login throttle's key. Both are fixed without Express's
+  `trust proxy`, which would make `req.ip` a client-writable header and hand
+  over a rate-limit bypass — see `lib/client-ip.ts` and `CLIENT_IP_HEADER`.
 - **Two dataset families exist, and they are not duplicates.**
-  `artifacts/safarly/src/data/*.json` is what the app imports — edit that one.
+  `lib/poi-data/src/pois.json` and `artifacts/safarly/src/data/*.json` are what
+  the app imports — edit those.
   `docs/research-data/*.json` is the original research corpus: different ids,
   different schema, and it holds dish origin stories the live data still lacks.
   Its POI Arabic names and 8 genuinely-new POIs have already been merged into

@@ -3,12 +3,19 @@
  * zero dependency on Express/session/DB machinery, importable and unit
  * testable on its own.
  *
- * poiIds are trusted as opaque strings, not cross-checked against the POI
- * dataset (that dataset is a frontend JSON file, not something api-server
- * currently loads) — accepted simplification for v1. Content is plain
- * markdown/text, not HTML, so there is no markup to sanitise; it is rendered
- * as text on the client, never dangerously-set as HTML.
+ * poiIds are checked against the real dataset in @workspace/poi-data, the
+ * same one the itinerary engine schedules from — the client picks from a
+ * list, but nothing stops a crafted request, and an id that matches no place
+ * would be stored forever and silently dropped at render time, leaving a
+ * story that claims to tag somewhere it cannot show. Unknown ids are dropped
+ * rather than rejecting the whole story: the rest of the post is still valid
+ * and worth keeping.
+ *
+ * Content is plain markdown/text, not HTML, so there is no markup to
+ * sanitise; it is rendered as text on the client, never dangerously-set as
+ * HTML.
  */
+import { isKnownPoiId } from "@workspace/poi-data";
 import type { PostCreateRequest, PostMediaInput, PostUpdateRequest } from "./posts-types";
 
 const MAX_TITLE = 120;
@@ -17,12 +24,18 @@ const MAX_CITY = 80;
 const MAX_TAG = 40;
 const MAX_TAGS = 10;
 const MAX_POI_IDS = 30;
-const MAX_POI_ID_LEN = 60;
 const MAX_MEDIA = 12;
 const MAX_URL = 2000;
 const MAX_CAPTION = 200;
 
 const MEDIA_TYPES = new Set(["image", "video", "tiktok"]);
+
+/** Deduped, capped, and filtered down to ids that name a real place. */
+function toPoiIds(raw: unknown[]): string[] {
+  return [...new Set(raw.filter((v): v is string => typeof v === "string"))]
+    .filter(isKnownPoiId)
+    .slice(0, MAX_POI_IDS);
+}
 
 /**
  * Media URLs must be http(s). A `javascript:` URL reaching the client is a
@@ -87,9 +100,7 @@ export function validateCreateRequest(body: unknown): PostCreateRequest | null {
     title: stripScriptTags(b.title.trim()).slice(0, MAX_TITLE),
     content: stripScriptTags(b.content.trim()).slice(0, MAX_CONTENT),
     city: b.city.trim().toLowerCase().slice(0, MAX_CITY),
-    poiIds: [...new Set(b.poiIds.filter((v): v is string => typeof v === "string"))]
-      .slice(0, MAX_POI_IDS)
-      .map((id) => id.slice(0, MAX_POI_ID_LEN)),
+    poiIds: toPoiIds(b.poiIds),
     tags: [...new Set(b.tags.filter((v): v is string => typeof v === "string" && v.trim().length > 0))]
       .slice(0, MAX_TAGS)
       .map((tag) => tag.trim().slice(0, MAX_TAG)),
@@ -124,9 +135,7 @@ export function validateUpdateRequest(body: unknown): PostUpdateRequest | null {
   }
   if (b.poiIds !== undefined) {
     if (!Array.isArray(b.poiIds)) return null;
-    update.poiIds = [...new Set(b.poiIds.filter((v): v is string => typeof v === "string"))]
-      .slice(0, MAX_POI_IDS)
-      .map((id) => id.slice(0, MAX_POI_ID_LEN));
+    update.poiIds = toPoiIds(b.poiIds);
   }
   if (b.tags !== undefined) {
     if (!Array.isArray(b.tags)) return null;

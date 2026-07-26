@@ -18,7 +18,7 @@ gap, not silently borrowed content. This is the *only* remaining fallback.
 `jeddah`, and `jeddah` respectively — most visibly, choosing "Abha" (Aseer highlands)
 produced an itinerary of AlUla's desert/Nabataean-tomb content mislabelled with the
 Abha name. All three now have their own real POIs; see git history on
-`artifacts/safarly/src/data/pois.json` for the fix.
+`lib/poi-data/src/pois.json` for the fix.
 
 Mecca's POI set is deliberately thin (3 entries) and every entry's `culture_note`
 states the Grand Mosque/Haram area is restricted to Muslims — a factual travel-safety

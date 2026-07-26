@@ -27,6 +27,7 @@ import {
   validatePassword,
   NAME_MAX_LENGTH,
 } from "../lib/validation";
+import { resolveClientIp } from "../lib/client-ip";
 
 const router: IRouter = Router();
 
@@ -87,13 +88,17 @@ async function createSession(userId: string, res: Response): Promise<void> {
  * and is per-instance — enough to blunt online guessing in this single-process
  * deployment, but replace with a shared store before running multiple
  * instances behind a load balancer.
+ *
+ * The IP comes from resolveClientIp, not `req.ip`: behind a proxy the socket
+ * address is the proxy's, the same for everyone, which collapses the IP half
+ * of the key. See lib/client-ip.ts for why `trust proxy` is not used.
  */
 const MAX_ATTEMPTS = 8;
 const ATTEMPT_WINDOW_MS = 15 * 60 * 1000;
 const attempts = new Map<string, { count: number; firstAt: number }>();
 
 function attemptKey(req: Request, email: string): string {
-  return `${req.ip ?? "unknown"}:${email}`;
+  return `${resolveClientIp(req.headers, req.ip)}:${email}`;
 }
 
 function isRateLimited(key: string): boolean {

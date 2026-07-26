@@ -4,11 +4,13 @@
  * create-story.tsx once an edit flow needed the identical fields, rather than
  * forking the form in two places.
  *
- * Media: a file upload (direct-to-R2 via lib/media-api.ts) when storage is
- * configured server-side, or a pasted external URL always — the paste path
- * never goes away since TikTok links are never uploaded. POIs: a city-scoped
- * autocomplete over the same pois.json the itinerary engine reads, so a
- * story can only tag real places, not free text.
+ * Media: an image upload (stored in Postgres — see lib/media-api.ts), or a
+ * pasted external URL. The paste path never goes away, since TikTok links are
+ * embedded rather than uploaded and video is not hosted at all. POIs: a
+ * city-scoped autocomplete over @workspace/poi-data, the same dataset the
+ * itinerary engine schedules from, so a story tags real places rather than
+ * free text — and the API re-checks the ids, since the picker is only a
+ * convenience and not a constraint on what a request can contain.
  */
 import { useRef, useState } from "react";
 import { Trash2, PlusCircle, Upload, Loader2 } from "lucide-react";
@@ -22,7 +24,7 @@ import { extractTikTokId } from "@/lib/tiktok";
 import { uploadMediaFile } from "@/lib/media-api";
 import type { PostMediaInput, Post, PostResult } from "@/lib/posts-api";
 import type { POI } from "@/lib/engine";
-import poisData from "@/data/pois.json";
+import { pois as poisData } from "@workspace/poi-data";
 
 export interface StoryFormValues {
   title: string;

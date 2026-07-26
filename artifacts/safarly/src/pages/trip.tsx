@@ -16,7 +16,7 @@ import {
   currencyForNationality, convertFromSAR, formatCurrencyAmount,
   getCurrencyDisplayPref, setCurrencyDisplayPref,
 } from "@/lib/currency";
-import poisData from "@/data/pois.json";
+import { pois as poisData } from "@workspace/poi-data";
 
 /**
  * "Famous for" line on each destination card — the single most recognisable
