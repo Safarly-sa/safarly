@@ -64,6 +64,7 @@ export function Navbar() {
     { href: "/",            label: t("nav.plan")       },
     { href: "/planner",     label: t("nav.planner")    },
     { href: "/companion",   label: t("nav.companion")  },
+    { href: "/stories",     label: t("nav.stories")    },
     { href: "/dashboard",   label: t("nav.dashboard")  },
     { href: "/vision-2030", label: t("nav.vision2030") },
   ];

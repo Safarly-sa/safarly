@@ -35,6 +35,9 @@ const Lens            = lazy(() => import('@/pages/lens').then(m => ({ default: 
 const Dialect         = lazy(() => import('@/pages/dialect').then(m => ({ default: m.Dialect })));
 const Companion       = lazy(() => import('@/pages/companion').then(m => ({ default: m.Companion })));
 const Dashboard       = lazy(() => import('@/pages/dashboard').then(m => ({ default: m.Dashboard })));
+const Stories         = lazy(() => import('@/pages/stories').then(m => ({ default: m.Stories })));
+const StoryDetail     = lazy(() => import('@/pages/story-detail').then(m => ({ default: m.StoryDetail })));
+const CreateStory     = lazy(() => import('@/pages/create-story').then(m => ({ default: m.CreateStory })));
 const About           = lazy(() => import('@/pages/about').then(m => ({ default: m.About })));
 const Vision2030      = lazy(() => import('@/pages/vision-2030').then(m => ({ default: m.Vision2030 })));
 const NotFound        = lazy(() => import('@/pages/not-found'));
@@ -123,6 +126,12 @@ function Router() {
             <Route path="/lens"      component={Lens} />
             <Route path="/dialect"   component={Dialect} />
             <Route path="/dashboard" component={Dashboard} />
+
+            {/* Trip Stories — creator posts, order matters: /stories/new
+                before the /stories/:id catch-all. */}
+            <Route path="/stories/new" component={CreateStory} />
+            <Route path="/stories/:id" component={StoryDetail} />
+            <Route path="/stories"     component={Stories} />
 
             <Route component={NotFound} />
           </Switch>
