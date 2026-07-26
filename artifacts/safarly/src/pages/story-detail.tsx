@@ -20,7 +20,7 @@ import { fetchStory, deleteStory, type Post } from "@/lib/posts-api";
 import { fetchMe } from "@/lib/auth-api";
 import { poiName } from "@/lib/poi-i18n";
 import type { POI } from "@/lib/engine";
-import poisData from "@/data/pois.json";
+import { pois as poisData } from "@workspace/poi-data";
 
 const CITY_FALLBACK_CENTER: [number, number] = [24.7136, 46.6753]; // Riyadh
 

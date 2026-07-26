@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import { pois } from "@workspace/poi-data";
 import { validateCreateRequest, validateUpdateRequest } from "./posts-validate";
 
 describe("validateCreateRequest", () => {
@@ -6,7 +7,7 @@ describe("validateCreateRequest", () => {
     title: "3 Days in AlUla",
     content: "Exploring AlUla was unforgettable...",
     city: "alula",
-    poiIds: ["alula_hegra", "alula_hegra", "alula_elephant_rock"],
+    poiIds: ["ula_hegra", "ula_hegra", "ula_elephant"],
     tags: ["Heritage", "Desert"],
     media: [{ type: "tiktok", url: "https://www.tiktok.com/@x/video/123", tiktokVideoId: "123" }],
   };
@@ -14,7 +15,7 @@ describe("validateCreateRequest", () => {
   it("accepts a well-formed request and dedupes poi ids", () => {
     const result = validateCreateRequest(ok);
     expect(result).toMatchObject({ title: ok.title, city: "alula" });
-    expect(result?.poiIds).toEqual(["alula_hegra", "alula_elephant_rock"]);
+    expect(result?.poiIds).toEqual(["ula_hegra", "ula_elephant"]);
   });
 
   it("rejects a request with no media", () => {
@@ -40,9 +41,27 @@ describe("validateCreateRequest", () => {
   });
 
   it("caps an oversized poiIds array", () => {
-    const poiIds = Array.from({ length: 100 }, (_, i) => `poi_${i}`);
+    // Real ids, since unknown ones are now dropped before the cap applies.
+    const poiIds = (pois as { id: string }[]).map((p) => p.id);
+    expect(poiIds.length).toBeGreaterThan(30);
     const result = validateCreateRequest({ ...ok, poiIds });
     expect(result?.poiIds.length).toBe(30);
+  });
+
+  it("drops poi ids that name no real place", () => {
+    // The picker only offers real places, but nothing stops a crafted request,
+    // and a bogus id would be stored forever and silently vanish at render.
+    const result = validateCreateRequest({
+      ...ok,
+      poiIds: ["ula_hegra", "not_a_real_place", "../../etc/passwd", ""],
+    });
+    expect(result?.poiIds).toEqual(["ula_hegra"]);
+  });
+
+  it("keeps the rest of the story when every poi id is bogus", () => {
+    const result = validateCreateRequest({ ...ok, poiIds: ["nope", "also_nope"] });
+    expect(result).not.toBeNull();
+    expect(result?.poiIds).toEqual([]);
   });
 
   it("strips script tags from title and content", () => {

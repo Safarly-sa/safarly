@@ -2,7 +2,7 @@
  * Localised POI text.
  *
  * POI names and culture notes live in the locale files under `poi.<id>.name`
- * and `poi.<id>.culture`, while the raw English sits in `src/data/pois.json`.
+ * and `poi.<id>.culture`, while the raw English sits in `@workspace/poi-data`.
  *
  * Call sites used to write `t("poi." + poi.id + ".name") || poi.name`, which
  * never actually falls back: `t()` echoes the key back when a translation is

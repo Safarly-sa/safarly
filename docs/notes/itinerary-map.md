@@ -15,7 +15,7 @@ markers/route without tearing down the underlying `L.Map` instance — only the
 
 ## Data
 Marker positions come straight from each stop's `poi.lat`/`poi.lng` (already
-present on every POI in `src/data/pois.json` — audited when this was built,
+present on every POI in `lib/poi-data/src/pois.json` — audited when this was built,
 no missing coordinates). No new data was needed.
 
 ## Tiles & controls

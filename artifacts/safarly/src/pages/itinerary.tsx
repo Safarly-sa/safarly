@@ -19,7 +19,7 @@ import { isFavorite as isFavoritePoi, toggleFavorite as toggleFavoritePoi } from
 import { ConciergeChat } from "@/components/ConciergeChat";
 import { ResultsGate } from "@/components/ResultsGate";
 import { getAuth } from "@/lib/auth";
-import poisRaw from "@/data/pois.json";
+import { pois as poisRaw } from "@workspace/poi-data";
 
 /* ── POI type (mirrors pois.json shape) ────────────────────────────── */
 interface RawPoi {
@@ -1810,7 +1810,7 @@ function TripSummary({
 }
 
 /* ── Photo modal ────────────────────────────────────────────────────────
-   Neither src/data/pois.json nor docs/research-data/ carries any image
+   Neither @workspace/poi-data nor docs/research-data/ carries any image
    field for POIs or dishes, and the app has no backend/image API — so
    there is no real photo to fetch or embed. Embedding a third-party image
    search result would also fail: engines that serve the actual photos
