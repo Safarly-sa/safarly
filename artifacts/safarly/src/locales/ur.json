@@ -863,5 +863,18 @@
   "stories.new.edit_title": "اپنی سفر کی کہانی میں ترمیم کریں",
   "stories.new.save": "تبدیلیاں محفوظ کریں",
   "stories.new.saving": "محفوظ ہو رہا ہے...",
-  "stories.new.not_your_story": "آپ صرف اپنی کہانیوں میں ترمیم کر سکتے ہیں۔"
+  "stories.new.not_your_story": "آپ صرف اپنی کہانیوں میں ترمیم کر سکتے ہیں۔",
+  "pwa.dismiss": "بند کریں",
+  "pwa.offline.title": "آپ آف لائن ہیں",
+  "pwa.offline.body": "آپ کا سفرنامہ، جملے اور مقامات اب بھی کام کر رہے ہیں۔",
+  "pwa.update.title": "اپ ڈیٹ دستیاب ہے",
+  "pwa.update.body": "سفرلی کا نیا ورژن انسٹال کے لیے تیار ہے۔",
+  "pwa.update.action": "دوبارہ لوڈ کریں",
+  "pwa.update.later": "بعد میں",
+  "pwa.install.title": "سفرلی انسٹال کریں",
+  "pwa.install.body": "سفرلی کو ہوم اسکرین پر شامل کریں تاکہ یہ ایپ کی طرح کھلے اور آپ اپنا سفر آف لائن استعمال کر سکیں۔",
+  "pwa.install.ios_body": "شیئر بٹن پر ٹیپ کریں، پھر ”ہوم اسکرین پر شامل کریں“ منتخب کریں۔",
+  "pwa.install.action": "انسٹال کریں",
+  "pwa.install.later": "ابھی نہیں",
+  "pwa.install.got_it": "سمجھ گیا"
 }

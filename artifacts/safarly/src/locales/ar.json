@@ -899,5 +899,18 @@
   "stories.new.edit_title": "تعديل قصة رحلتك",
   "stories.new.save": "حفظ التغييرات",
   "stories.new.saving": "جارٍ الحفظ...",
-  "stories.new.not_your_story": "يمكنك تعديل قصصك الخاصة فقط."
+  "stories.new.not_your_story": "يمكنك تعديل قصصك الخاصة فقط.",
+  "pwa.dismiss": "إغلاق",
+  "pwa.offline.title": "أنت غير متصل بالإنترنت",
+  "pwa.offline.body": "خط سيرك والعبارات والوجهات لا تزال تعمل.",
+  "pwa.update.title": "يتوفر تحديث",
+  "pwa.update.body": "إصدار جديد من سفرلي جاهز للتثبيت.",
+  "pwa.update.action": "إعادة التحميل",
+  "pwa.update.later": "لاحقًا",
+  "pwa.install.title": "ثبّت سفرلي",
+  "pwa.install.body": "أضف سفرلي إلى الشاشة الرئيسية لفتحه كتطبيق واستخدام رحلتك دون اتصال.",
+  "pwa.install.ios_body": "اضغط على زر المشاركة، ثم اختر «إضافة إلى الشاشة الرئيسية».",
+  "pwa.install.action": "تثبيت",
+  "pwa.install.later": "ليس الآن",
+  "pwa.install.got_it": "حسنًا"
 }

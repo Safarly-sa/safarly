@@ -875,7 +875,7 @@ export function Lens() {
 
   /* ── Render ── */
   return (
-    <div style={{ paddingTop: 68, paddingBottom: 88, background: "var(--sf-bg)", minHeight: "100dvh" }}>
+    <div style={{ paddingTop: "var(--sf-navbar-h)", paddingBottom: "calc(24px + var(--sf-bottomnav-h))", background: "var(--sf-bg)", minHeight: "100dvh" }}>
       {/* Header */}
       <AuroraHero minHeight="auto" className="sf-aurora-band">
         <div style={{ borderBottom: "1px solid var(--sf-border)", padding: "20px 20px 0" }}>

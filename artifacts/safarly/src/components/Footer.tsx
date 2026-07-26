@@ -36,7 +36,13 @@ export function Footer() {
 
   return (
     <footer
-      className="pt-16 pb-24 md:pb-16 mt-auto"
+      /* The mobile bottom padding clears the fixed BottomNav. It was a flat
+         pb-24 (96px), which left only 32px of slack over the bar's 64px — less
+         than the home-indicator inset on a modern iPhone, so the last footer
+         row ended up under the bar once the app was installed and painting
+         edge to edge. The token folds that inset in. md:pb-16 is unchanged:
+         BottomNav is md:hidden, so there is nothing to clear there. */
+      className="pt-16 pb-[calc(32px+var(--sf-bottomnav-h))] md:pb-16 mt-auto"
       style={{ backgroundColor: C.bg, borderTop: `1px solid ${C.border}`, color: C.text }}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

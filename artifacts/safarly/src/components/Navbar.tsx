@@ -82,7 +82,23 @@ export function Navbar() {
   return (
     <header
       className="fixed top-0 start-0 end-0 z-50 backdrop-blur-xl"
-      style={{ height: "68px", backgroundColor: "rgba(10, 14, 22, 0.92)", borderBottom: "1px solid #232C3D" }}
+      style={{
+        // Grows by the status-bar inset when installed to a home screen, where
+        // `viewport-fit=cover` lets this bar paint under the notch. Off a
+        // notched device the inset is 0px and this is the plain 68px it was.
+        // The inner row keeps its own 68px via `h-full`, since border-box
+        // height means the padding is carved out of the total.
+        height: "var(--sf-navbar-h)",
+        paddingTop: "env(safe-area-inset-top, 0px)",
+        // Landscape on a notched phone puts the notch on one side; the insets
+        // keep the brand and the sign-in button clear of it. They go on the
+        // fixed element rather than the inner row so the bar's background still
+        // bleeds edge to edge, and so the row keeps its own px-6/lg:px-8 scale.
+        paddingInlineStart: "env(safe-area-inset-left, 0px)",
+        paddingInlineEnd: "env(safe-area-inset-right, 0px)",
+        backgroundColor: "rgba(10, 14, 22, 0.92)",
+        borderBottom: "1px solid #232C3D",
+      }}
     >
       <div className="max-w-7xl mx-auto px-6 lg:px-8 h-full flex items-center justify-between">
 

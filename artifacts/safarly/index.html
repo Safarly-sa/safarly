@@ -2,7 +2,17 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
+    <!--
+      viewport-fit=cover lets the page paint under the notch and the home
+      indicator once installed, which is what makes a standalone launch look
+      like an app rather than a boxed-in web page. It is also what switches on
+      the `env(safe-area-inset-*)` values that index.css relies on — without it
+      they resolve to 0 and the bottom nav sits under the home indicator.
+    -->
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1, viewport-fit=cover"
+    />
 
     <!-- Primary meta -->
     <title>Safarly — Travel Companion</title>
@@ -12,7 +22,28 @@
 
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="apple-touch-icon" href="/favicon.svg" />
+
+    <!--
+      Installed-app metadata for iOS.
+
+      Safari reads none of the web manifest for "Add to Home Screen" — it wants
+      these `apple-*` tags instead, so the two have to be kept in step by hand.
+      A missing apple-touch-icon is the usual reason an iOS install ends up with
+      a screenshot of the page as its icon, and it must be a PNG: Safari will
+      not accept the SVG favicon this used to point at.
+    -->
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Safarly" />
+    <!--
+      `black-translucent` puts the page under the status bar, which is the
+      counterpart to viewport-fit=cover above. The status bar text is drawn
+      light, so it needs the app's dark surface behind it — Safarly's dark theme
+      is the default and light theme still has a dark navbar, so this holds in
+      both.
+    -->
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 
     <!-- Open Graph -->
     <meta property="og:type"        content="website" />
@@ -43,6 +74,30 @@
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
+    <!--
+      Catches `beforeinstallprompt` before the app bundle exists.
+
+      Chromium fires it as soon as it decides the site is installable, which is
+      routinely before a module script has finished parsing — so a listener
+      registered inside a React component misses the only event it will ever
+      get, and the install button silently never appears. Stashing it here (the
+      one place guaranteed to run first) and re-announcing it lets
+      components/PWAProvider.tsx pick it up whenever it mounts.
+
+      preventDefault() suppresses Chromium's own mini-infobar, which is what
+      buys the app the right to ask at a better moment than first paint.
+    -->
+    <script>
+      window.__safarlyInstallPrompt = null;
+      window.addEventListener('beforeinstallprompt', function (event) {
+        event.preventDefault();
+        window.__safarlyInstallPrompt = event;
+        window.dispatchEvent(new Event('safarly-install-available'));
+      });
+      window.addEventListener('appinstalled', function () {
+        window.__safarlyInstallPrompt = null;
+      });
+    </script>
   </head>
   <body>
     <div id="root"></div>

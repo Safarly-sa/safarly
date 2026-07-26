@@ -818,7 +818,7 @@ export function Trip() {
   const canGenerate = !!travelContext && !!city && !!dateStart && !!dateEnd;
 
   return (
-    <div style={{ paddingTop: 68, background: "var(--sf-bg)", minHeight: "100dvh" }}>
+    <div style={{ paddingTop: "var(--sf-navbar-h)", background: "var(--sf-bg)", minHeight: "100dvh" }}>
 
       {/* Page header */}
       <div style={{ padding: "28px 20px 22px", borderBottom: "1px solid var(--sf-border)" }}>

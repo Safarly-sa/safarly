@@ -53,7 +53,7 @@ export function About() {
   }
 
   return (
-    <div style={{ paddingTop: 68, paddingBottom: 88, background: "var(--sf-bg)", minHeight: "100dvh" }}>
+    <div style={{ paddingTop: "var(--sf-navbar-h)", paddingBottom: "calc(24px + var(--sf-bottomnav-h))", background: "var(--sf-bg)", minHeight: "100dvh" }}>
 
       {/* ── Hero ──────────────────────────────────────────────────────── */}
       <AuroraHero minHeight="clamp(520px, 80vh, 780px)">

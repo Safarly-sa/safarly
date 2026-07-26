@@ -2464,7 +2464,7 @@ export function Itinerary() {
     return (
       <div style={{
         paddingTop:    "80px",
-        paddingBottom: "80px",
+        paddingBottom: "calc(16px + var(--sf-bottomnav-h))",
         minHeight:     "100dvh",
         background:    "var(--sf-bg)",
         display:       "flex",
@@ -2491,8 +2491,8 @@ export function Itinerary() {
 
   return (
     <div style={{
-      paddingTop:    "68px",
-      paddingBottom: "88px",
+      paddingTop:    "var(--sf-navbar-h)",
+      paddingBottom: "calc(24px + var(--sf-bottomnav-h))",
       background:    "var(--sf-bg)",
       minHeight:     "100dvh",
     }}>

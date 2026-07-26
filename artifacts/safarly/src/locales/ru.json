@@ -863,5 +863,18 @@
   "stories.new.edit_title": "Редактировать историю путешествия",
   "stories.new.save": "Сохранить изменения",
   "stories.new.saving": "Сохранение...",
-  "stories.new.not_your_story": "Вы можете редактировать только свои истории."
+  "stories.new.not_your_story": "Вы можете редактировать только свои истории.",
+  "pwa.dismiss": "Закрыть",
+  "pwa.offline.title": "Вы офлайн",
+  "pwa.offline.body": "Ваш маршрут, фразы и направления по-прежнему доступны.",
+  "pwa.update.title": "Доступно обновление",
+  "pwa.update.body": "Новая версия Safarly готова к установке.",
+  "pwa.update.action": "Обновить",
+  "pwa.update.later": "Позже",
+  "pwa.install.title": "Установить Safarly",
+  "pwa.install.body": "Добавьте Safarly на главный экран, чтобы открывать его как приложение и пользоваться поездкой офлайн.",
+  "pwa.install.ios_body": "Нажмите кнопку «Поделиться», затем выберите «На экран «Домой»».",
+  "pwa.install.action": "Установить",
+  "pwa.install.later": "Не сейчас",
+  "pwa.install.got_it": "Понятно"
 }

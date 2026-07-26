@@ -863,5 +863,18 @@
   "stories.new.edit_title": "Edit Your Trip Story",
   "stories.new.save": "Save Changes",
   "stories.new.saving": "Saving...",
-  "stories.new.not_your_story": "You can only edit your own stories."
+  "stories.new.not_your_story": "You can only edit your own stories.",
+  "pwa.dismiss": "Dismiss",
+  "pwa.offline.title": "You're offline",
+  "pwa.offline.body": "Your itinerary, phrases and destinations still work.",
+  "pwa.update.title": "Update available",
+  "pwa.update.body": "A new version of Safarly is ready to install.",
+  "pwa.update.action": "Reload",
+  "pwa.update.later": "Later",
+  "pwa.install.title": "Install Safarly",
+  "pwa.install.body": "Add Safarly to your home screen to open it like an app and use your trip offline.",
+  "pwa.install.ios_body": "Tap the Share button, then choose “Add to Home Screen”.",
+  "pwa.install.action": "Install",
+  "pwa.install.later": "Not now",
+  "pwa.install.got_it": "Got it"
 }

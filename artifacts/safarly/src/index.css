@@ -53,6 +53,20 @@
   --app-font-sans: 'Inter', sans-serif;
   --radius: 0.625rem; /* 10px — site-wide standard radius */
 
+  /* ── Fixed chrome heights ─────────────────────────────────────────
+     Both bars are position:fixed, so every page has to offset its own
+     content past them. These used to be the bare literals 68 and 88
+     repeated across eight pages; they became tokens when index.html
+     adopted `viewport-fit=cover` for the installed app, which lets the
+     page paint under the notch and the home indicator and makes the real
+     clearance device-dependent.
+
+     The `env()` fallbacks matter: outside a notched device — and in every
+     browser before the viewport-fit opt-in — they resolve to 0px, so
+     these collapse to exactly the 68/64 they replaced. */
+  --sf-navbar-h: calc(68px + env(safe-area-inset-top, 0px));
+  --sf-bottomnav-h: calc(64px + env(safe-area-inset-bottom, 0px));
+
   /* Light Grid Default Vars */
   --sf-bg: #F5F7FA;
   --sf-surface: #FFFFFF;

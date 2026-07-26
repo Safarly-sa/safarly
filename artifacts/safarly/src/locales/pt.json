@@ -863,5 +863,18 @@
   "stories.new.edit_title": "Editar a sua História de Viagem",
   "stories.new.save": "Guardar alterações",
   "stories.new.saving": "A guardar...",
-  "stories.new.not_your_story": "Só pode editar as suas próprias histórias."
+  "stories.new.not_your_story": "Só pode editar as suas próprias histórias.",
+  "pwa.dismiss": "Fechar",
+  "pwa.offline.title": "Está sem ligação",
+  "pwa.offline.body": "O seu itinerário, as frases e os destinos continuam a funcionar.",
+  "pwa.update.title": "Atualização disponível",
+  "pwa.update.body": "Está pronta uma nova versão do Safarly.",
+  "pwa.update.action": "Recarregar",
+  "pwa.update.later": "Mais tarde",
+  "pwa.install.title": "Instalar o Safarly",
+  "pwa.install.body": "Adicione o Safarly ao ecrã principal para o abrir como uma app e usar a sua viagem offline.",
+  "pwa.install.ios_body": "Toque no botão Partilhar e escolha «Adicionar ao ecrã principal».",
+  "pwa.install.action": "Instalar",
+  "pwa.install.later": "Agora não",
+  "pwa.install.got_it": "Entendido"
 }

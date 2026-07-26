@@ -902,7 +902,7 @@ export function Dashboard() {
   const hasAnyData = !!(auth || profile || ongoingTrip || pastTrips.length);
   if (!hasAnyData) {
     return (
-      <div style={{ paddingTop: 68, paddingBottom: 88, background: "var(--sf-bg)", minHeight: "100dvh", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div style={{ paddingTop: "var(--sf-navbar-h)", paddingBottom: "calc(24px + var(--sf-bottomnav-h))", background: "var(--sf-bg)", minHeight: "100dvh", display: "flex", alignItems: "center", justifyContent: "center" }}>
         <div style={{ textAlign: "center", padding: "40px 24px", maxWidth: 400 }}>
           <div style={{ fontSize: "3rem", marginBottom: 16 }}>🗺️</div>
           <h2 style={{ fontSize: "1.25rem", fontWeight: 800, color: "var(--sf-text)", marginBottom: 8 }}>
@@ -920,7 +920,7 @@ export function Dashboard() {
   }
 
   return (
-    <div style={{ paddingTop: 68, paddingBottom: 88, background: "var(--sf-bg)", minHeight: "100dvh" }}>
+    <div style={{ paddingTop: "var(--sf-navbar-h)", paddingBottom: "calc(24px + var(--sf-bottomnav-h))", background: "var(--sf-bg)", minHeight: "100dvh" }}>
 
       {/* Page header */}
       <AuroraHero minHeight="auto" className="sf-aurora-band">

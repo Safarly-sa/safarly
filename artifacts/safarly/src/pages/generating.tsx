@@ -566,8 +566,8 @@ export function Generating() {
   return (
     <div
       style={{
-        paddingTop:    "68px",
-        paddingBottom: "80px",   // clear bottom-nav
+        paddingTop:    "var(--sf-navbar-h)",
+        paddingBottom: "calc(16px + var(--sf-bottomnav-h))",   // clear bottom-nav
         background:    "var(--sf-bg)",
         minHeight:     "100dvh",
         display:       "flex",

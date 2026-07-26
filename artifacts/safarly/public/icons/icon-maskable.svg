@@ -1,0 +1,31 @@
+<!--
+  Safarly app icon — `purpose: "maskable"` source.
+
+  Same artwork as icon.svg, but the mark is shrunk to ~63% of the canvas so it
+  survives Android's adaptive-icon mask. The mask is guaranteed only to preserve
+  the centre circle of 80% diameter, and launchers crop anything outside it into
+  whatever shape the device uses (circle, squircle, teardrop). The background
+  bleeds to the full square so no mask shape can expose a transparent corner.
+
+  Regenerate the PNGs with `pnpm --filter @workspace/scripts run icons`.
+-->
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="512" height="512" fill="#0A0E16"/>
+  <svg x="95" y="95" width="322" height="322" viewBox="0 0 180 180" fill="none">
+    <defs>
+      <linearGradient id="sfIconGrad" x1="0" y1="0" x2="180" y2="180" gradientUnits="userSpaceOnUse">
+        <stop stop-color="#00D8A4"/>
+        <stop offset="1" stop-color="#5C6CFF"/>
+      </linearGradient>
+    </defs>
+    <circle cx="90" cy="90" r="76" stroke="url(#sfIconGrad)" stroke-width="9"/>
+    <path d="M 62 74 A 28 28 0 0 1 118 74" stroke="url(#sfIconGrad)" stroke-width="8" stroke-linecap="round"/>
+    <line x1="90" y1="38" x2="90" y2="26" stroke="url(#sfIconGrad)" stroke-width="7" stroke-linecap="round"/>
+    <line x1="68" y1="45" x2="62" y2="35" stroke="url(#sfIconGrad)" stroke-width="6" stroke-linecap="round"/>
+    <line x1="112" y1="45" x2="118" y2="35" stroke="url(#sfIconGrad)" stroke-width="6" stroke-linecap="round"/>
+    <line x1="52" y1="62" x2="44" y2="56" stroke="url(#sfIconGrad)" stroke-width="5" stroke-linecap="round"/>
+    <line x1="128" y1="62" x2="136" y2="56" stroke="url(#sfIconGrad)" stroke-width="5" stroke-linecap="round"/>
+    <path d="M 46 84 C 62 80 80 82 90 96 C 100 110 118 118 134 114" stroke="url(#sfIconGrad)" stroke-width="9" stroke-linecap="round"/>
+    <path d="M 46 122 C 62 126 80 120 90 106 C 100 92 118 84 134 88" stroke="url(#sfIconGrad)" stroke-width="7" stroke-linecap="round" opacity="0.55"/>
+  </svg>
+</svg>

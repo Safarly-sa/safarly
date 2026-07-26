@@ -135,7 +135,7 @@ export function Vision2030() {
   ];
 
   return (
-    <div style={{ paddingTop: 68, paddingBottom: 88, background: "var(--sf-bg)", minHeight: "100dvh", overflowX: "hidden" }}>
+    <div style={{ paddingTop: "var(--sf-navbar-h)", paddingBottom: "calc(24px + var(--sf-bottomnav-h))", background: "var(--sf-bg)", minHeight: "100dvh", overflowX: "hidden" }}>
 
       {/* ── Hero — full-bleed Riyadh skyline photo ───────────────────────
           Breaks out to the viewport edge regardless of where this page's

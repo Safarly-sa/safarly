@@ -313,7 +313,7 @@ export function Profile() {
 
   return (
     <div style={{
-      paddingTop: "68px",
+      paddingTop: "var(--sf-navbar-h)",
       paddingBottom: "40px",
       background: "var(--sf-bg)",
       minHeight: "100dvh",

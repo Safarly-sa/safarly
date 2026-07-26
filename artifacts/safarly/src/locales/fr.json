@@ -863,5 +863,18 @@
   "stories.new.edit_title": "Modifier votre récit de voyage",
   "stories.new.save": "Enregistrer les modifications",
   "stories.new.saving": "Enregistrement...",
-  "stories.new.not_your_story": "Vous ne pouvez modifier que vos propres récits."
+  "stories.new.not_your_story": "Vous ne pouvez modifier que vos propres récits.",
+  "pwa.dismiss": "Fermer",
+  "pwa.offline.title": "Vous êtes hors ligne",
+  "pwa.offline.body": "Votre itinéraire, les phrases et les destinations fonctionnent toujours.",
+  "pwa.update.title": "Mise à jour disponible",
+  "pwa.update.body": "Une nouvelle version de Safarly est prête à être installée.",
+  "pwa.update.action": "Recharger",
+  "pwa.update.later": "Plus tard",
+  "pwa.install.title": "Installer Safarly",
+  "pwa.install.body": "Ajoutez Safarly à votre écran d’accueil pour l’ouvrir comme une app et utiliser votre voyage hors ligne.",
+  "pwa.install.ios_body": "Touchez le bouton Partager, puis choisissez « Sur l’écran d’accueil ».",
+  "pwa.install.action": "Installer",
+  "pwa.install.later": "Pas maintenant",
+  "pwa.install.got_it": "J’ai compris"
 }

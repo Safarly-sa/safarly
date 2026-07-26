@@ -401,7 +401,7 @@ export function ProfileSetup() {
 
   return (
     <div style={{
-      paddingTop: "68px", minHeight: "100dvh",
+      paddingTop: "var(--sf-navbar-h)", minHeight: "100dvh",
       display: "flex", flexDirection: "column",
       background: "var(--sf-bg)",
     }}>

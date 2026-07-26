@@ -717,7 +717,7 @@ export function Dialect() {
   const dialectDesc = t(DIALECT_I18N[dialect].desc);
 
   return (
-    <div style={{ paddingTop: 68, paddingBottom: 88, background: "var(--sf-bg)", minHeight: "100dvh" }}>
+    <div style={{ paddingTop: "var(--sf-navbar-h)", paddingBottom: "calc(24px + var(--sf-bottomnav-h))", background: "var(--sf-bg)", minHeight: "100dvh" }}>
 
       {/* Header */}
       <AuroraHero minHeight="auto" className="sf-aurora-band">

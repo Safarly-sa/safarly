@@ -863,5 +863,18 @@
   "stories.new.edit_title": "Seyahat Hikayeni Düzenle",
   "stories.new.save": "Değişiklikleri Kaydet",
   "stories.new.saving": "Kaydediliyor...",
-  "stories.new.not_your_story": "Yalnızca kendi hikayelerini düzenleyebilirsin."
+  "stories.new.not_your_story": "Yalnızca kendi hikayelerini düzenleyebilirsin.",
+  "pwa.dismiss": "Kapat",
+  "pwa.offline.title": "Çevrimdışısınız",
+  "pwa.offline.body": "Rotanız, ifadeler ve destinasyonlar çalışmaya devam ediyor.",
+  "pwa.update.title": "Güncelleme mevcut",
+  "pwa.update.body": "Safarly’nin yeni sürümü kurulmaya hazır.",
+  "pwa.update.action": "Yeniden yükle",
+  "pwa.update.later": "Daha sonra",
+  "pwa.install.title": "Safarly’yi yükle",
+  "pwa.install.body": "Safarly’yi ana ekranınıza ekleyin; uygulama gibi açılsın, seyahatinizi çevrimdışı kullanın.",
+  "pwa.install.ios_body": "Paylaş düğmesine dokunun, ardından “Ana Ekrana Ekle”yi seçin.",
+  "pwa.install.action": "Yükle",
+  "pwa.install.later": "Şimdi değil",
+  "pwa.install.got_it": "Anladım"
 }

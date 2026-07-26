@@ -10,6 +10,7 @@ import { I18nProvider } from '@/providers/I18nProvider';
 import { Navbar } from '@/components/Navbar';
 import { BottomNav } from '@/components/BottomNav';
 import { Footer } from '@/components/Footer';
+import { PWAProvider } from '@/components/PWAProvider';
 
 import { Home } from '@/pages/home';
 
@@ -141,6 +142,9 @@ function Router() {
       </main>
       <Footer />
       <BottomNav />
+      {/* Inside Router so it sits under I18nProvider — every string it shows is
+          translated — and so its fixed cards layer over the app chrome. */}
+      <PWAProvider />
     </div>
   );
 }

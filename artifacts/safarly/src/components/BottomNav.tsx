@@ -18,6 +18,14 @@ export function BottomNav() {
     <nav
       aria-label={t("nav.bottom_nav")}
       className="md:hidden fixed bottom-0 start-0 end-0 z-50 border-t border-border bg-background/90 backdrop-blur-xl pb-safe"
+      // Matches the Navbar: a fixed bar is laid out against the viewport, so in
+      // landscape on a notched phone the outermost tab would sit under the
+      // notch unless it opts into the horizontal insets itself. The bottom
+      // inset is already handled by `pb-safe`.
+      style={{
+        paddingInlineStart: "env(safe-area-inset-left, 0px)",
+        paddingInlineEnd: "env(safe-area-inset-right, 0px)",
+      }}
     >
       <div className="flex justify-around items-center h-16 px-2">
         {links.map((link) => {

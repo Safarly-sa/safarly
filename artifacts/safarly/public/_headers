@@ -1,4 +1,8 @@
-# ⚠️ REMOVE THIS FILE BEFORE LAUNCHING ON THE REAL DOMAIN. ⚠️
+# Read by Cloudflare Pages and Netlify. Vercel needs `headers` in vercel.json.
+#
+# ⚠️ Two unrelated rules live here. Only the first one is temporary. ⚠️
+
+# ── TEMPORARY: remove this block before launching on the real domain ──────
 #
 # This blocks ALL search-engine indexing, on every domain the site is served
 # from — including a custom domain. It exists because the site currently lives
@@ -8,7 +12,20 @@
 # `X-Robots-Tag` is used rather than a robots.txt `Disallow`, because Disallow
 # only stops crawling — Google can still index a URL it never crawled, from
 # inbound links alone. The header is what actually keeps it out of the index.
-#
-# Read by Cloudflare Pages and Netlify. Vercel needs `headers` in vercel.json.
 /*
   X-Robots-Tag: noindex, nofollow
+
+# ── PERMANENT: keep this block ───────────────────────────────────────────
+#
+# The service worker is the one file that must never be served stale. Every
+# asset it precaches is content-hashed, so sw.js is the only thing whose URL
+# stays constant across deploys — if a CDN holds an old copy, installed users
+# keep the old precache manifest and never see the new build.
+#
+# Browsers already cap service-worker script caching at 24h on their own, but
+# that is a ceiling, not a fix: it still means up to a day of an installed app
+# serving the previous release. The registration in components/PWAProvider.tsx
+# polls hourly for exactly this reason, and the poll is pointless if the
+# response it revalidates against is cached.
+/sw.js
+  Cache-Control: public, max-age=0, must-revalidate
