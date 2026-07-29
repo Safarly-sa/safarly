@@ -16,6 +16,7 @@
  * HTML.
  */
 import { isKnownPoiId } from "@workspace/poi-data";
+import { isTikTokUrl, extractTikTokVideoId } from "../../lib/tiktok-url";
 import type { PostCreateRequest, PostMediaInput, PostUpdateRequest } from "./posts-types";
 
 const MAX_TITLE = 120;
@@ -75,10 +76,34 @@ function toMedia(raw: unknown): PostMediaInput | null {
   const url = m.url.trim().slice(0, MAX_URL);
   if (!hasSafeUrlScheme(url)) return null;
 
+  const type = m.type as PostMediaInput["type"];
+
+  /**
+   * A tiktok item must actually point at TikTok. The scheme check above stops
+   * `javascript:`, but any https URL passed it — and story-detail renders this
+   * url as the embed's "Watch on TikTok" href, so an off-host https URL is a
+   * phishing link presented in TikTok's own chrome. Reject the item rather than
+   * silently downgrading it to a plain video, so the author sees it was refused.
+   */
+  if (type === "tiktok" && !isTikTokUrl(url)) return null;
+
+  /**
+   * The id is re-derived from the URL rather than trusted from the body: the
+   * client sends both, and a mismatched pair would embed one video while
+   * linking to another. Short links carry no id, so undefined is a legitimate
+   * outcome and the client falls back to the plain link.
+   */
+  const tiktokVideoId =
+    type === "tiktok"
+      ? (extractTikTokVideoId(url) ?? undefined)
+      : typeof m.tiktokVideoId === "string"
+        ? m.tiktokVideoId.slice(0, 40)
+        : undefined;
+
   return {
-    type: m.type as PostMediaInput["type"],
+    type,
     url,
-    tiktokVideoId: typeof m.tiktokVideoId === "string" ? m.tiktokVideoId.slice(0, 40) : undefined,
+    tiktokVideoId,
     caption: typeof m.caption === "string" ? m.caption.trim().slice(0, MAX_CAPTION) : undefined,
   };
 }

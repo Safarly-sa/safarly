@@ -4,29 +4,101 @@
  * writes require a session, and edits/deletes are creator-only.
  */
 import { Router, type IRouter } from "express";
-import { eq, desc, and, inArray } from "drizzle-orm";
+import { eq, desc, and, inArray, sql } from "drizzle-orm";
 import {
   db,
   postsTable,
   postMediaTable,
+  postReactionsTable,
   usersTable,
   type Post,
   type PostMedia,
   type PublicPost,
 } from "@workspace/db";
-import { requireSession } from "../../lib/session";
+import { requireSession, readSessionUser } from "../../lib/session";
+import { fetchTikTokOEmbed } from "../../lib/tiktok-oembed";
 import { validateCreateRequest, validateUpdateRequest } from "./posts-validate";
+import type { PostMediaInput } from "./posts-types";
 
 const router: IRouter = Router();
 
 const FEED_PAGE_SIZE = 20;
 
-function toPublicPost(post: Post, creatorName: string, media: PostMedia[]): PublicPost {
+/**
+ * Builds the rows for a post's media, enriching tiktok items with oEmbed
+ * metadata so the feed can render a thumbnail without mounting an iframe.
+ *
+ * `existing` carries forward metadata already captured for the same URL. PATCH
+ * replaces a post's media wholesale (delete + re-insert), so without this an
+ * edit to a story's *title* would re-fetch every one of its videos from TikTok.
+ *
+ * Fetches run concurrently and each one is already failure-tolerant, so the
+ * slowest this adds is one timeout regardless of how many videos a story has.
+ */
+async function buildMediaRows(
+  postId: string,
+  media: PostMediaInput[],
+  existing: PostMedia[] = [],
+) {
+  const cached = new Map(existing.filter((m) => m.thumbnailUrl).map((m) => [m.url, m]));
+
+  return Promise.all(
+    media.map(async (m, i) => {
+      const reuse = m.type === "tiktok" ? cached.get(m.url) : undefined;
+      const oembed = m.type === "tiktok" && !reuse ? await fetchTikTokOEmbed(m.url) : null;
+
+      return {
+        postId,
+        type: m.type,
+        url: m.url,
+        tiktokVideoId: m.tiktokVideoId ?? null,
+        caption: m.caption ?? null,
+        thumbnailUrl: reuse?.thumbnailUrl ?? oembed?.thumbnailUrl ?? null,
+        authorName: reuse?.authorName ?? oembed?.authorName ?? null,
+        oembedTitle: reuse?.oembedTitle ?? oembed?.title ?? null,
+        sortOrder: i,
+      };
+    }),
+  );
+}
+
+function toPublicPost(
+  post: Post,
+  creatorName: string,
+  media: PostMedia[],
+  likedByMe = false,
+): PublicPost {
   return {
     ...post,
     creatorName,
+    likedByMe,
     media: [...media].sort((a, b) => a.sortOrder - b.sortOrder),
   };
+}
+
+/**
+ * Which of these posts the current viewer has liked.
+ *
+ * Reads stay public, so this resolves the session optionally rather than
+ * guarding on it — a signed-out reader gets an empty set and every story reads
+ * as unliked, which is exactly right.
+ */
+async function loadLikedPostIds(req: Parameters<typeof readSessionUser>[0], postIds: string[]): Promise<Set<string>> {
+  if (postIds.length === 0) return new Set();
+  const viewer = await readSessionUser(req);
+  if (!viewer) return new Set();
+
+  const rows = await db
+    .select({ postId: postReactionsTable.postId })
+    .from(postReactionsTable)
+    .where(
+      and(
+        eq(postReactionsTable.userId, viewer.id),
+        eq(postReactionsTable.kind, "like"),
+        inArray(postReactionsTable.postId, postIds),
+      ),
+    );
+  return new Set(rows.map((r) => r.postId));
 }
 
 async function loadMediaByPostId(postIds: string[]): Promise<Map<string, PostMedia[]>> {
@@ -54,10 +126,14 @@ router.get("/posts", async (req, res) => {
     .limit(FEED_PAGE_SIZE);
 
   const filtered = cursor ? rows.filter((r) => r.post.id !== cursor) : rows;
-  const mediaByPost = await loadMediaByPostId(filtered.map((r) => r.post.id));
+  const postIds = filtered.map((r) => r.post.id);
+  const [mediaByPost, likedIds] = await Promise.all([
+    loadMediaByPostId(postIds),
+    loadLikedPostIds(req, postIds),
+  ]);
 
   const posts = filtered.map((r) =>
-    toPublicPost(r.post, r.creatorName, mediaByPost.get(r.post.id) ?? []),
+    toPublicPost(r.post, r.creatorName, mediaByPost.get(r.post.id) ?? [], likedIds.has(r.post.id)),
   );
   res.json({ posts });
 });
@@ -76,8 +152,11 @@ router.get<{ id: string }>("/posts/:id", async (req, res) => {
     return;
   }
 
-  const media = await db.select().from(postMediaTable).where(eq(postMediaTable.postId, row.post.id));
-  res.json({ post: toPublicPost(row.post, row.creatorName, media) });
+  const [media, likedIds] = await Promise.all([
+    db.select().from(postMediaTable).where(eq(postMediaTable.postId, row.post.id)),
+    loadLikedPostIds(req, [row.post.id]),
+  ]);
+  res.json({ post: toPublicPost(row.post, row.creatorName, media, likedIds.has(row.post.id)) });
 });
 
 /* ── POST /api/posts ────────────────────────────────────────────────────── */
@@ -104,16 +183,7 @@ router.post("/posts", requireSession, async (req, res) => {
     parsed.media.length > 0
       ? await db
           .insert(postMediaTable)
-          .values(
-            parsed.media.map((m, i) => ({
-              postId: post.id,
-              type: m.type,
-              url: m.url,
-              tiktokVideoId: m.tiktokVideoId ?? null,
-              caption: m.caption ?? null,
-              sortOrder: i,
-            })),
-          )
+          .values(await buildMediaRows(post.id, parsed.media))
           .returning()
       : [];
 
@@ -151,24 +221,92 @@ router.patch<{ id: string }>("/posts/:id", requireSession, async (req, res) => {
 
   let media = await db.select().from(postMediaTable).where(eq(postMediaTable.postId, post.id));
   if (newMedia) {
+    // `media` here is the pre-edit set — passed in so unchanged videos keep the
+    // oEmbed data already captured for them instead of being re-fetched.
+    const rows = await buildMediaRows(post.id, newMedia, media);
     await db.delete(postMediaTable).where(eq(postMediaTable.postId, post.id));
-    media = await db
-      .insert(postMediaTable)
-      .values(
-        newMedia.map((m, i) => ({
-          postId: post.id,
-          type: m.type,
-          url: m.url,
-          tiktokVideoId: m.tiktokVideoId ?? null,
-          caption: m.caption ?? null,
-          sortOrder: i,
-        })),
-      )
-      .returning();
+    media = await db.insert(postMediaTable).values(rows).returning();
   }
 
   const [creator] = await db.select({ name: usersTable.name }).from(usersTable).where(eq(usersTable.id, post.creatorId));
   res.json({ post: toPublicPost(post, creator?.name ?? "", media) });
+});
+
+/* ── POST /api/posts/:id/like ───────────────────────────────────────────── */
+/**
+ * The unique index on (user, post, kind) is what actually enforces one vote per
+ * user — `onConflictDoNothing` turns a double-tap into a no-op rather than a
+ * 500, and the empty `returning()` is how we know not to double-count. Doing
+ * the check with a SELECT first would leave a race between two concurrent
+ * requests from the same user.
+ */
+router.post<{ id: string }>("/posts/:id/like", requireSession, async (req, res) => {
+  const [post] = await db.select().from(postsTable).where(eq(postsTable.id, req.params.id)).limit(1);
+  if (!post) {
+    res.status(404).json({ error: "Story not found." });
+    return;
+  }
+  // Self-votes are refused outright rather than silently uncounted, so the
+  // ranking cannot be seeded by its own authors and the UI can say why.
+  if (post.creatorId === req.user!.id) {
+    res.status(403).json({ error: "You cannot like your own story." });
+    return;
+  }
+
+  const likeCount = await db.transaction(async (tx) => {
+    const inserted = await tx
+      .insert(postReactionsTable)
+      .values({ postId: post.id, userId: req.user!.id, kind: "like" })
+      .onConflictDoNothing()
+      .returning();
+
+    if (inserted.length === 0) return post.likeCount;
+
+    const [updated] = await tx
+      .update(postsTable)
+      .set({ likeCount: sql`${postsTable.likeCount} + 1` })
+      .where(eq(postsTable.id, post.id))
+      .returning({ likeCount: postsTable.likeCount });
+    return updated.likeCount;
+  });
+
+  res.json({ likeCount, likedByMe: true });
+});
+
+/* ── DELETE /api/posts/:id/like ─────────────────────────────────────────── */
+router.delete<{ id: string }>("/posts/:id/like", requireSession, async (req, res) => {
+  const [post] = await db.select().from(postsTable).where(eq(postsTable.id, req.params.id)).limit(1);
+  if (!post) {
+    res.status(404).json({ error: "Story not found." });
+    return;
+  }
+
+  const likeCount = await db.transaction(async (tx) => {
+    const removed = await tx
+      .delete(postReactionsTable)
+      .where(
+        and(
+          eq(postReactionsTable.postId, post.id),
+          eq(postReactionsTable.userId, req.user!.id),
+          eq(postReactionsTable.kind, "like"),
+        ),
+      )
+      .returning();
+
+    if (removed.length === 0) return post.likeCount;
+
+    const [updated] = await tx
+      .update(postsTable)
+      // GREATEST floors this at zero. The counter is denormalized, so a stray
+      // decrement from a manual DB edit or an old bug would otherwise strand a
+      // post at a negative count that no amount of unliking could repair.
+      .set({ likeCount: sql`GREATEST(${postsTable.likeCount} - 1, 0)` })
+      .where(eq(postsTable.id, post.id))
+      .returning({ likeCount: postsTable.likeCount });
+    return updated.likeCount;
+  });
+
+  res.json({ likeCount, likedByMe: false });
 });
 
 /* ── DELETE /api/posts/:id — creator-only ──────────────────────────────── */
