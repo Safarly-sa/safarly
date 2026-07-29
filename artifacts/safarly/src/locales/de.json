@@ -863,5 +863,16 @@
   "stories.new.edit_title": "Reisebericht bearbeiten",
   "stories.new.save": "Änderungen speichern",
   "stories.new.saving": "Wird gespeichert...",
-  "stories.new.not_your_story": "Du kannst nur deine eigenen Berichte bearbeiten."
+  "stories.new.not_your_story": "Du kannst nur deine eigenen Berichte bearbeiten.",
+  "stories.top_videos": "Top-Videos",
+  "stories.top_videos_note": "Sortiert nach Likes von Safarly-Reisenden, nicht nach TikTok.",
+  "stories.play_video": "Video abspielen",
+  "stories.top_places": "Bestbewertete Orte",
+  "stories.top_places_note": "Die Orte, die Reisende in ihren Geschichten am meisten liebten.",
+  "stories.place_estimated": "Geschätzt",
+  "stories.place_stories": "Geschichten",
+  "stories.all_stories": "Alle Geschichten",
+  "stories.like": "Gefällt mir",
+  "stories.unlike": "Gefällt mir nicht mehr",
+  "stories.place_story": "Geschichte"
 }

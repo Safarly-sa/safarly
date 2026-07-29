@@ -863,5 +863,16 @@
   "stories.new.edit_title": "اپنی سفر کی کہانی میں ترمیم کریں",
   "stories.new.save": "تبدیلیاں محفوظ کریں",
   "stories.new.saving": "محفوظ ہو رہا ہے...",
-  "stories.new.not_your_story": "آپ صرف اپنی کہانیوں میں ترمیم کر سکتے ہیں۔"
+  "stories.new.not_your_story": "آپ صرف اپنی کہانیوں میں ترمیم کر سکتے ہیں۔",
+  "stories.top_videos": "بہترین ویڈیوز",
+  "stories.top_videos_note": "ٹک ٹاک کے بجائے سفرلی مسافروں کی پسند کے مطابق ترتیب دیا گیا۔",
+  "stories.play_video": "ویڈیو چلائیں",
+  "stories.top_places": "بہترین درجہ بندی والے مقامات",
+  "stories.top_places_note": "وہ مقامات جو مسافروں کو اپنی کہانیوں میں سب سے زیادہ پسند آئے۔",
+  "stories.place_estimated": "تخمینی",
+  "stories.place_stories": "کہانیاں",
+  "stories.all_stories": "تمام کہانیاں",
+  "stories.like": "پسند",
+  "stories.unlike": "ناپسند",
+  "stories.place_story": "کہانی"
 }

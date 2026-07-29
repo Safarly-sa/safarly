@@ -863,5 +863,16 @@
   "stories.new.edit_title": "Редактировать историю путешествия",
   "stories.new.save": "Сохранить изменения",
   "stories.new.saving": "Сохранение...",
-  "stories.new.not_your_story": "Вы можете редактировать только свои истории."
+  "stories.new.not_your_story": "Вы можете редактировать только свои истории.",
+  "stories.top_videos": "Лучшие видео",
+  "stories.top_videos_note": "Ранжировано по лайкам путешественников Safarly, а не по данным TikTok.",
+  "stories.play_video": "Воспроизвести видео",
+  "stories.top_places": "Места с лучшими оценками",
+  "stories.top_places_note": "Места, которые путешественники полюбили больше всего.",
+  "stories.place_estimated": "Приблизительно",
+  "stories.place_stories": "историй",
+  "stories.all_stories": "Все истории",
+  "stories.like": "Нравится",
+  "stories.unlike": "Не нравится",
+  "stories.place_story": "история"
 }

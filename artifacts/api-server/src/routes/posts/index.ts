@@ -15,14 +15,19 @@ import {
   type PostMedia,
   type PublicPost,
 } from "@workspace/db";
+import { pois } from "@workspace/poi-data";
 import { requireSession, readSessionUser } from "../../lib/session";
 import { fetchTikTokOEmbed } from "../../lib/tiktok-oembed";
 import { validateCreateRequest, validateUpdateRequest } from "./posts-validate";
+import { parseRankingQuery, GRAVITY, AGE_OFFSET_HOURS } from "./posts-ranking";
 import type { PostMediaInput } from "./posts-types";
 
 const router: IRouter = Router();
 
 const FEED_PAGE_SIZE = 20;
+
+/** Built once — the dataset is a static import, not a table. */
+const poiById = new Map(pois.map((p) => [p.id, p]));
 
 /**
  * Builds the rows for a post's media, enriching tiktok items with oEmbed
@@ -136,6 +141,107 @@ router.get("/posts", async (req, res) => {
     toPublicPost(r.post, r.creatorName, mediaByPost.get(r.post.id) ?? [], likedIds.has(r.post.id)),
   );
   res.json({ posts });
+});
+
+/* ── GET /api/posts/top-videos ──────────────────────────────────────────── */
+/**
+ * Ranked TikTok clips. **Must stay above `/posts/:id`** — Express matches in
+ * declaration order, so below it this path arrives as `id = "top-videos"` and
+ * 404s as a missing story.
+ *
+ * The ranking is ours, not TikTok's: oEmbed reports no engagement counts, so
+ * `posts.like_count` is the only popularity signal available. See
+ * posts-ranking.ts for why it decays with age.
+ */
+router.get("/posts/top-videos", async (req, res) => {
+  const { city, limit } = parseRankingQuery(req.query as Record<string, unknown>);
+  const cityFilter = city ? sql`AND p.city = ${city}` : sql``;
+
+  const result = await db.execute(sql`
+    SELECT
+      m.id,
+      m.url,
+      m.tiktok_video_id AS "tiktokVideoId",
+      m.thumbnail_url   AS "thumbnailUrl",
+      m.author_name     AS "authorName",
+      m.oembed_title    AS "oembedTitle",
+      m.caption,
+      p.id              AS "postId",
+      p.title           AS "postTitle",
+      p.city,
+      p.like_count      AS "likeCount",
+      p.created_at      AS "createdAt",
+      u.name            AS "creatorName"
+    FROM post_media m
+    JOIN posts p ON p.id = m.post_id
+    JOIN users u ON u.id = p.creator_id
+    WHERE m.type = 'tiktok' ${cityFilter}
+    ORDER BY
+      p.like_count::float
+        / power(extract(epoch from (now() - p.created_at)) / 3600.0 + ${AGE_OFFSET_HOURS}, ${GRAVITY}) DESC,
+      p.created_at DESC
+    LIMIT ${limit}
+  `);
+
+  res.json({ videos: result.rows });
+});
+
+/* ── GET /api/posts/top-places ──────────────────────────────────────────── */
+/**
+ * Top-rated places, aggregated from the POI ids stories are anchored to.
+ *
+ * This query is the payoff of anchoring stories to real POI ids instead of
+ * freeform location text — "top rated place in Riyadh" is a GROUP BY rather
+ * than a text-clustering problem.
+ *
+ * Rows whose poi id is no longer in the dataset are dropped rather than
+ * rendered as a bare id: the dataset is a static file that can be re-cut, and
+ * a ranking entry naming a place we cannot describe or map is worse than one
+ * fewer entry.
+ *
+ * Deliberately no minimum-story floor yet. One would stop a single enthusiastic
+ * post from crowning a POI, but on a young dataset it renders the whole section
+ * empty, which reads as broken rather than as honest. `storyCount` is returned
+ * so the UI can show what the ranking rests on; reintroduce a floor once volume
+ * supports it.
+ */
+router.get("/posts/top-places", async (req, res) => {
+  const { city, limit } = parseRankingQuery(req.query as Record<string, unknown>);
+  const cityFilter = city ? sql`AND p.city = ${city}` : sql``;
+
+  const result = await db.execute(sql`
+    SELECT
+      poi.value          AS "poiId",
+      SUM(p.like_count)::int AS score,
+      COUNT(*)::int      AS "storyCount"
+    FROM posts p, jsonb_array_elements_text(p.poi_ids) AS poi(value)
+    WHERE 1 = 1 ${cityFilter}
+    GROUP BY poi.value
+    ORDER BY score DESC, "storyCount" DESC
+    LIMIT ${limit}
+  `);
+
+  const places = (result.rows as Array<{ poiId: string; score: number; storyCount: number }>)
+    .map((row) => {
+      const poi = poiById.get(row.poiId);
+      if (!poi) return null;
+      return {
+        poiId: poi.id,
+        name: poi.name,
+        city: poi.city,
+        category: poi.category,
+        lat: poi.lat,
+        lng: poi.lng,
+        // Same flag the itinerary's Verified/Estimated badge reads — a ranked
+        // place with an approximate pin should not look researched.
+        verified: poi.verified !== false,
+        score: row.score,
+        storyCount: row.storyCount,
+      };
+    })
+    .filter((p): p is NonNullable<typeof p> => p !== null);
+
+  res.json({ places });
 });
 
 /* ── GET /api/posts/:id ────────────────────────────────────────────────── */

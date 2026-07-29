@@ -863,5 +863,16 @@
   "stories.new.edit_title": "Modifica la tua Storia di Viaggio",
   "stories.new.save": "Salva modifiche",
   "stories.new.saving": "Salvataggio...",
-  "stories.new.not_your_story": "Puoi modificare solo le tue storie."
+  "stories.new.not_your_story": "Puoi modificare solo le tue storie.",
+  "stories.top_videos": "Video più popolari",
+  "stories.top_videos_note": "Ordinati per i mi piace dei viaggiatori Safarly, non da TikTok.",
+  "stories.play_video": "Riproduci video",
+  "stories.top_places": "Luoghi più apprezzati",
+  "stories.top_places_note": "I luoghi più amati dai viaggiatori nelle loro storie.",
+  "stories.place_estimated": "Stimato",
+  "stories.place_stories": "storie",
+  "stories.all_stories": "Tutte le storie",
+  "stories.like": "Mi piace",
+  "stories.unlike": "Non mi piace più",
+  "stories.place_story": "storia"
 }

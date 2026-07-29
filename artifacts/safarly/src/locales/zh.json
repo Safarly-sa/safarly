@@ -863,5 +863,16 @@
   "stories.new.edit_title": "编辑你的旅行故事",
   "stories.new.save": "保存更改",
   "stories.new.saving": "保存中...",
-  "stories.new.not_your_story": "你只能编辑自己的故事。"
+  "stories.new.not_your_story": "你只能编辑自己的故事。",
+  "stories.top_videos": "热门视频",
+  "stories.top_videos_note": "根据 Safarly 旅行者的点赞排序，而非 TikTok 的数据。",
+  "stories.play_video": "播放视频",
+  "stories.top_places": "评价最高的地点",
+  "stories.top_places_note": "旅行者在故事中最喜爱的地点。",
+  "stories.place_estimated": "估算",
+  "stories.place_stories": "篇故事",
+  "stories.all_stories": "全部故事",
+  "stories.like": "点赞",
+  "stories.unlike": "取消点赞",
+  "stories.place_story": "篇故事"
 }

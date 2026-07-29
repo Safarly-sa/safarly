@@ -863,5 +863,16 @@
   "stories.new.edit_title": "Editar tu Historia de Viaje",
   "stories.new.save": "Guardar cambios",
   "stories.new.saving": "Guardando...",
-  "stories.new.not_your_story": "Solo puedes editar tus propias historias."
+  "stories.new.not_your_story": "Solo puedes editar tus propias historias.",
+  "stories.top_videos": "Vídeos destacados",
+  "stories.top_videos_note": "Clasificados por los me gusta de los viajeros de Safarly, no por TikTok.",
+  "stories.play_video": "Reproducir vídeo",
+  "stories.top_places": "Lugares mejor valorados",
+  "stories.top_places_note": "Los lugares que más gustaron a los viajeros en sus historias.",
+  "stories.place_estimated": "Estimado",
+  "stories.place_stories": "historias",
+  "stories.all_stories": "Todas las historias",
+  "stories.like": "Me gusta",
+  "stories.unlike": "Ya no me gusta",
+  "stories.place_story": "historia"
 }

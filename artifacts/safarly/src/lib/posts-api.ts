@@ -16,6 +16,14 @@ export interface PostMedia {
   url: string;
   tiktokVideoId: string | null;
   caption: string | null;
+  /**
+   * TikTok oEmbed metadata captured server-side at write time. Null means the
+   * capture failed or predates it — render the live embed instead, not an
+   * error. See the feed's lazy-mount note in TikTokVideoFeed.
+   */
+  thumbnailUrl: string | null;
+  authorName: string | null;
+  oembedTitle: string | null;
   sortOrder: number;
 }
 
@@ -29,8 +37,41 @@ export interface Post {
   poiIds: string[];
   tags: string[];
   media: PostMedia[];
+  likeCount: number;
+  /** Viewer-relative, and always false when signed out. */
+  likedByMe: boolean;
   createdAt: string;
   updatedAt: string;
+}
+
+/** A ranked TikTok clip — one row per tiktok media item, not per story. */
+export interface TopVideo {
+  id: string;
+  url: string;
+  tiktokVideoId: string | null;
+  thumbnailUrl: string | null;
+  authorName: string | null;
+  oembedTitle: string | null;
+  caption: string | null;
+  postId: string;
+  postTitle: string;
+  city: string;
+  likeCount: number;
+  createdAt: string;
+  creatorName: string;
+}
+
+export interface TopPlace {
+  poiId: string;
+  name: string;
+  city: string;
+  category: string;
+  lat: number;
+  lng: number;
+  /** False means an approximate pin — same flag the itinerary badge reads. */
+  verified: boolean;
+  score: number;
+  storyCount: number;
 }
 
 export interface PostMediaInput {
@@ -110,6 +151,64 @@ export async function updateStory(id: string, input: Partial<PostCreateInput>): 
     if (!res.ok) return { ok: false, error: await parseError(res) };
     const payload = await res.json();
     return { ok: true, post: payload.post };
+  } catch {
+    return { ok: false, error: OFFLINE_MESSAGE };
+  }
+}
+
+export type TopVideosResult = { ok: true; videos: TopVideo[] } | { ok: false; error: string };
+export type TopPlacesResult = { ok: true; places: TopPlace[] } | { ok: false; error: string };
+
+function rankingQuery(city?: string, limit?: number): string {
+  const params = new URLSearchParams();
+  if (city) params.set("city", city);
+  if (limit) params.set("limit", String(limit));
+  const qs = params.toString();
+  return qs ? `?${qs}` : "";
+}
+
+/**
+ * Ranked by likes cast here, on Safarly — not by anything TikTok reports.
+ * TikTok's oEmbed carries no engagement counts, its Display API returns only
+ * the caller's own videos, and its Research API is gated to academic
+ * institutions, so there is no popularity signal to import.
+ */
+export async function fetchTopVideos(city?: string, limit?: number): Promise<TopVideosResult> {
+  try {
+    const res = await fetch(`${API_BASE}/api/posts/top-videos${rankingQuery(city, limit)}`);
+    if (!res.ok) return { ok: false, error: await parseError(res) };
+    const payload = await res.json();
+    return { ok: true, videos: payload.videos ?? [] };
+  } catch {
+    return { ok: false, error: OFFLINE_MESSAGE };
+  }
+}
+
+export async function fetchTopPlaces(city?: string, limit?: number): Promise<TopPlacesResult> {
+  try {
+    const res = await fetch(`${API_BASE}/api/posts/top-places${rankingQuery(city, limit)}`);
+    if (!res.ok) return { ok: false, error: await parseError(res) };
+    const payload = await res.json();
+    return { ok: true, places: payload.places ?? [] };
+  } catch {
+    return { ok: false, error: OFFLINE_MESSAGE };
+  }
+}
+
+export type LikeResult =
+  | { ok: true; likeCount: number; likedByMe: boolean }
+  | { ok: false; error: string };
+
+/** `liked` is the state being requested, not the current one. */
+export async function setStoryLike(id: string, liked: boolean): Promise<LikeResult> {
+  try {
+    const res = await fetch(`${API_BASE}/api/posts/${encodeURIComponent(id)}/like`, {
+      method: liked ? "POST" : "DELETE",
+      credentials: "include",
+    });
+    if (!res.ok) return { ok: false, error: await parseError(res) };
+    const payload = await res.json();
+    return { ok: true, likeCount: payload.likeCount, likedByMe: payload.likedByMe };
   } catch {
     return { ok: false, error: OFFLINE_MESSAGE };
   }

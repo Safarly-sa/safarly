@@ -863,5 +863,16 @@
   "stories.new.edit_title": "Edit Your Trip Story",
   "stories.new.save": "Save Changes",
   "stories.new.saving": "Saving...",
-  "stories.new.not_your_story": "You can only edit your own stories."
+  "stories.new.not_your_story": "You can only edit your own stories.",
+  "stories.top_videos": "Top videos",
+  "stories.top_videos_note": "Ranked by likes from Safarly travellers, not by TikTok.",
+  "stories.play_video": "Play video",
+  "stories.top_places": "Top-rated places",
+  "stories.top_places_note": "The places travellers loved most across their stories.",
+  "stories.place_estimated": "Estimated",
+  "stories.place_stories": "stories",
+  "stories.all_stories": "All stories",
+  "stories.like": "Like",
+  "stories.unlike": "Unlike",
+  "stories.place_story": "story"
 }
