@@ -4,7 +4,7 @@
  */
 import { useTranslation } from "@/providers/translation-context";
 import { useTheme } from "@/providers/ThemeProvider";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import {
   MapPin, MessageCircle, Camera, Languages, Compass, ArrowRight, BookOpen,
 } from "lucide-react";
@@ -26,6 +26,104 @@ function FadeUp({
     >
       {children}
     </motion.div>
+  );
+}
+
+/**
+ * How It Works — a timeline that traces itself as it scrolls into view.
+ *
+ * Three coordinated pieces: the accent line draws downward over the static
+ * rail, each step slides in, and its dot pops as the line reaches it. The
+ * delays are shared so the dot never lands before the line gets there — that
+ * mismatch is what makes a staggered timeline look accidental rather than
+ * drawn.
+ *
+ * The section is fully mirrored for Arabic and Urdu (`border-s`, `ms-`, `ps-`,
+ * `-start-`), so the horizontal entrance has to flip too. Framer's `x` is
+ * physical, not logical: a hardcoded negative slid every step in from the left
+ * even in RTL, against the direction the layout reads. It now follows `dir`.
+ *
+ * Honours prefers-reduced-motion by rendering the finished state outright —
+ * a drawing line and popping dots are exactly the sweeping motion that setting
+ * exists to suppress.
+ */
+function HowItWorks() {
+  const { t, dir } = useTranslation();
+  const reduceMotion = useReducedMotion();
+  const enterX = dir === "rtl" ? 24 : -24;
+
+  const STEP_STAGGER = 0.18;
+  const LINE_DURATION = 0.9;
+
+  return (
+    <section className="py-24 px-4 bg-muted/20">
+      <FadeUp>
+        <div className="max-w-3xl mx-auto">
+          <h2 className="text-3xl md:text-4xl font-bold text-center mb-16">
+            {t("how.title")}
+          </h2>
+
+          <div className="relative border-s-2 border-border ms-4 md:ms-8 space-y-12">
+            {/*
+              Sits exactly on top of the container's 2px rail rather than
+              replacing it, so the layout is untouched and an unanimated
+              fallback still shows a complete timeline.
+            */}
+            {!reduceMotion && (
+              <motion.span
+                aria-hidden
+                className="absolute -start-[2px] top-0 h-full w-[2px] origin-top bg-[var(--sf-accent)]"
+                initial={{ scaleY: 0, opacity: 0.9 }}
+                whileInView={{ scaleY: 1, opacity: 1 }}
+                viewport={{ once: true, margin: "-60px" }}
+                transition={{ duration: LINE_DURATION, ease: [0.16, 1, 0.3, 1] }}
+              />
+            )}
+
+            {[1, 2, 3].map((step, i) => (
+              <motion.div
+                key={step}
+                {...(reduceMotion
+                  ? {}
+                  : {
+                      initial: { opacity: 0, x: enterX },
+                      whileInView: { opacity: 1, x: 0 },
+                      viewport: { once: true },
+                      transition: { duration: 0.5, delay: i * STEP_STAGGER },
+                    })}
+                className="relative ps-8"
+                data-testid={`step-how-${step}`}
+              >
+                <motion.div
+                  {...(reduceMotion
+                    ? {}
+                    : {
+                        initial: { scale: 0 },
+                        whileInView: { scale: 1 },
+                        viewport: { once: true },
+                        // Trails the step slightly so the dot lands as the
+                        // drawing line passes it.
+                        transition: {
+                          delay: i * STEP_STAGGER + 0.18,
+                          type: "spring",
+                          stiffness: 320,
+                          damping: 18,
+                        },
+                      })}
+                  className="absolute -start-[9px] top-1.5 w-4 h-4 rounded-full bg-[var(--sf-accent)] border-[3px] border-background shadow-[0_0_12px_rgba(0,216,164,0.55)]"
+                />
+                <h3 className="text-xl font-bold mb-2">
+                  <span className="text-[var(--sf-text-accent)] text-sm me-2 font-mono tabular-nums">
+                    0{step}
+                  </span>
+                  {t(`how.step${step}`)}
+                </h3>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </FadeUp>
+    </section>
   );
 }
 
@@ -150,36 +248,7 @@ export function HomeBelowFold() {
       <DottedDivider />
 
       {/* ── 4. How It Works ──────────────────────────────────────────── */}
-      <section className="py-24 px-4 bg-muted/20">
-        <FadeUp>
-          <div className="max-w-3xl mx-auto">
-            <h2 className="text-3xl md:text-4xl font-bold text-center mb-16">
-              {t("how.title")}
-            </h2>
-            <div className="relative border-s-2 border-border ms-4 md:ms-8 space-y-12">
-              {[1, 2, 3].map((step, i) => (
-                <motion.div
-                  key={step}
-                  initial={{ opacity: 0, x: -20 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.5, delay: i * 0.18 }}
-                  className="relative ps-8"
-                  data-testid={`step-how-${step}`}
-                >
-                  <div className="absolute -start-[9px] top-1.5 w-4 h-4 rounded-full bg-[var(--sf-accent)] border-[3px] border-background shadow-[0_0_12px_rgba(0,216,164,0.55)]" />
-                  <h3 className="text-xl font-bold mb-2">
-                    <span className="text-[var(--sf-text-accent)] text-sm me-2 font-mono tabular-nums">
-                      0{step}
-                    </span>
-                    {t(`how.step${step}`)}
-                  </h3>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        </FadeUp>
-      </section>
+      <HowItWorks />
 
       <DottedDivider />
 
