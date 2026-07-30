@@ -44,7 +44,7 @@ const HERO_SLIDES: HeroSlide[] = [
     taglineAr: "قف على حافة جرف ارتفاعه ٣٠٠ متر فوق الأفق اللانهائي",
     region: "Central",
     imageUrl:
-      "https://scth.scene7.com/is/image/scth/New-Tabuk_Image-Banner?wid=1920&fit=constrain&fmt=webp",
+      "https://scth.scene7.com/is/image/scth/edge-of-world?wid=1920&fit=constrain&fmt=webp",
     alt: "Edge of the World — dramatic escarpment near Riyadh, official Visit Saudi",
     fallback: "#0D1520",
   },
@@ -68,7 +68,7 @@ const HERO_SLIDES: HeroSlide[] = [
     taglineAr: "شعاب مرجانية نقية ومياه حمراء فيروزية",
     region: "Southern",
     imageUrl:
-      "https://scth.scene7.com/is/image/scth/yanbu-new-hero-banner?wid=1920&fit=constrain&fmt=webp",
+      "https://scth.scene7.com/is/image/scth/Farasan-Islands?wid=1920&fit=constrain&fmt=webp",
     alt: "Yanbu Red Sea coast — official Visit Saudi hero image",
     fallback: "#031822",
   },
@@ -80,8 +80,8 @@ const HERO_SLIDES: HeroSlide[] = [
     taglineAr: "جزر المالديف السعودية — رمال بيضاء وبحيرات هادئة",
     region: "Northern",
     imageUrl:
-      "https://scth.scene7.com/is/image/scth/new-alahsa-banner?wid=1920&fit=constrain&fmt=webp",
-    alt: "Al-Ahsa Oasis — official Visit Saudi hero image",
+      "https://images.pexels.com/photos/17154576/pexels-photo-17154576.jpeg?auto=compress&cs=tinysrgb&w=1920",
+    alt: "Umluj — a moored boat on the shallow turquoise lagoon of the Saudi Red Sea coast",
     fallback: "#031A20",
   },
   {
@@ -104,7 +104,7 @@ const HERO_SLIDES: HeroSlide[] = [
     taglineAr: "منطقة التراث العالمي من الحجر المرجاني على البحر الأحمر",
     region: "Western",
     imageUrl:
-      "https://scth.scene7.com/is/image/scth/jeddah-banner?wid=1920&fit=constrain&fmt=webp",
+      "https://scth.scene7.com/is/image/scth/jeddah-corniche?wid=1920&fit=constrain&fmt=webp",
     alt: "Jeddah — official Visit Saudi hero image",
     fallback: "#12100A",
   },
@@ -116,8 +116,8 @@ const HERO_SLIDES: HeroSlide[] = [
     taglineAr: "أكبر واحة نخيل في العالم — تراث إنساني يونسكو",
     region: "Eastern",
     imageUrl:
-      "https://scth.scene7.com/is/image/scth/New-Najran-Banner-Image?wid=1920&fit=constrain&fmt=webp",
-    alt: "Najran — official Visit Saudi hero image",
+      "https://scth.scene7.com/is/image/scth/new-alahsa-banner?wid=1920&fit=constrain&fmt=webp",
+    alt: "Al-Ahsa Oasis — official Visit Saudi hero image",
     fallback: "#0C1608",
   },
   {
