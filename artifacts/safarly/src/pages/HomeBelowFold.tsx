@@ -4,7 +4,11 @@
  */
 import { useTranslation } from "@/providers/translation-context";
 import { useTheme } from "@/providers/ThemeProvider";
-import { motion, useReducedMotion } from "framer-motion";
+import { useRef } from "react";
+import { motion, useInView, useReducedMotion, type Variants } from "framer-motion";
+
+/** Shared easing so the whole entrance reads as one movement. */
+const EASE = [0.16, 1, 0.3, 1] as const;
 import {
   MapPin, MessageCircle, Camera, Languages, Compass, ArrowRight, BookOpen,
 } from "lucide-react";
@@ -30,99 +34,233 @@ function FadeUp({
 }
 
 /**
- * How It Works — a timeline that traces itself as it scrolls into view.
+ * How It Works — a three-column row that assembles itself as it scrolls in.
  *
- * Three coordinated pieces: the accent line draws downward over the static
- * rail, each step slides in, and its dot pops as the line reaches it. The
- * delays are shared so the dot never lands before the line gets there — that
- * mismatch is what makes a staggered timeline look accidental rather than
- * drawn.
+ * One orchestrated entrance rather than three independent ones: a mint-to-indigo
+ * rail draws across the row, its nodes pop as it passes, then each step's
+ * numeral, rule, title and copy cascade in behind it. The shared easing and a
+ * single stagger are what make it read as one movement rather than four.
  *
- * The section is fully mirrored for Arabic and Urdu (`border-s`, `ms-`, `ps-`,
- * `-start-`), so the horizontal entrance has to flip too. Framer's `x` is
- * physical, not logical: a hardcoded negative slid every step in from the left
- * even in RTL, against the direction the layout reads. It now follows `dir`.
+ * Bilingual by design: the step title renders in the active locale and the
+ * opposite script sits quietly beneath it. Arabic is the fixed counterpart
+ * (English when the locale already is Arabic) — the same device
+ * DestinationGallery uses when it shows nameAr on every card regardless of
+ * locale. Those Arabic strings are held here rather than fetched through t(),
+ * which only ever returns the active locale.
  *
- * Honours prefers-reduced-motion by rendering the finished state outright —
- * a drawing line and popping dots are exactly the sweeping motion that setting
+ * Mirrored for RTL: transformOrigin on the rail and rules follows dir, so the
+ * draw runs right-to-left in Arabic and Urdu instead of against the reading
+ * direction.
+ *
+ * Honours prefers-reduced-motion by collapsing every variant to a plain fade —
+ * a drawing line and popping nodes are exactly the sweeping motion that setting
  * exists to suppress.
  */
+
+/** Arabic step titles, for the secondary line under non-Arabic locales.
+ *  Kept in sync with how.step* in locales/ar.json. */
+const STEPS_AR: Record<number, string> = {
+  1: "شاركنا أهداف رحلتك",
+  2: "نصمم خطة رحلتك المثالية",
+  3: "سافر بإرشاد ذكي في الوقت الفعلي",
+};
+/** English counterpart, shown when the active locale is Arabic. */
+const STEPS_EN: Record<number, string> = {
+  1: "Share your travel goals",
+  2: "Agents craft your perfect itinerary",
+  3: "Travel with real-time AI guidance",
+};
+
 function HowItWorks() {
   const { t, dir } = useTranslation();
   const reduceMotion = useReducedMotion();
-  const enterX = dir === "rtl" ? 24 : -24;
+  const isRtl = dir === "rtl";
 
-  const STEP_STAGGER = 0.18;
-  const LINE_DURATION = 0.9;
+  const sectionRef = useRef<HTMLElement | null>(null);
+  const inView = useInView(sectionRef, { once: true, margin: "-15%" });
+
+  const container: Variants = {
+    hidden: {},
+    show: {
+      transition: reduceMotion
+        ? { duration: 0 }
+        : { staggerChildren: 0.14, delayChildren: 0.22 },
+    },
+  };
+  const maskUp: Variants = {
+    hidden: { y: reduceMotion ? 0 : "110%", opacity: reduceMotion ? 0 : 1 },
+    show: { y: 0, opacity: 1, transition: { duration: reduceMotion ? 0.3 : 0.85, ease: EASE } },
+  };
+  const rail: Variants = {
+    hidden: { scaleX: reduceMotion ? 1 : 0, opacity: reduceMotion ? 0 : 1 },
+    show: { scaleX: 1, opacity: 1, transition: { duration: reduceMotion ? 0.3 : 1.15, ease: EASE } },
+  };
+  const node: Variants = {
+    hidden: { scale: reduceMotion ? 1 : 0, opacity: 0 },
+    show: { scale: 1, opacity: 1, transition: { duration: reduceMotion ? 0.3 : 0.5, ease: EASE } },
+  };
+  const numeral: Variants = {
+    hidden: { y: reduceMotion ? 0 : 28, opacity: 0 },
+    show: { y: 0, opacity: 0.1, transition: { duration: reduceMotion ? 0.3 : 0.9, ease: EASE } },
+  };
+  const rule: Variants = {
+    hidden: { scaleX: reduceMotion ? 1 : 0, opacity: reduceMotion ? 0 : 1 },
+    show: { scaleX: 1, opacity: 1, transition: { duration: reduceMotion ? 0.3 : 0.6, ease: EASE } },
+  };
+  const fade: Variants = {
+    hidden: { y: reduceMotion ? 0 : 14, opacity: 0 },
+    show: { y: 0, opacity: 1, transition: { duration: reduceMotion ? 0.3 : 0.6, ease: EASE } },
+  };
 
   return (
-    <section className="py-24 px-4 bg-muted/20">
-      <FadeUp>
-        <div className="max-w-3xl mx-auto">
-          <h2 className="text-3xl md:text-4xl font-bold text-center mb-16">
-            {t("how.title")}
-          </h2>
+    <section ref={sectionRef} className="py-24 px-4 bg-muted/20 relative overflow-hidden">
+      {/* Soft mint bloom anchored behind the rail, for depth */}
+      <div
+        aria-hidden
+        className="absolute pointer-events-none"
+        style={{
+          insetInlineStart: "50%",
+          top: "58%",
+          width: "min(1100px, 90vw)",
+          height: 380,
+          transform: `translate(${isRtl ? "50%" : "-50%"}, -50%)`,
+          background: "radial-gradient(ellipse at center, rgba(0,216,164,0.07), transparent 68%)",
+        }}
+      />
 
-          <div className="relative border-s-2 border-border ms-4 md:ms-8 space-y-12">
-            {/*
-              Sits exactly on top of the container's 2px rail rather than
-              replacing it, so the layout is untouched and an unanimated
-              fallback still shows a complete timeline.
-            */}
-            {!reduceMotion && (
+      <motion.div
+        className="max-w-7xl mx-auto relative"
+        variants={container}
+        initial="hidden"
+        animate={inView ? "show" : "hidden"}
+      >
+        {/* Heading — slides out from behind a clipping mask */}
+        <div className="mb-16 md:mb-20 max-w-[30ch]">
+          <span className="block overflow-hidden">
+            <motion.span
+              className="block text-xs font-bold uppercase tracking-[0.22em] text-muted-foreground mb-4"
+              variants={maskUp}
+            >
+              {t("how.overline")}
+            </motion.span>
+          </span>
+          <h2 className="m-0">
+            <span className="block overflow-hidden">
+              <motion.span
+                className="block font-extrabold text-foreground"
+                style={{
+                  fontSize: "clamp(2.1rem, 5.4vw, 4.2rem)",
+                  lineHeight: 1.02,
+                  letterSpacing: "-0.042em",
+                  paddingBottom: "0.08em", // keeps descenders inside the mask
+                }}
+                variants={maskUp}
+              >
+                {t("how.title")}
+                <span style={{ color: "var(--sf-accent)" }}>.</span>
+              </motion.span>
+            </span>
+          </h2>
+        </div>
+
+        {/* Steps. The rail lives inside the grid so it lines up with the node
+            row whatever the column widths resolve to. */}
+        <div className="relative grid grid-cols-1 md:grid-cols-3 gap-y-14 md:gap-y-0 md:gap-x-12">
+          {/* A horizontal thread only reads as one across a row — drop it once
+              the steps stack on mobile. */}
+          <div
+            aria-hidden
+            className="hidden md:block absolute top-[7px] inset-x-0 h-px bg-border"
+            style={{
+              WebkitMaskImage: "linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent)",
+              maskImage: "linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent)",
+            }}
+          >
+            <motion.span
+              className="block h-full w-full"
+              style={{
+                background: "linear-gradient(90deg, var(--sf-accent), var(--sf-indigo))",
+                transformOrigin: isRtl ? "right center" : "left center",
+                willChange: "transform",
+              }}
+              variants={rail}
+            />
+          </div>
+
+          {[1, 2, 3].map((step) => (
+            <motion.div key={step} variants={container} data-testid={`step-how-${step}`}>
+              <div aria-hidden className="hidden md:flex items-center h-[15px] mb-8">
+                <motion.span
+                  className="grid place-items-center w-[15px] h-[15px] rounded-full bg-background shadow-[0_0_0_1px_var(--sf-border)]"
+                  variants={node}
+                >
+                  <span className="w-[7px] h-[7px] rounded-full bg-[var(--sf-accent)] shadow-[0_0_12px_rgba(0,216,164,0.85)]" />
+                </motion.span>
+              </div>
+
+              {/* Ghost numeral watermark — step order is already carried by
+                  reading order, so keep it out of the a11y tree. */}
               <motion.span
                 aria-hidden
-                className="absolute -start-[2px] top-0 h-full w-[2px] origin-top bg-[var(--sf-accent)]"
-                initial={{ scaleY: 0, opacity: 0.9 }}
-                whileInView={{ scaleY: 1, opacity: 1 }}
-                viewport={{ once: true, margin: "-60px" }}
-                transition={{ duration: LINE_DURATION, ease: [0.16, 1, 0.3, 1] }}
-              />
-            )}
-
-            {[1, 2, 3].map((step, i) => (
-              <motion.div
-                key={step}
-                {...(reduceMotion
-                  ? {}
-                  : {
-                      initial: { opacity: 0, x: enterX },
-                      whileInView: { opacity: 1, x: 0 },
-                      viewport: { once: true },
-                      transition: { duration: 0.5, delay: i * STEP_STAGGER },
-                    })}
-                className="relative ps-8"
-                data-testid={`step-how-${step}`}
+                className="block font-black text-foreground select-none"
+                style={{
+                  fontSize: "clamp(4.2rem, 8.5vw, 7rem)",
+                  lineHeight: 0.8,
+                  letterSpacing: "-0.06em",
+                  marginBottom: "1.35rem",
+                }}
+                variants={numeral}
               >
-                <motion.div
-                  {...(reduceMotion
-                    ? {}
-                    : {
-                        initial: { scale: 0 },
-                        whileInView: { scale: 1 },
-                        viewport: { once: true },
-                        // Trails the step slightly so the dot lands as the
-                        // drawing line passes it.
-                        transition: {
-                          delay: i * STEP_STAGGER + 0.18,
-                          type: "spring",
-                          stiffness: 320,
-                          damping: 18,
-                        },
-                      })}
-                  className="absolute -start-[9px] top-1.5 w-4 h-4 rounded-full bg-[var(--sf-accent)] border-[3px] border-background shadow-[0_0_12px_rgba(0,216,164,0.55)]"
-                />
-                <h3 className="text-xl font-bold mb-2">
-                  <span className="text-[var(--sf-text-accent)] text-sm me-2 font-mono tabular-nums">
-                    0{step}
-                  </span>
-                  {t(`how.step${step}`)}
-                </h3>
-              </motion.div>
-            ))}
-          </div>
+                {step}
+              </motion.span>
+
+              <motion.span
+                aria-hidden
+                className="block w-[46px] h-[3px] rounded-full bg-[var(--sf-accent)] shadow-[0_0_14px_rgba(0,216,164,0.5)] mb-5"
+                style={{ transformOrigin: isRtl ? "right center" : "left center" }}
+                variants={rule}
+              />
+
+              <h3 className="m-0 mb-3.5">
+                <span className="block overflow-hidden">
+                  <motion.span
+                    className="block font-extrabold text-foreground"
+                    style={{
+                      fontSize: "clamp(1.2rem, 1.9vw, 1.5rem)",
+                      lineHeight: 1.25,
+                      letterSpacing: "-0.022em",
+                      paddingBottom: "0.08em",
+                    }}
+                    variants={maskUp}
+                  >
+                    {t(`how.step${step}`)}
+                  </motion.span>
+                </span>
+              </h3>
+
+              <motion.p
+                className="m-0 mb-3.5 text-[0.96rem] leading-relaxed text-muted-foreground max-w-[30ch]"
+                variants={fade}
+              >
+                {t(`how.step${step}.desc`)}
+              </motion.p>
+
+              {/* Opposite script, quiet, underneath. dir is set so bidi renders
+                  correctly, but alignment follows the PAGE — text-align:start
+                  would resolve against this element's own dir and float it away
+                  from the line it belongs under. */}
+              <motion.p
+                className={`m-0 text-[0.88rem] font-semibold leading-normal text-muted-foreground/70 max-w-[30ch] ${isRtl ? "text-right" : "text-left"}`}
+                dir={isRtl ? "ltr" : "rtl"}
+                lang={isRtl ? "en" : "ar"}
+                variants={fade}
+              >
+                {isRtl ? STEPS_EN[step] : STEPS_AR[step]}
+              </motion.p>
+            </motion.div>
+          ))}
         </div>
-      </FadeUp>
+      </motion.div>
     </section>
   );
 }
