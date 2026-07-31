@@ -68,6 +68,10 @@
   "how.step1": "Seyahat hedeflerini paylaş",
   "how.step2": "Ajanlar mükemmel gezi planını hazırlar",
   "how.step3": "Gerçek zamanlı yapay zeka rehberliğiyle seyahat et",
+  "how.overline": "Yolculuk",
+  "how.step1.desc": "Bir şehir, tarihlerin ve yolculuktan gerçekte ne beklediğin.",
+  "how.step2.desc": "Gerçek, doğrulanmış yerlerden geçen bir rota — gün gün, saat saat.",
+  "how.step3.desc": "Canlı Mercek, lehçe yardımı ve yolda sana göre uyarlanan bir konsiyerj.",
   "vision.text": "Suudi Vizyonu 2030'u gururla destekliyoruz — Krallık genelinde dünya standartlarında turizm deneyimleri sunuyoruz",
   "vision2030.learn_more": "Vizyon 2030 ile nasıl örtüştüğünü görün",
   "vision2030.badge": "Vizyon 2030 Uyumu",
@@ -863,5 +867,16 @@
   "stories.new.edit_title": "Seyahat Hikayeni Düzenle",
   "stories.new.save": "Değişiklikleri Kaydet",
   "stories.new.saving": "Kaydediliyor...",
-  "stories.new.not_your_story": "Yalnızca kendi hikayelerini düzenleyebilirsin."
+  "stories.new.not_your_story": "Yalnızca kendi hikayelerini düzenleyebilirsin.",
+  "stories.top_videos": "En iyi videolar",
+  "stories.top_videos_note": "TikTok'a göre değil, Safarly gezginlerinin beğenilerine göre sıralandı.",
+  "stories.play_video": "Videoyu oynat",
+  "stories.top_places": "En beğenilen yerler",
+  "stories.top_places_note": "Gezginlerin hikâyelerinde en çok sevdiği yerler.",
+  "stories.place_estimated": "Tahmini",
+  "stories.place_stories": "hikâye",
+  "stories.all_stories": "Tüm hikâyeler",
+  "stories.like": "Beğen",
+  "stories.unlike": "Beğenmekten vazgeç",
+  "stories.place_story": "hikâye"
 }

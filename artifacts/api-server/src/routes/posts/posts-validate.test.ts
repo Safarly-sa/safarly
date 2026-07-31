@@ -99,6 +99,46 @@ describe("validateCreateRequest", () => {
     ).toBeNull();
   });
 
+  it("drops a tiktok item pointing at a non-TikTok host", () => {
+    // https, so the scheme check above passes it. The danger is different:
+    // story-detail renders this as the embed's "Watch on TikTok" link, so an
+    // off-host URL is a phishing link wearing TikTok's chrome.
+    const result = validateCreateRequest({
+      ...ok,
+      media: [
+        { type: "tiktok", url: "https://evil.example/login", tiktokVideoId: "123" },
+        { type: "tiktok", url: "https://tiktok.com.evil.com/@x/video/123", tiktokVideoId: "123" },
+        ...ok.media,
+      ],
+    });
+    expect(result?.media).toHaveLength(1);
+    expect(result?.media[0].url).toBe(ok.media[0].url);
+  });
+
+  it("re-derives the tiktok video id from the url instead of trusting the body", () => {
+    // The client sends both; a mismatched pair would embed one video while
+    // linking to another.
+    const result = validateCreateRequest({
+      ...ok,
+      media: [
+        {
+          type: "tiktok",
+          url: "https://www.tiktok.com/@x/video/7212345678901234567",
+          tiktokVideoId: "999",
+        },
+      ],
+    });
+    expect(result?.media[0].tiktokVideoId).toBe("7212345678901234567");
+  });
+
+  it("leaves the tiktok id undefined for a short link", () => {
+    const result = validateCreateRequest({
+      ...ok,
+      media: [{ type: "tiktok", url: "https://vm.tiktok.com/ZMabcdefg/", tiktokVideoId: "123" }],
+    });
+    expect(result?.media[0].tiktokVideoId).toBeUndefined();
+  });
+
   it("rejects an empty title or content", () => {
     expect(validateCreateRequest({ ...ok, title: "   " })).toBeNull();
     expect(validateCreateRequest({ ...ok, content: "" })).toBeNull();

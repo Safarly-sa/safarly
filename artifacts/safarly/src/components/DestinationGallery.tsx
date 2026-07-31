@@ -46,7 +46,7 @@ const DESTINATIONS: Destination[] = [
     taglineEn: "A 300 m cliff overlooking an ancient sea bed",
     taglineAr: "جرف بارتفاع ٣٠٠ متر يُطلّ على قاع بحر قديم",
     region: "central",
-    imageUrl: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600&q=80&auto=format&fit=crop",
+    imageUrl: "https://scth.scene7.com/is/image/scth/edge-of-world?wid=600&fit=constrain&fmt=webp",
     alt: "Dramatic sandstone escarpment cliffs at Jebel Fihrayn, Edge of the World near Riyadh",
     fallback: "#0D1520",
   },
@@ -103,7 +103,7 @@ const DESTINATIONS: Destination[] = [
     taglineEn: "Al-Balad UNESCO district, Corniche & King Fahd Fountain",
     taglineAr: "حي البلد التراثي، الكورنيش ونافورة الملك فهد",
     region: "western",
-    imageUrl: "https://scth.scene7.com/is/image/scth/jeddah-banner?wid=600&fit=constrain&fmt=webp",
+    imageUrl: "https://scth.scene7.com/is/image/scth/jeddah-corniche?wid=600&fit=constrain&fmt=webp",
     alt: "Jeddah — official Visit Saudi image",
     fallback: "#12100A",
   },
@@ -215,8 +215,8 @@ const DESTINATIONS: Destination[] = [
     taglineEn: "The ancient hanging village on sheer cliff faces",
     taglineAr: "القرية المعلقة القديمة على وجوه الجروف الشاهقة",
     region: "southern",
-    imageUrl: "https://c.regencyholidays.com/blog/2023/11/161728_Rijal%20Almaa%20-%20Hero%20Image.webp",
-    alt: "Ancient cliff-dwelling village perched dramatically on sheer rock faces in Aseer, Saudi Arabia",
+    imageUrl: "https://scth.scene7.com/is/image/scth/al-habala?wid=600&fit=constrain&fmt=webp",
+    alt: "The rock face at Al-Habala in Aseer, above the valley the hanging village clung to",
     fallback: "#0D1520",
   },
   {
@@ -226,8 +226,8 @@ const DESTINATIONS: Destination[] = [
     taglineEn: "Abha's lush hilltop park with panoramic valley views",
     taglineAr: "حديقة أبها الخضراء مع مشاهد بانورامية للوادي",
     region: "southern",
-    imageUrl: "https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=600&q=80&auto=format&fit=crop",
-    alt: "Lush green mountain valley with terraced gardens and sweeping panoramic views",
+    imageUrl: "https://scth.scene7.com/is/image/scth/cable-car?wid=600&fit=constrain&fmt=webp",
+    alt: "Cable cars crossing the Asir escarpment above Abha's green highland slopes",
     fallback: "#0A1A0E",
   },
   {
@@ -237,7 +237,7 @@ const DESTINATIONS: Destination[] = [
     taglineEn: "Tanoumah forests and Muhayil's canyon trails",
     taglineAr: "غابات تنومة ومسارات وادي محايل",
     region: "southern",
-    imageUrl: "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=600&q=80&auto=format&fit=crop",
+    imageUrl: "https://scth.scene7.com/is/image/scth/aseer-national-park?wid=600&fit=constrain&fmt=webp",
     alt: "Dense green forest canopy with mist rolling through the highland valleys of Aseer National Park",
     fallback: "#081208",
   },
@@ -305,7 +305,7 @@ const DESTINATIONS: Destination[] = [
     taglineEn: "Gulf Corniche, seafood, and the Eastern Province pulse",
     taglineAr: "كورنيش الخليج والمأكولات البحرية ونبض المنطقة الشرقية",
     region: "eastern",
-    imageUrl: "https://scth.scene7.com/is/image/scth/dammam-2?wid=600&fit=constrain&fmt=webp",
+    imageUrl: "https://scth.scene7.com/is/image/scth/dammam-3?wid=600&fit=constrain&fmt=webp",
     alt: "Dammam — official Visit Saudi image",
     fallback: "#0A0E16",
   },
@@ -340,7 +340,7 @@ const DESTINATIONS: Destination[] = [
     taglineEn: "The Maldives of Saudi — white sand and calm lagoons",
     taglineAr: "جزر المالديف السعودية — رمال بيضاء وبحيرات هادئة",
     region: "northern",
-    imageUrl: "https://houseofsaud.com/wp-content/uploads/2026/04/upload-111.jpg",
+    imageUrl: "https://images.pexels.com/photos/17154576/pexels-photo-17154576.jpeg?auto=compress&cs=tinysrgb&w=600",
     alt: "Turquoise lagoon and white sand islands at Umluj on the Saudi Red Sea coast",
     fallback: "#031A20",
   },
@@ -384,7 +384,7 @@ const DESTINATIONS: Destination[] = [
     taglineEn: "Domat Al-Jandal palm groves and ancient Nabataean ruins",
     taglineAr: "نخيل دومة الجندل وأطلال نبطية قديمة",
     region: "northern",
-    imageUrl: "https://visaliv.s3.ap-south-1.amazonaws.com/Dumat-al-Jandal-Saudi-Arabia.jpg",
+    imageUrl: "https://scth.scene7.com/is/image/scth/al-jouf?wid=600&fit=constrain&fmt=webp",
     alt: "Ancient stone ruins and palm groves of Domat Al-Jandal in the Al-Jawf region near Sakaka",
     fallback: "#1A0F06",
   },
@@ -414,6 +414,10 @@ const TABS: { id: Region; labelEn: string; labelAr: string }[] = [
 
 const DEFAULT_REGION: Region = "northern";
 
+/* Alternating tilt so the grid reads as laid-out prints rather than a table.
+   Deterministic per index so cards don't reshuffle their angle on re-render. */
+const TILTS = [-1.6, 1.2, -0.9, 1.7, -1.3, 1.0];
+
 /* ── Card component ──────────────────────────────────────────────── */
 function DestCard({
   dest,
@@ -425,77 +429,71 @@ function DestCard({
   index: number;
 }) {
   const [hovered, setHovered] = useState(false);
+  const [imgFailed, setImgFailed] = useState(false);
   const prefersReduced =
     typeof window !== "undefined" &&
     window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
+  /* A tilted card is decorative motion — drop it entirely under reduced-motion
+     rather than animating to it. */
+  const tilt = prefersReduced ? 0 : TILTS[index % TILTS.length];
+
   return (
     <motion.article
       layout
-      initial={{ opacity: 0, scale: 0.94 }}
-      animate={{ opacity: 1, scale: 1 }}
+      /* `rotate` belongs in the motion props, not `style`: Framer Motion owns
+         the transform on an animated element, so an inline rotate would fight
+         the scale/y it drives on hover. */
+      initial={{ opacity: 0, scale: 0.94, rotate: tilt }}
+      animate={{ opacity: 1, scale: 1, rotate: tilt }}
       exit={{ opacity: 0, scale: 0.94 }}
       transition={
         prefersReduced
           ? { duration: 0 }
-          : { duration: 0.35, delay: index * 0.04, ease: [0.16, 1, 0.3, 1] }
+          : { duration: 0.38, delay: index * 0.035, ease: [0.16, 1, 0.3, 1] }
       }
-      className="relative overflow-hidden bg-card border border-border shadow-sm cursor-default focus-within:ring-2 focus-within:ring-[var(--sf-indigo)]"
-      style={{ borderRadius: "10px", aspectRatio: "3/2" }}
-      whileHover={prefersReduced ? {} : { y: -5, transition: { duration: 0.2 } }}
+      className="cursor-default focus-within:outline focus-within:outline-2 focus-within:outline-offset-4 focus-within:outline-[var(--sf-indigo)]"
+      whileHover={
+        prefersReduced ? {} : { rotate: 0, y: -8, scale: 1.025, transition: { duration: 0.25 } }
+      }
       onHoverStart={() => setHovered(true)}
       onHoverEnd={() => setHovered(false)}
       onFocus={() => setHovered(true)}
       onBlur={() => setHovered(false)}
     >
-      {/* Image */}
-      <img
-        src={dest.imageUrl}
-        alt={dest.alt}
-        loading="lazy"
-        decoding="async"
-        className="absolute inset-0 w-full h-full object-cover"
-        style={{
-          transition: prefersReduced ? "none" : "transform 700ms ease-out",
-          transform: hovered && !prefersReduced ? "scale(1.1)" : "scale(1)",
-        }}
-        onError={(e) => {
-          const el = e.currentTarget as HTMLImageElement;
-          el.style.display = "none";
-          const parent = el.parentElement;
-          if (parent) parent.style.background = dest.fallback;
-        }}
-      />
-
-      {/* Always-visible gradient (bottom dark) */}
+      {/* Photo frame */}
       <div
-        aria-hidden
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          background:
-            "linear-gradient(to top, rgba(10,14,22,0.88) 0%, rgba(10,14,22,0.2) 50%, transparent 100%)",
-        }}
-      />
+        className="relative overflow-hidden bg-muted border border-border"
+        style={{ borderRadius: "18px", aspectRatio: "4/5" }}
+      >
+        {imgFailed ? (
+          <div
+            className="absolute inset-0"
+            style={{ background: dest.fallback }}
+            aria-label={dest.alt}
+          />
+        ) : (
+          <img
+            src={dest.imageUrl}
+            alt={dest.alt}
+            loading="lazy"
+            decoding="async"
+            className="absolute inset-0 w-full h-full object-cover"
+            style={{
+              transition: prefersReduced ? "none" : "transform 700ms cubic-bezier(.16,1,.3,1)",
+              transform: hovered && !prefersReduced ? "scale(1.09)" : "scale(1)",
+            }}
+            onError={() => setImgFailed(true)}
+          />
+        )}
 
-      {/* Hover overlay */}
-      <div
-        aria-hidden
-        className="absolute inset-0 pointer-events-none transition-opacity duration-300"
-        style={{
-          opacity: hovered ? 1 : 0,
-          background:
-            "linear-gradient(to top, rgba(10,14,22,0.95) 30%, rgba(10,14,22,0.4) 70%, rgba(0,216,164,0.08) 100%)",
-        }}
-      />
-
-      {/* Region badge */}
-      <div className="absolute top-3 start-3 z-10">
+        {/* Region badge */}
         <span
-          className="text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full"
+          className="absolute top-3 end-3 z-10 text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full"
           style={{
-            background: "rgba(92,108,255,0.18)",
-            color: "var(--sf-indigo)",
-            border: "1px solid rgba(92,108,255,0.32)",
+            background: "rgba(92,108,255,0.22)",
+            color: "#C7CDFF",
+            border: "1px solid rgba(92,108,255,0.4)",
             backdropFilter: "blur(4px)",
           }}
         >
@@ -503,46 +501,28 @@ function DestCard({
             ? TABS.find((t) => t.id === dest.region)?.labelAr
             : TABS.find((t) => t.id === dest.region)?.labelEn}
         </span>
+
+        {/* Floating name pill */}
+        <h3
+          className="absolute bottom-3 start-3 z-10 bg-card text-foreground font-bold px-4 py-2 rounded-full shadow-md"
+          style={{ fontSize: "clamp(0.78rem, 2vw, 0.88rem)" }}
+        >
+          {dest.nameEn}
+        </h3>
       </div>
 
-      {/* Text content */}
-      <div className="absolute bottom-0 start-0 end-0 z-10 p-4">
-        {/* Name — always visible */}
-        <div className="flex items-baseline gap-2 flex-wrap">
-          <h3
-            className="font-bold text-white leading-tight"
-            style={{ fontSize: "clamp(0.9rem, 2.5vw, 1.1rem)" }}
-          >
-            {dest.nameEn}
-          </h3>
-          <span
-            className="text-sm"
-            style={{ color: "rgba(255,255,255,0.65)" }}
-            dir="rtl"
-            lang="ar"
-          >
-            {dest.nameAr}
-          </span>
-        </div>
-
-        {/* Tagline — slides up on hover */}
-        <div
-          className="overflow-hidden"
-          style={{
-            maxHeight: hovered ? "60px" : "0px",
-            opacity: hovered ? 1 : 0,
-            transition: prefersReduced
-              ? "none"
-              : "max-height 300ms ease-out, opacity 250ms ease-out",
-          }}
+      {/* Caption below the photo */}
+      <div className="pt-3.5 px-1 text-start">
+        <span
+          className="block text-sm font-bold text-foreground/60 mb-1"
+          dir="rtl"
+          lang="ar"
         >
-          <p
-            className="text-xs mt-1.5 leading-relaxed"
-            style={{ color: "rgba(255,255,255,0.72)" }}
-          >
-            {isAr ? dest.taglineAr : dest.taglineEn}
-          </p>
-        </div>
+          {dest.nameAr}
+        </span>
+        <p className="text-xs leading-relaxed text-muted-foreground">
+          {isAr ? dest.taglineAr : dest.taglineEn}
+        </p>
       </div>
     </motion.article>
   );
@@ -563,25 +543,31 @@ export function DestinationGallery() {
       aria-labelledby="gallery-heading"
     >
       <div className="max-w-7xl mx-auto">
-        {/* Heading */}
-        <div className="mb-12 text-center">
-          <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2">
+        {/* Heading — oversized display type, start-aligned */}
+        <div className="mb-10">
+          <p className="text-xs font-bold uppercase tracking-[0.22em] text-muted-foreground mb-4">
             {isAr ? "استكشف المملكة" : "Explore the Kingdom"}
           </p>
           <h2
             id="gallery-heading"
-            className="text-3xl md:text-4xl font-bold text-foreground tracking-tight"
+            className="font-extrabold text-foreground"
+            style={{
+              fontSize: "clamp(2.1rem, 5.5vw, 4.2rem)",
+              lineHeight: 0.98,
+              letterSpacing: "-0.042em",
+            }}
           >
             {isAr ? "وجهات لكل روح مسافرة" : "Destinations for Every Traveller"}
+            <span style={{ color: "var(--sf-accent)" }}>.</span>
           </h2>
         </div>
 
-        {/* Filter tabs */}
+        {/* Filter tabs — bilingual pills */}
         <LayoutGroup id={tabsId}>
           <div
             role="tablist"
             aria-label={isAr ? "تصفية حسب المنطقة" : "Filter by region"}
-            className="flex items-center gap-1 overflow-x-auto pb-2 mb-10 scrollbar-hide"
+            className="flex items-center gap-1.5 flex-wrap overflow-x-auto pb-2 mb-10 scrollbar-hide"
             style={{ WebkitOverflowScrolling: "touch" }}
           >
             {TABS.map((tab) => (
@@ -590,27 +576,31 @@ export function DestinationGallery() {
                 role="tab"
                 aria-selected={activeRegion === tab.id}
                 onClick={() => setActiveRegion(tab.id)}
-                className="relative flex-shrink-0 px-4 py-2 text-sm font-semibold rounded-full transition-colors duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--sf-indigo)]"
-                style={{
-                  color:
-                    activeRegion === tab.id
-                      ? "var(--sf-accent)"
-                      : "var(--sf-text-muted)",
-                }}
+                className="relative flex-shrink-0 px-5 py-2.5 rounded-full border border-border transition-colors duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sf-indigo)]"
               >
                 {activeRegion === tab.id && (
                   <motion.span
                     layoutId="tab-indicator"
-                    className="absolute inset-0 rounded-full"
-                    style={{
-                      background: "rgba(0,216,164,0.1)",
-                      border: "1px solid rgba(0,216,164,0.3)",
-                    }}
-                    transition={{ type: "spring", stiffness: 380, damping: 32 }}
+                    className="absolute rounded-full bg-primary"
+                    style={{ inset: "-1px" }}
+                    transition={{ type: "spring", stiffness: 400, damping: 34 }}
                   />
                 )}
-                <span className="relative z-10">
-                  {isAr ? tab.labelAr : tab.labelEn}
+                <span
+                  className="relative z-10 inline-flex items-baseline gap-2 text-sm font-bold"
+                  style={{
+                    color:
+                      activeRegion === tab.id
+                        ? "var(--color-primary-foreground)"
+                        : "var(--sf-text-muted)",
+                  }}
+                >
+                  {/* Both scripts sit together — the label pair reads the same
+                      either way, so it doesn't swap on locale change. */}
+                  {tab.labelEn}
+                  <span className="text-xs opacity-60" dir="rtl" lang="ar">
+                    {tab.labelAr}
+                  </span>
                 </span>
               </button>
             ))}
@@ -618,10 +608,15 @@ export function DestinationGallery() {
         </LayoutGroup>
 
         {/* Grid — scales 2→4 columns so a region's destinations stay visible
-            without a long scroll. Card width stays ~230-300px across
-            breakpoints; it's the row count that drops.
-            Mobile (<sm) uses the snap-scroll carousel below instead. */}
-        <div className="hidden sm:grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            without a long scroll. Cards are 4:5 portraits with a caption
+            beneath, so the row gap is larger than the column gap.
+            Mobile (<sm) uses the snap-scroll carousel below instead.
+            Keyed by region: remounting on tab change replays the entrance
+            stagger and avoids relying on exit animations completing. */}
+        <div
+          key={activeRegion}
+          className="hidden sm:grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-5 gap-y-7"
+        >
           <AnimatePresence mode="popLayout">
             {filtered.map((dest, i) => (
               <DestCard key={dest.id} dest={dest} isAr={isAr} index={i} />
@@ -631,25 +626,20 @@ export function DestinationGallery() {
 
         {/* Mobile horizontal snap-scroll */}
         <div
+          key={`m-${activeRegion}`}
           className="sm:hidden flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory"
           style={{ WebkitOverflowScrolling: "touch", scrollbarWidth: "none" }}
         >
           {filtered.map((dest, i) => (
-            <div
-              key={dest.id}
-              className="flex-shrink-0 snap-center w-[78vw]"
-              style={{ aspectRatio: "3/2" }}
-            >
-              <div className="w-full h-full">
-                <DestCard dest={dest} isAr={isAr} index={i} />
-              </div>
+            <div key={dest.id} className="flex-shrink-0 snap-center w-[68vw]">
+              <DestCard dest={dest} isAr={isAr} index={i} />
             </div>
           ))}
         </div>
 
         {/* Result count */}
         <p
-          className="mt-6 text-center text-xs text-muted-foreground"
+          className="mt-10 text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground"
           aria-live="polite"
           aria-atomic="true"
         >

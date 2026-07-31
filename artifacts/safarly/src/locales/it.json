@@ -68,6 +68,10 @@
   "how.step1": "Condividi i tuoi obiettivi di viaggio",
   "how.step2": "Gli agenti creano il tuo itinerario perfetto",
   "how.step3": "Viaggia con guida AI in tempo reale",
+  "how.overline": "Il viaggio",
+  "how.step1.desc": "Una città, le tue date e ciò che vuoi davvero dal viaggio.",
+  "how.step2.desc": "Un percorso tra luoghi reali e verificati — giorno per giorno, ora per ora.",
+  "how.step3.desc": "Obiettivo Live, aiuto con il dialetto e un concierge che si adatta strada facendo.",
   "vision.text": "Sosteniamo con orgoglio la Saudi Vision 2030 — abilitando esperienze turistiche di livello mondiale in tutto il Regno",
   "vision2030.learn_more": "Scopri come si allinea con Vision 2030",
   "vision2030.badge": "Allineamento con Vision 2030",
@@ -863,5 +867,16 @@
   "stories.new.edit_title": "Modifica la tua Storia di Viaggio",
   "stories.new.save": "Salva modifiche",
   "stories.new.saving": "Salvataggio...",
-  "stories.new.not_your_story": "Puoi modificare solo le tue storie."
+  "stories.new.not_your_story": "Puoi modificare solo le tue storie.",
+  "stories.top_videos": "Video più popolari",
+  "stories.top_videos_note": "Ordinati per i mi piace dei viaggiatori Safarly, non da TikTok.",
+  "stories.play_video": "Riproduci video",
+  "stories.top_places": "Luoghi più apprezzati",
+  "stories.top_places_note": "I luoghi più amati dai viaggiatori nelle loro storie.",
+  "stories.place_estimated": "Stimato",
+  "stories.place_stories": "storie",
+  "stories.all_stories": "Tutte le storie",
+  "stories.like": "Mi piace",
+  "stories.unlike": "Non mi piace più",
+  "stories.place_story": "storia"
 }

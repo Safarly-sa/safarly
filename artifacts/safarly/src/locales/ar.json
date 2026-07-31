@@ -68,6 +68,10 @@
   "how.step1": "شاركنا أهداف رحلتك",
   "how.step2": "نصمم خطة رحلتك المثالية",
   "how.step3": "سافر بإرشاد ذكي في الوقت الفعلي",
+  "how.overline": "الرحلة",
+  "how.step1.desc": "مدينة، وتواريخك، وما تريده فعلاً من الرحلة.",
+  "how.step2.desc": "مسار عبر أماكن حقيقية موثّقة — يوماً بيوم وساعة بساعة.",
+  "how.step3.desc": "العدسة الحية، ومساعدة اللهجة، ومرافق يعدّل خطتك أثناء الرحلة.",
   "vision.text": "ندعم بفخر رؤية السعودية ٢٠٣٠ - لتمكين تجارب سياحية عالمية المستوى في أنحاء المملكة",
   "vision2030.learn_more": "اطّلع على توافقنا مع رؤية 2030",
   "vision2030.badge": "التوافق مع رؤية 2030",
@@ -899,5 +903,16 @@
   "stories.new.edit_title": "تعديل قصة رحلتك",
   "stories.new.save": "حفظ التغييرات",
   "stories.new.saving": "جارٍ الحفظ...",
-  "stories.new.not_your_story": "يمكنك تعديل قصصك الخاصة فقط."
+  "stories.new.not_your_story": "يمكنك تعديل قصصك الخاصة فقط.",
+  "stories.top_videos": "أفضل الفيديوهات",
+  "stories.top_videos_note": "مرتبة حسب إعجابات مسافري سفرلي، وليس حسب تيك توك.",
+  "stories.play_video": "تشغيل الفيديو",
+  "stories.top_places": "الأماكن الأعلى تقييماً",
+  "stories.top_places_note": "الأماكن الأكثر إعجاباً لدى المسافرين في قصصهم.",
+  "stories.place_estimated": "تقديري",
+  "stories.place_stories": "قصص",
+  "stories.all_stories": "كل القصص",
+  "stories.like": "إعجاب",
+  "stories.unlike": "إلغاء الإعجاب",
+  "stories.place_story": "قصة"
 }

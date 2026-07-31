@@ -20,3 +20,4 @@
 export * from "./users";
 export * from "./posts";
 export * from "./media";
+export * from "./reactions";
