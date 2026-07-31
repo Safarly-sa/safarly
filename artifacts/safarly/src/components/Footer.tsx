@@ -3,6 +3,7 @@ import safarlyLogo from "@assets/safarly-logo-new.png";
 import { useTranslation } from "@/providers/translation-context";
 import { Link } from "wouter";
 import { getAuth } from "@/lib/auth";
+import { LanguagePicker } from "@/components/LanguagePicker";
 
 /* Hardcoded dark-mode palette — footer is always dark regardless of theme */
 const C = {
@@ -132,6 +133,12 @@ export function Footer() {
           style={{ borderTop: `1px solid ${C.border}` }}
         >
           <p className="text-xs" style={{ color: C.muted }}>{t("footer.rights").replace("2026", String(new Date().getFullYear()))}</p>
+
+          {/* Language — phones only. It moved out of the header so the menu
+              button has room there; the circular form keeps it to a single
+              40px target. Desktop keeps the labelled picker in the Navbar. */}
+          <LanguagePicker variant="circle" className="md:hidden" />
+
           <div className="flex gap-4">
             {[t("footer.legal.privacy"), t("footer.legal.terms")].map((label) => (
               <span

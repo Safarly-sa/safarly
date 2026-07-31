@@ -6,26 +6,12 @@ import { useTheme } from "@/providers/ThemeProvider";
 import { getAuth, signOut } from "@/lib/auth";
 import { SignOutDialog } from "@/components/SignOutDialog";
 import safarlyLogo from "@assets/safarly-logo-new.png";
-import { Sun, Moon, UserCircle, LogIn, LogOut, Globe, ChevronDown } from "lucide-react";
+import { Sun, Moon, UserCircle, LogIn, LogOut, Menu, X } from "lucide-react";
+import { LanguagePicker } from "@/components/LanguagePicker";
 import clsx from "clsx";
-import type { Language } from "@/providers/translation-context";
-
-const LANGS: { code: Language; label: string; flag: string }[] = [
-  { code: "en", label: "English",   flag: "🇬🇧" },
-  { code: "ar", label: "العربية",   flag: "🇸🇦" },
-  { code: "de", label: "Deutsch",   flag: "🇩🇪" },
-  { code: "it", label: "Italiano",  flag: "🇮🇹" },
-  { code: "fr", label: "Français",  flag: "🇫🇷" },
-  { code: "ur", label: "اردو",      flag: "🇵🇰" },
-  { code: "zh", label: "中文",      flag: "🇨🇳" },
-  { code: "ru", label: "Русский",   flag: "🇷🇺" },
-  { code: "tr", label: "Türkçe",    flag: "🇹🇷" },
-  { code: "es", label: "Español",   flag: "🇪🇸" },
-  { code: "pt", label: "Português", flag: "🇵🇹" },
-];
 
 export function Navbar() {
-  const { t, language, setLanguage } = useTranslation();
+  const { t } = useTranslation();
   const { theme, toggleTheme } = useTheme();
   const [location, navigate] = useLocation();
 
@@ -42,19 +28,31 @@ export function Navbar() {
     };
   }, []);
 
-  /* Language dropdown */
-  const [langOpen, setLangOpen] = useState(false);
-  const langRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (!langOpen) return;
-    function close(e: MouseEvent) {
-      if (langRef.current && !langRef.current.contains(e.target as Node)) setLangOpen(false);
-    }
-    document.addEventListener("mousedown", close);
-    return () => document.removeEventListener("mousedown", close);
-  }, [langOpen]);
+  /* Mobile menu. The desktop link row is `hidden md:flex`, and the bottom bar
+     only carries four tabs — without this, Stories, Dashboard, Companion and
+     2030 Vision had no navigation route at all on a phone. */
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
 
-  const currentLang = LANGS.find(l => l.code === language) ?? LANGS[0];
+  /* Route changes close it, so tapping a link doesn't leave the panel hanging
+     open over the page it just navigated to. */
+  useEffect(() => { setMenuOpen(false); }, [location]);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    function onPointer(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
+    }
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setMenuOpen(false);
+    }
+    document.addEventListener("mousedown", onPointer);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onPointer);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [menuOpen]);
 
   /* Two agents, not a feature list. Live Lens and Dialect moved under the
      Companion hub — they keep their own routes, and stay one tap away in the
@@ -126,62 +124,10 @@ export function Navbar() {
             {theme === "dark" ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
           </button>
 
-          {/* Language dropdown */}
-          <div ref={langRef} style={{ position: "relative" }}>
-            <button
-              onClick={() => setLangOpen(o => !o)}
-              style={{ ...controlBtn, gap: 5 }}
-              onMouseEnter={(e) => { e.currentTarget.style.color = "#EDEFF3"; e.currentTarget.style.borderColor = "#5C6CFF"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.color = "#8A93A6"; e.currentTarget.style.borderColor = "#232C3D"; }}
-              aria-label="Select language"
-              aria-expanded={langOpen}
-            >
-              <Globe size={13} aria-hidden />
-              <span style={{ maxWidth: 52, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                {currentLang.label}
-              </span>
-              <ChevronDown size={11} aria-hidden style={{ opacity: 0.6, transition: "transform .15s", transform: langOpen ? "rotate(180deg)" : "none" }} />
-            </button>
-
-            {langOpen && (
-              <div style={{
-                position: "absolute",
-                top: "calc(100% + 8px)",
-                insetInlineEnd: 0,
-                zIndex: 200,
-                background: "#111827",
-                border: "1px solid #232C3D",
-                borderRadius: 12,
-                minWidth: 162,
-                overflow: "hidden",
-                boxShadow: "0 8px 32px rgba(0,0,0,0.45)",
-              }}>
-                {LANGS.map(l => (
-                  <button
-                    key={l.code}
-                    onClick={() => { setLanguage(l.code); setLangOpen(false); }}
-                    style={{
-                      display: "flex", alignItems: "center", gap: 10,
-                      width: "100%", padding: "10px 14px",
-                      background: language === l.code ? "#1A2233" : "transparent",
-                      color: language === l.code ? "#EDEFF3" : "#8A93A6",
-                      fontSize: "0.875rem",
-                      fontWeight: language === l.code ? 700 : 500,
-                      cursor: "pointer", border: "none",
-                      textAlign: "start",
-                      transition: "background .12s, color .12s",
-                    }}
-                    onMouseEnter={(e) => { if (language !== l.code) e.currentTarget.style.background = "#1A2233"; e.currentTarget.style.color = "#EDEFF3"; }}
-                    onMouseLeave={(e) => { if (language !== l.code) { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#8A93A6"; } }}
-                  >
-                    <span style={{ fontSize: "1.125rem", lineHeight: 1 }}>{l.flag}</span>
-                    <span>{l.label}</span>
-                    {language === l.code && <span style={{ marginInlineStart: "auto", color: "#5C6CFF", fontSize: "0.75rem" }}>✓</span>}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+          {/* Language — desktop only. On phones it lives in the footer as
+              a compact circular control, so the header keeps room for the
+              menu button. */}
+          <LanguagePicker className="hidden md:block" />
 
           {/* Auth buttons. Sign out is a separate control rather than a menu
               item so it is reachable in one click from any page; it is kept
@@ -223,6 +169,79 @@ export function Navbar() {
               <span className="hidden sm:inline">Sign In</span>
             </Link>
           )}
+
+          {/* Mobile menu — the only route to Stories, Dashboard, Companion and
+              2030 Vision on a phone, since the bottom bar holds just four tabs. */}
+          <div ref={menuRef} className="md:hidden" style={{ position: "relative" }}>
+            <button
+              type="button"
+              onClick={() => setMenuOpen(o => !o)}
+              style={{ ...controlBtn, padding: "6px 8px" }}
+              aria-label={t("nav.menu")}
+              aria-expanded={menuOpen}
+              aria-controls="mobile-nav-menu"
+              onMouseEnter={(e) => { e.currentTarget.style.color = "#EDEFF3"; e.currentTarget.style.borderColor = "#5C6CFF"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.color = "#8A93A6"; e.currentTarget.style.borderColor = "#232C3D"; }}
+            >
+              {menuOpen ? <X size={18} aria-hidden /> : <Menu size={18} aria-hidden />}
+            </button>
+
+            {menuOpen && (
+              <div
+                id="mobile-nav-menu"
+                style={{
+                  /* Pinned to the viewport, not the button. Anchoring to the
+                     button put the panel's edge ~150px from the screen edge,
+                     so a 208px menu ran off-screen and clipped every label.
+                     Fixed + insetInline can't overflow whatever the button's
+                     position or the writing direction. */
+                  position: "fixed",
+                  top: 76, // header is 68px + 8px gap
+                  insetInline: 12,
+                  zIndex: 200,
+                  background: "#111827",
+                  border: "1px solid #232C3D",
+                  borderRadius: 12,
+                  overflow: "hidden",
+                  boxShadow: "0 8px 32px rgba(0,0,0,0.45)",
+                }}
+              >
+                {navLinks.map((link) => {
+                  const isActive = location === link.href;
+                  return (
+                    <Link
+                      key={link.href}
+                      href={link.href}
+                      onClick={() => setMenuOpen(false)}
+                      aria-current={isActive ? "page" : undefined}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 10,
+                        /* 44px min target — this is a phone-only control. */
+                        minHeight: 44,
+                        padding: "11px 16px",
+                        background: isActive ? "#1A2233" : "transparent",
+                        color: isActive ? "#EDEFF3" : "#8A93A6",
+                        fontSize: "0.9375rem",
+                        fontWeight: isActive ? 700 : 500,
+                        textDecoration: "none",
+                        transition: "background .12s, color .12s",
+                      }}
+                    >
+                      {isActive && (
+                        <span
+                          aria-hidden
+                          style={{ width: 3, height: 16, borderRadius: 2, background: "#5C6CFF", marginInlineStart: -6 }}
+                        />
+                      )}
+                      <span>{link.label}</span>
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
+          </div>
 
         </div>
       </div>
