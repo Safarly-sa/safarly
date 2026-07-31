@@ -101,7 +101,11 @@ function HowItWorks() {
   };
   const numeral: Variants = {
     hidden: { y: reduceMotion ? 0 : 28, opacity: 0 },
-    show: { y: 0, opacity: 0.1, transition: { duration: reduceMotion ? 0.3 : 0.9, ease: EASE } },
+    // Full opacity: the numeral's colour is already text-foreground, i.e.
+    // --sf-text — near-black in light mode, near-white in dark. At the
+    // previous 0.1 opacity both read as the same faint grey, which erased
+    // that per-theme contrast rather than showing it.
+    show: { y: 0, opacity: 1, transition: { duration: reduceMotion ? 0.3 : 0.9, ease: EASE } },
   };
   const rule: Variants = {
     hidden: { scaleX: reduceMotion ? 1 : 0, opacity: reduceMotion ? 0 : 1 },
