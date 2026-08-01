@@ -53,6 +53,7 @@ pnpm run test                                   # run the safarly + api-server t
 | `artifacts/safarly/src/pages/{stories,story-detail,create-story,edit-story}.tsx`, `components/StoryForm.tsx` | Trip Stories — the creator feed. See Architecture decisions |
 | `artifacts/api-server/` | Express API — auth, Live Lens vision, trip enrichment, the Personal Concierge, the dialect coach, and Trip Stories. See Architecture decisions |
 | `artifacts/mockup-sandbox/` | Design mockup sandbox, not shipped |
+| `scripts/src/poi-embeddings/` | **Spike, throwaway.** Semantic POI retrieval via NVIDIA NIM embeddings, scored against a base-rate baseline in English and Arabic. Nothing here is wired into the app. See its README |
 | `lib/db/src/schema/` | Drizzle schema — source of truth for DB |
 | `lib/api-spec/openapi.yaml` | API contract — source of truth, drives codegen |
 | `lib/api-client-react/`, `lib/api-zod/` | **Generated** from the spec — don't hand-edit |
@@ -174,7 +175,8 @@ narrow and high-value rather than exhaustive: pure logic only, no DOM, no bootin
   `t()` echoing the key on a miss means a lagging locale fails silently in the running
   app — the gap is only visible in code, which is why it needs a test, not just a glance.
   `ar.json` is allowed extra `poi.*.name` keys by design; every other locale must match
-  `en.json` exactly.
+  `en.json` exactly. That exemption has a cost — those keys are the one thing this
+  test cannot hold a line on, and they are currently at 42/114. See Gotchas.
 
 ## Gotchas
 
@@ -211,6 +213,18 @@ narrow and high-value rather than exhaustive: pure logic only, no DOM, no bootin
   the live data; most of the rest turned out to be the same landmarks under
   different names/coordinates on inspection, not new places — coordinate-match
   before merging any more of it. See its README.
+- **Arabic POI names cover 42 of 114 POIs, and the locale drift guard cannot
+  see the gap.** `ar.json` carries `poi.<id>.name` (42) and `poi.<id>.culture`
+  (21) keys that no other locale has — which is exactly why `locales.test.ts`
+  exempts them, and therefore why it will never fail on a POI added without
+  one. The 16-city expansion added POIs without Arabic names, so twelve cities
+  sit at zero: abha, taif, madinah, dammam, najran, jazan, tabuk, hail, yanbu,
+  dhahran, khamis_mushait, mecca. Riyadh, Jeddah and AlUla are the covered
+  ones. Nothing is visibly broken today because `t()` echoes the key and the
+  itinerary falls back to the English name, but any feature that reads POI text
+  in Arabic — search, an Arabic concierge, retrieval — is working off a third
+  of the corpus. Measure before trusting an Arabic result:
+  `pnpm --filter @workspace/scripts run embed-pois -- --dry` prints the counts.
 - **`pois.json`'s `verified` flag drives the itinerary's Verified/Estimated
   badge** — absent or `true` means researched coordinates, `false` means
   authored to fill out the pool (real place, approximate pin and price). Two

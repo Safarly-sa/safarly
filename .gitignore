@@ -59,3 +59,6 @@ Thumbs.db
 # Caveman plugin local install artifacts
 .agents/
 skills-lock.json
+
+# POI embedding spike — regenerate with `pnpm --filter @workspace/scripts run embed-pois`
+scripts/src/poi-embeddings/poi-vectors.json
